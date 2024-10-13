@@ -14,7 +14,7 @@ public class Player : MonoBehaviour {
 	public Vector2 wallJumpOff;
 	public Vector2 wallLeap;
 
-	public float wallSlideSpeedMax = 3;
+	public float wallSlideSpeedMax = 3; 
 	public float wallStickTime = .25f;
 	float timeToWallUnstick;
 
