@@ -20,5 +20,20 @@ public class PlayerInput : MonoBehaviour {
 		if (Input.GetKeyUp (KeyCode.Space)) {
 			player.OnJumpInputUp ();
 		}
-	}
+
+        // Check for sprint input (Left Shift key)
+        player.SetSprinting(Input.GetKey(KeyCode.LeftShift));
+
+        // Sliding logic
+        if (Input.GetKeyDown(KeyCode.C) && player.isSprinting)
+        {
+            player.StartSlide();
+        }
+        if (Input.GetKeyUp(KeyCode.C))
+        {
+            player.StopSlide();
+        }
+
+		player.playerSpeed = player.velocity.x; // So we can see the current speed
+    }
 }
