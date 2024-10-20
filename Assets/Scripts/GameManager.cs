@@ -21,9 +21,7 @@ public class GameManager : MonoBehaviour
 
     private GameState currentState;
 
-    public GameObject playerPrefab;  // Change this to playerPrefab to differentiate from player instance
     private GameObject playerInstance;  // This will hold the instantiated player
-
     public GameObject pauseMenu;
     public GameObject gameOverMenu;
     public GameObject mainMenu;
@@ -96,27 +94,32 @@ public class GameManager : MonoBehaviour
         {
             case GameState.MainMenu:
                 mainMenu.SetActive(true);
-                Time.timeScale = 0f;  // Pause game while in the menu
+                Time.timeScale = 0f;
+                AudioManager.instance.PlayMusic(AudioManager.instance.mainMenuMusic);  // Play main menu music
                 break;
 
             case GameState.Playing:
-                Time.timeScale = 1f;  // Resume game time
-                InstantiatePlayer(); // Instantiate the player when starting the game
+                Time.timeScale = 1f;
+                InstantiatePlayer();
+                AudioManager.instance.PlayMusic(AudioManager.instance.gameplayMusic);  // Play gameplay music
                 break;
 
             case GameState.Paused:
                 pauseMenu.SetActive(true);
-                Time.timeScale = 0f;  // Freeze game
+                Time.timeScale = 0f;
+                AudioManager.instance.PlayMusic(AudioManager.instance.pauseMusic);  // Play pause music
                 break;
 
             case GameState.GameOver:
                 gameOverMenu.SetActive(true);
                 Time.timeScale = 0f;
+                AudioManager.instance.PlayMusic(AudioManager.instance.gameOverMusic);  // Play game over music
                 break;
 
             case GameState.LevelComplete:
                 levelCompleteMenu.SetActive(true);
                 Time.timeScale = 0f;
+                AudioManager.instance.PlayMusic(AudioManager.instance.gameplayMusic);  // Keep gameplay music or add victory music
                 break;
 
             case GameState.Cutscene:
@@ -145,16 +148,8 @@ public class GameManager : MonoBehaviour
 
     private void InstantiatePlayer()
     {
-        if (playerPrefab != null)
-        {
-            // Instantiate the player at the higher than origin by 2
-            Vector3 position = new Vector3(0, 3, 0);
-            playerInstance = Instantiate(playerPrefab, position, Quaternion.identity);
-        }
-        else
-        {
-            Debug.LogError("Player prefab is not assigned in GameManager.");
-        }
+        // Find the player and instantiate him instead of creating it from the prefab
+        playerInstance = GameObject.FindGameObjectWithTag("Player");
     }
 
     public void PauseGame()
