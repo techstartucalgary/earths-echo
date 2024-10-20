@@ -21,7 +21,7 @@ public abstract class Weapon : MonoBehaviour
         if (weaponPrefab != null)
         {
             // Instantiate the weapon prefab at the player's position
-            instantiatedWeapon = Instantiate(weaponPrefab, playerTransform.position, Quaternion.identity);
+            instantiatedWeapon = (GameObject)Instantiate(weaponPrefab, playerTransform.position, Quaternion.identity);
             instantiatedWeapon.transform.SetParent(playerTransform);
             instantiatedWeapon.transform.localPosition = new Vector3(0.5f, -0.5f, 0); // Adjust position as necessary
             instantiatedWeapon.transform.localRotation = Quaternion.identity; // Adjust rotation as necessary

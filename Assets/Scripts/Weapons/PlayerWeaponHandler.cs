@@ -12,7 +12,7 @@ public class PlayerWeaponHandler : MonoBehaviour
         }
 
         equippedWeapon = newWeapon;
-        equippedWeapon.Equip();
+        equippedWeapon.Equip(transform); // Pass the player's transform to the Equip method
         Debug.Log("Player equipped: " + equippedWeapon.weaponName);
     }
 
@@ -27,7 +27,6 @@ public class PlayerWeaponHandler : MonoBehaviour
 
     private void Update()
     {
-
         // Handle weapon attack inputs
         if (equippedWeapon != null)
         {
@@ -35,17 +34,17 @@ public class PlayerWeaponHandler : MonoBehaviour
             {
                 equippedWeapon.PrimaryAttack();
             }
-            else if ((Input.GetKeyDown(KeyCode.LeftControl)))
+            else if (Input.GetKeyDown(KeyCode.LeftControl))
             {
-                if (Input.GetKeyDown(KeyCode.D)) 
+                if (Input.GetKeyDown(KeyCode.D))
                     equippedWeapon.SideAttack();
             }
-            else if ((Input.GetKeyDown(KeyCode.LeftControl)))
+            else if (Input.GetKeyDown(KeyCode.LeftControl))
             {
                 if (Input.GetKeyDown(KeyCode.W))
                     equippedWeapon.UpAttack();
             }
-            else if ((Input.GetKeyDown(KeyCode.LeftControl)))
+            else if (Input.GetKeyDown(KeyCode.LeftControl))
             {
                 if (Input.GetKeyDown(KeyCode.S))
                     equippedWeapon.DownAttack();
