@@ -8,14 +8,14 @@ public class Controller2D : RaycastController {
 	public CollisionInfo collisions;
 	[HideInInspector]
 	public Vector2 playerInput;
-
+    
 	public override void Start() {
 		base.Start ();
 		collisions.faceDir = 1;
 
 	}
 
-	public void Move(Vector2 moveAmount, bool standingOnPlatform) {
+    public void Move(Vector2 moveAmount, bool standingOnPlatform) {
 		Move (moveAmount, Vector2.zero, standingOnPlatform);
 	}
 

@@ -2,13 +2,16 @@
 using System.Collections;
 
 [RequireComponent (typeof (BoxCollider2D))]
+[RequireComponent(typeof(Rigidbody2D))]
+
 public class RaycastController : MonoBehaviour {
 
 	public LayerMask collisionMask;
 	
 	public const float skinWidth = .015f;
 	const float dstBetweenRays = .25f;
-	[HideInInspector]
+
+    [HideInInspector]
 	public int horizontalRayCount;
 	[HideInInspector]
 	public int verticalRayCount;
@@ -20,11 +23,13 @@ public class RaycastController : MonoBehaviour {
 
 	[HideInInspector]
 	public BoxCollider2D collider;
+    private Rigidbody2D rb;
 	public RaycastOrigins raycastOrigins;
 
 	public virtual void Awake() {
 		collider = GetComponent<BoxCollider2D> ();
-	}
+        rb = GetComponent<Rigidbody2D>();
+    }
 
 	public virtual void Start() {
 		CalculateRaySpacing ();

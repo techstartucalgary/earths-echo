@@ -35,6 +35,20 @@ public class AudioManager : MonoBehaviour
         musicSource.loop = true;  // Loop background music
     }
 
+    // if dialogue is playing stop music and sfx
+    public void Update()
+    {
+        if (DialogueManager.GetInstance().dialogueIsPlaying)
+        {
+            StopMusic();
+            sfxSource.Stop();
+        }
+        else if (!musicSource.isPlaying)
+        {
+            PlayMusic(gameplayMusic);
+        }
+    }
+
     // Method to play background music
     public void PlayMusic(AudioClip clip)
     {
