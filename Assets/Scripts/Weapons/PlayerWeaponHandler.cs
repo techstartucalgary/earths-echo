@@ -1,9 +1,13 @@
 ﻿using UnityEngine;
+<<<<<<< HEAD
 using System.Collections.Generic;
+=======
+>>>>>>> 4d13b36c3729ac9bdde2730f117255ae03d0bd15
 
 public class PlayerWeaponHandler : MonoBehaviour
 {
     private Weapon equippedWeapon;
+<<<<<<< HEAD
     private List<Weapon> inventory = new List<Weapon>();
     public int inventoryLimit = 3; // Maximum number of weapons
 
@@ -24,16 +28,27 @@ public class PlayerWeaponHandler : MonoBehaviour
         }
 
         // Unequip the currently equipped weapon
+=======
+
+    public void EquipWeapon(Weapon newWeapon)
+    {
+>>>>>>> 4d13b36c3729ac9bdde2730f117255ae03d0bd15
         if (equippedWeapon != null)
         {
             UnequipWeapon();
         }
 
+<<<<<<< HEAD
         // Equip the new weapon
         equippedWeapon = newWeapon;
         equippedWeapon.Equip(transform); // Pass the player's transform to the Equip method
         Debug.Log("Player equipped: " + equippedWeapon.weaponName);
         UpdateWeaponVisibility();
+=======
+        equippedWeapon = newWeapon;
+        equippedWeapon.Equip(transform); // Pass the player's transform to the Equip method
+        Debug.Log("Player equipped: " + equippedWeapon.weaponName);
+>>>>>>> 4d13b36c3729ac9bdde2730f117255ae03d0bd15
     }
 
     public void UnequipWeapon()
@@ -42,6 +57,7 @@ public class PlayerWeaponHandler : MonoBehaviour
         {
             equippedWeapon.Unequip();
             equippedWeapon = null;
+<<<<<<< HEAD
             UpdateWeaponVisibility();
         }
     }
@@ -64,11 +80,14 @@ public class PlayerWeaponHandler : MonoBehaviour
         {
             UnequipWeapon();
             Debug.Log("Dropped weapon: " + equippedWeapon.weaponName);
+=======
+>>>>>>> 4d13b36c3729ac9bdde2730f117255ae03d0bd15
         }
     }
 
     private void Update()
     {
+<<<<<<< HEAD
         HandleWeaponSwitch();
         HandleWeaponAttack();
     }
@@ -91,12 +110,16 @@ public class PlayerWeaponHandler : MonoBehaviour
 
     private void HandleWeaponAttack()
     {
+=======
+        // Handle weapon attack inputs
+>>>>>>> 4d13b36c3729ac9bdde2730f117255ae03d0bd15
         if (equippedWeapon != null)
         {
             if (Input.GetKeyDown(KeyCode.R))
             {
                 equippedWeapon.PrimaryAttack();
             }
+<<<<<<< HEAD
             else if (Input.GetKey(KeyCode.LeftControl)) // Check if LeftControl is held down
             {
                 if (Input.GetKeyDown(KeyCode.D))
@@ -104,11 +127,29 @@ public class PlayerWeaponHandler : MonoBehaviour
                 else if (Input.GetKeyDown(KeyCode.Space))
                     equippedWeapon.UpAttack();
                 else if (Input.GetKeyDown(KeyCode.S))
+=======
+            else if (Input.GetKeyDown(KeyCode.LeftControl))
+            {
+                if (Input.GetKeyDown(KeyCode.D))
+                    equippedWeapon.SideAttack();
+            }
+            else if (Input.GetKeyDown(KeyCode.LeftControl))
+            {
+                if (Input.GetKeyDown(KeyCode.W))
+                    equippedWeapon.UpAttack();
+            }
+            else if (Input.GetKeyDown(KeyCode.LeftControl))
+            {
+                if (Input.GetKeyDown(KeyCode.S))
+>>>>>>> 4d13b36c3729ac9bdde2730f117255ae03d0bd15
                     equippedWeapon.DownAttack();
             }
         }
     }
 }
+<<<<<<< HEAD
 
 
 
+=======
+>>>>>>> 4d13b36c3729ac9bdde2730f117255ae03d0bd15

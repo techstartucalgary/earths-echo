@@ -24,6 +24,7 @@ public class WeaponPickup : MonoBehaviour
     {
         Debug.Log("Weapon picked up: " + weapon.weaponName);
 
+<<<<<<< HEAD
         PlayerWeaponHandler weaponHandler = player.GetComponent<PlayerWeaponHandler>();
         if (weaponHandler != null)
         {
@@ -34,4 +35,16 @@ public class WeaponPickup : MonoBehaviour
         // Destroy the weapon object after being picked up
         Destroy(gameObject);
     }
+=======
+        // Equip the weapon to the player
+        PlayerWeaponHandler weaponHandler = player.GetComponent<PlayerWeaponHandler>();
+        if (weaponHandler != null)
+        {
+            weaponHandler.EquipWeapon(weapon);
+        }
+
+        Destroy(gameObject); // Destroy the weapon object after being picked up
+    }
+
+>>>>>>> 4d13b36c3729ac9bdde2730f117255ae03d0bd15
 }
