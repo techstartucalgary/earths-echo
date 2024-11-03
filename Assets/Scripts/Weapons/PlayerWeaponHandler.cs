@@ -5,11 +5,11 @@ public class PlayerWeaponHandler : MonoBehaviour
 {
     private Weapon equippedWeapon;
     private List<Weapon> inventory = new List<Weapon>();
-    public int inventoryLimit = 3; // Maximum number of weapons
+    public int inventoryLimit = 20; // Maximum number of weapons
+    public InventoryMenu inventoryMenu; // Reference to the InventoryMenu
 
     public void EquipWeapon(Weapon newWeapon)
     {
-
         // Check if the weapon is already in the inventory or if there's space in the inventory
         if (!inventory.Contains(newWeapon))
         {
@@ -21,6 +21,7 @@ public class PlayerWeaponHandler : MonoBehaviour
 
             // Add the new weapon to the inventory if there's space
             inventory.Add(newWeapon);
+            inventoryMenu.AddItem(newWeapon.gameObject, newWeapon.GetComponent<SpriteRenderer>().sprite); // Add to inventory menu
         }
 
         // Unequip the currently equipped weapon
@@ -93,19 +94,16 @@ public class PlayerWeaponHandler : MonoBehaviour
     {
         if (equippedWeapon != null)
         {
-            if (Input.GetKeyDown(KeyCode.R))
-            {
+            if (Input.GetKeyDown(KeyCode.RightShift)) // Primary attack
                 equippedWeapon.PrimaryAttack();
-            }
-            else if (Input.GetKey(KeyCode.LeftControl)) // Check if LeftControl is held down
-            {
-                if (Input.GetKeyDown(KeyCode.D))
-                    equippedWeapon.SideAttack();
-                else if (Input.GetKeyDown(KeyCode.Space))
-                    equippedWeapon.UpAttack();
-                else if (Input.GetKeyDown(KeyCode.S))
-                    equippedWeapon.DownAttack();
-            }
+            if (Input.GetKeyDown(KeyCode.LeftArrow)) // Side attack to the left
+                equippedWeapon.SideAttack();
+            if (Input.GetKeyDown(KeyCode.RightArrow)) // Side attack to the right
+                equippedWeapon.SideAttack();
+            if (Input.GetKeyDown(KeyCode.UpArrow)) // Up attack
+                equippedWeapon.UpAttack();
+            if (Input.GetKeyDown(KeyCode.DownArrow)) // Down attack
+                equippedWeapon.DownAttack();
         }
     }
 }

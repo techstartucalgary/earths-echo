@@ -87,7 +87,7 @@ public class GameManager : MonoBehaviour
         mainMenu.SetActive(false);
         //levelCompleteMenu.SetActive(false);
         //settingsMenu.SetActive(false);
-        //inventoryMenu.SetActive(false);
+        inventoryMenu.SetActive(false);
         //make sure player is not in control of input
 
         switch (currentState)
