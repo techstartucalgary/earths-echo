@@ -20,18 +20,21 @@ public class WeaponPickup : MonoBehaviour
         }
     }
 
-    private void PickupWeapon(GameObject player)
-    {
-        Debug.Log("Weapon picked up: " + weapon.weaponName);
+	private void PickupWeapon(GameObject player)
+	{
+		Debug.Log("Weapon picked up: " + weapon.weaponName);
 
-        PlayerWeaponHandler weaponHandler = player.GetComponent<PlayerWeaponHandler>();
-        if (weaponHandler != null)
-        {
-            // Equip the new weapon directly, which handles unequipping and managing the inventory
-            weaponHandler.EquipWeapon(weapon);
-        }
+		InventoryHandler inventoryHandler = player.GetComponent<InventoryHandler>();
+		if (inventoryHandler != null)
+		{
+			inventoryHandler.AddItem(weapon.weaponPrefab);
+		}
+		else
+		{
+			Debug.LogWarning("InventoryHandler not found on player.");
+		}
 
-        // Destroy the weapon object after being picked up
-        Destroy(gameObject);
-    }
+		Destroy(gameObject);
+	}
+
 }

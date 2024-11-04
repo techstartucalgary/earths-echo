@@ -1,0 +1,40 @@
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+
+public class InventoryHandler : MonoBehaviour
+{
+    public int inventoryLimit = 20;
+    private List<GameObject> items = new List<GameObject>();
+    public InventoryMenu inventoryMenu;
+
+    void Start()
+    {
+        inventoryMenu = FindObjectOfType<InventoryMenu>();
+    }
+
+	public void AddItem(GameObject item)
+	{
+		if (inventoryMenu == null)
+		{
+			Debug.LogError("InventoryMenu is not assigned in InventoryHandler.");
+			return;
+		}
+
+		if (items.Count >= inventoryLimit)
+		{
+			Debug.Log("Inventory is full. Cannot add more items.");
+			return;
+		}
+
+		items.Add(item);
+		inventoryMenu.UpdateInventoryUI(items);
+	}
+
+
+    public List<GameObject> GetItems()
+    {
+        return items;
+    }
+}
