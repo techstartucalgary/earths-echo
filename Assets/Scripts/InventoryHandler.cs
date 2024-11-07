@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 
 public class InventoryHandler : MonoBehaviour
@@ -8,6 +9,7 @@ public class InventoryHandler : MonoBehaviour
     public int inventoryLimit = 20;
     private List<GameObject> items = new List<GameObject>();
     public InventoryMenu inventoryMenu;
+
 
     void Start()
     {
@@ -29,6 +31,7 @@ public class InventoryHandler : MonoBehaviour
 		}
 
 		items.Add(item);
+		
 		inventoryMenu.UpdateInventoryUI(items);
 	}
 

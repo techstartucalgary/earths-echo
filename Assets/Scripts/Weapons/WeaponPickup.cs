@@ -14,7 +14,7 @@ public class WeaponPickup : MonoBehaviour
 
     private void OnTriggerStay2D(Collider2D other)
     {
-        if (other.CompareTag("Player") && Input.GetKeyDown(KeyCode.E))
+        if (other.CompareTag("Player") )//&& Input.GetKeyDown(KeyCode.E))
         {
             PickupWeapon(other.gameObject);
         }

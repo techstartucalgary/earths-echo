@@ -4,75 +4,52 @@ using UnityEngine.UI;
 
 public class InventoryMenu : MonoBehaviour
 {
-    public GameObject inventoryUI;
-    public Image[] itemSlots;
-    public PlayerWeaponHandler playerWeaponHandler;
+    public GameObject inventoryUI; // The main inventory UI
+    public InventorySlot[] itemSlots; // Array of InventorySlot components
+    public PlayerWeaponHandler playerWeaponHandler; // Reference to player's weapon handler
 
-    private float doubleClickTime = 0.3f; // Adjust based on preferred double-click speed
+    private float doubleClickTime = 0.3f; // Time for double-click detection
     private float lastClickTime = 0;
 
-    // Update the inventory UI and assign onClick listeners to item slots
-	public void UpdateInventoryUI(List<GameObject> items)
-{
-    for (int i = 0; i < itemSlots.Length; i++)
+    // Update the inventory UI by assigning items to slots
+    public void UpdateInventoryUI(List<GameObject> items)
     {
-        if (i < items.Count)
+        for (int i = 0; i < itemSlots.Length; i++)
         {
-            Sprite itemSprite = items[i]?.GetComponent<SpriteRenderer>()?.sprite;
-
-            if (itemSlots[i] == null)
+            if (i < items.Count)
             {
-                Debug.LogError("itemSlots[" + i + "] is null.");
-                continue;
-            }
-
-            itemSlots[i].sprite = itemSprite;
-            itemSlots[i].gameObject.SetActive(true);
-
-            // Find the Button component on the child
-            var button = itemSlots[i].transform.GetChild(0).GetComponent<Button>();
-            if (button == null)
-            {
-                Debug.LogError("Button component is missing on child of itemSlots[" + i + "].");
+                // Set the item in the slot
+                itemSlots[i].SetItem(items[i]);
             }
             else
             {
-                button.onClick.RemoveAllListeners(); // Ensure previous listeners are cleared
-                int index = i; // Cache the current index for closure
-                button.onClick.AddListener(() => OnItemClicked(items[index]));
+                // Clear the slot if no item
+                itemSlots[i].SetItem(null);
             }
         }
-        else
-        {
-            itemSlots[i].sprite = null;
-            itemSlots[i].gameObject.SetActive(false);
-        }
     }
-}
 
+    // Called by InventorySlot when an item is clicked
+    public void OnItemClicked(GameObject item)
+    {
+        Debug.Log("Slot clicked, item: " + (item != null ? item.name : "null"));
 
+        // Double-click detection
+        if (Time.time - lastClickTime < doubleClickTime)
+        {
+            if (item != null)
+            {
+                EquipSelectedItem(item);
+            }
+            else
+            {
+                Debug.LogWarning("Attempted to equip a null item.");
+            }
+        }
+        lastClickTime = Time.time;
+    }
 
-    // Handle click and double-click events on items
-	public void OnItemClicked(GameObject item)
-	{
-		Debug.Log("Button clicked, item: " + (item != null ? item.name : "null"));
-		
-		if (Time.time - lastClickTime < doubleClickTime)
-		{
-			if (item != null)
-			{
-				EquipSelectedItem(item);
-			}
-			else
-			{
-				Debug.LogWarning("Attempted to equip a null item.");
-			}
-		}
-		lastClickTime = Time.time;
-	}
-
-
-    // Equip the item in the appropriate slot based on its type
+    // Equip the item in the appropriate slot based on type
     public void EquipSelectedItem(GameObject item)
     {
         Weapon weapon = item.GetComponent<Weapon>();
@@ -88,17 +65,16 @@ public class InventoryMenu : MonoBehaviour
             }
             Debug.Log("Equipped: " + weapon.weaponName);
         }
+        else
+        {
+            Debug.LogWarning("Selected item does not contain a Weapon component.");
+        }
     }
 
-    // Optional: Highlight the selected item or show more details (single click behavior)
-    public void HighlightItem(GameObject item)
-    {
-        // Logic to highlight the item or show more details (e.g., item stats)
-        Debug.Log("Item selected: " + item.name);
-    }
-
+    // Toggle the visibility of the inventory UI
     public void ToggleInventory()
     {
         inventoryUI.SetActive(!inventoryUI.activeSelf);
     }
 }
+
