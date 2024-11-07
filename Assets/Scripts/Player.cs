@@ -1,10 +1,13 @@
 ﻿using UnityEngine;
 using System.Collections;
+using UnityEngine.SceneManagement;
 
 [RequireComponent (typeof (Controller2D))]
 public class Player : MonoBehaviour {
 
-	public float maxJumpHeight = 4;
+    public HealthBar healthBar;
+
+    public float maxJumpHeight = 4;
 	public float minJumpHeight = 1;
 	public float timeToJumpApex = .4f;
 	float accelerationTimeAirborne = .2f;
@@ -38,8 +41,37 @@ public class Player : MonoBehaviour {
 		maxJumpVelocity = Mathf.Abs(gravity) * timeToJumpApex;
 		minJumpVelocity = Mathf.Sqrt (2 * Mathf.Abs (gravity) * minJumpHeight);
 	}
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.tag == "FallDetector")
+        {
+        }
+        else if (collision.tag == "Checkpoint")
+        {
+        }
+        else if (collision.tag == "NextLevel")
+        {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+            // Can also use SceneManager.LoadScene(1); to load a specific scene
+        }
+        else if (collision.tag == "PreviousLevel")
+        {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex - 1);
+        }
+        else if (collision.tag == "Crystal")
+        {
+            collision.gameObject.SetActive(false);
+        }
+    }
 
-	void Update() {
+    private void OnTriggerStay2D(Collider2D collision)
+    {
+        if (collision.tag == "spike")
+        {
+            healthBar.Damage(0.002f);
+        }
+    }
+    void Update() {
 		CalculateVelocity ();
 		HandleWallSliding ();
 
