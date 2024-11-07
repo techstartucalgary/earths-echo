@@ -3,68 +3,69 @@
 public class MeleeWeapon : Weapon
 {
     public float swingSpeed; // Speed of the melee attack
-    private BoxCollider2D weaponCollider; // Declare weaponCollider
+    private BoxCollider2D weaponCollider; // The weapon's own collider
     private float lastSwingTime; // Time of the last swing
 
     private void Start()
     {
-        // Assuming instantiatedWeapon is set when equipped
-        if (instantiatedWeapon != null)
+        // Get the BoxCollider2D attached to this weapon GameObject
+        // Attempt to get the BoxCollider component
+        weaponCollider = GetComponent<BoxCollider2D>();
+        
+        if (weaponCollider == null)
         {
-            weaponCollider = instantiatedWeapon.GetComponent<BoxCollider2D>();
-            if (weaponCollider == null)
-            {
-                Debug.LogError("Weapon collider not found. Make sure weapon prefab has a BoxCollider component.");
-            }
-            else
-            {
-                weaponCollider.isTrigger = true; // Set collider as a trigger
-                weaponCollider.enabled = false; // Disable by default
-            }
+            Debug.LogError("Weapon collider not found. Make sure weapon prefab has a BoxCollider component.");
+            // Optional: Automatically add a BoxCollider if missing
+            weaponCollider = gameObject.AddComponent<BoxCollider2D>();
+            Debug.Log("BoxCollider added automatically to the weapon.");
         }
     }
 
     private void EnableCollider()
     {
         if (weaponCollider != null)
+        {
             weaponCollider.enabled = true;
+        }
     }
 
     private void DisableCollider()
     {
         if (weaponCollider != null)
+        {
             weaponCollider.enabled = false;
+        }
     }
-
+/*
     private void PerformAttack()
     {
         EnableCollider();
-        Collider[] hitEnemies = Physics.OverlapBox(
+        
+        // Detect enemies within the collider area
+        Collider2D[] hitEnemies = Physics2D.OverlapBoxAll(
             weaponCollider.bounds.center,
-            weaponCollider.bounds.extents,
-            Quaternion.identity,
-            LayerMask.GetMask("Enemy") // Adjust to your enemy layer name
+            weaponCollider.bounds.size,
+            0f,
+            LayerMask.GetMask("Enemy") // Adjust to match your enemy layer name
         );
 
-        // Commented out for future implementation
-        /*
-        foreach (Collider enemy in hitEnemies)
+        foreach (Collider2D enemy in hitEnemies)
         {
-            enemy.GetComponent<Enemy>().TakeDamage(damage); // Assuming Enemy script has TakeDamage method
+            // Assuming enemies have a script with a TakeDamage method
+            enemy.GetComponent<Enemy>()?.TakeDamage(damage);
             Debug.Log("Hit " + enemy.name + " with " + weaponName);
         }
-        */
 
         DisableCollider();
     }
-
+*/
     public override void PrimaryAttack()
     {
         if (Time.time >= lastSwingTime + swingSpeed)
         {
             lastSwingTime = Time.time;
             Debug.Log("Melee primary attack with " + weaponName);
-            PerformAttack();
+            //PerformAttack();
             // Optional: Trigger animation here
         }
     }
@@ -75,7 +76,7 @@ public class MeleeWeapon : Weapon
         {
             lastSwingTime = Time.time;
             Debug.Log("Melee side attack with " + weaponName);
-            PerformAttack();
+            //PerformAttack();
             // Optional: Rotate or adjust position to simulate side attack
         }
     }
@@ -86,7 +87,7 @@ public class MeleeWeapon : Weapon
         {
             lastSwingTime = Time.time;
             Debug.Log("Melee up attack with " + weaponName);
-            PerformAttack();
+            //PerformAttack();
             // Optional: Adjust collider or animation for up attack
         }
     }
@@ -97,8 +98,17 @@ public class MeleeWeapon : Weapon
         {
             lastSwingTime = Time.time;
             Debug.Log("Melee down attack with " + weaponName);
-            PerformAttack();
+            //PerformAttack();
             // Optional: Adjust collider or animation for down attack
+        }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (weaponCollider != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireCube(weaponCollider.bounds.center, weaponCollider.bounds.size);
         }
     }
 }

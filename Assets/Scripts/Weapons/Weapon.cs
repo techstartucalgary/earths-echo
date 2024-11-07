@@ -6,8 +6,6 @@ public abstract class Weapon : MonoBehaviour
     public string weaponName;
     public float damage;
     public float range;
-    public GameObject weaponPrefab; // Reference to the weapon prefab
-    public GameObject instantiatedWeapon; // Instance of the weapon on the player
 
     // Abstract attack methods that subclasses must implement
     public abstract void PrimaryAttack();
@@ -15,34 +13,23 @@ public abstract class Weapon : MonoBehaviour
     public abstract void UpAttack();
     public abstract void DownAttack();
 
-    // Method to equip the weapon
+    // Method to equip the weapon (activate it on the player)
     public virtual void Equip(Transform playerTransform)
     {
-        if (weaponPrefab != null)
-        {
-            // Deactivate the existing instantiated weapon if it exists
-            if (instantiatedWeapon != null)
-            {
-                instantiatedWeapon.SetActive(false);
-            }
-
-            // Instantiate the new weapon prefab
-            instantiatedWeapon = Instantiate(weaponPrefab, playerTransform.position, Quaternion.identity);
-            instantiatedWeapon.transform.SetParent(playerTransform);
-            instantiatedWeapon.transform.localPosition = new Vector3(0.5f, -0.5f, 0); // Adjust as needed
-            instantiatedWeapon.transform.localRotation = Quaternion.identity;
-            instantiatedWeapon.SetActive(true); // Activate the weapon
-            Debug.Log(weaponName + " equipped.");
-        }
+        // Activate the weapon GameObject and parent it to the player
+        gameObject.SetActive(true);
+        transform.SetParent(playerTransform);
+        transform.localPosition = new Vector3(0.5f, -0.5f, 0); // Adjust as needed
+        transform.localRotation = Quaternion.identity;
+        
+        Debug.Log(weaponName + " equipped.");
     }
 
-    // Method to unequip the weapon
+    // Method to unequip the weapon (deactivate it)
     public virtual void Unequip()
     {
-        if (instantiatedWeapon != null)
-        {
-            instantiatedWeapon.SetActive(false); // Deactivate instead of destroying
-            Debug.Log(weaponName + " unequipped.");
-        }
+        // Deactivate the weapon GameObject instead of destroying it
+        gameObject.SetActive(false);
+        Debug.Log(weaponName + " unequipped.");
     }
 }

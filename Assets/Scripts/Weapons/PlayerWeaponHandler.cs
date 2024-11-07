@@ -17,10 +17,12 @@ public class PlayerWeaponHandler : MonoBehaviour
         // Check for key presses to switch weapons
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
+			Destroy(activeWeaponInstance);
             ActivateWeapon(WeaponType.Melee);
         }
         else if (Input.GetKeyDown(KeyCode.Alpha2))
         {
+			Destroy(activeWeaponInstance);
             ActivateWeapon(WeaponType.Projectile);
         }
     }
