@@ -2,36 +2,88 @@
 
 public class PlayerWeaponHandler : MonoBehaviour
 {
-    private GameObject equippedWeaponInstance; // Store instance of equipped weapon
-    public Transform meleeSlot;
-    public Transform projectileSlot;
+    private GameObject meleeWeaponPrefab; // Prefab for the melee weapon
+    private GameObject projectileWeaponPrefab; // Prefab for the projectile weapon
+    private GameObject activeWeaponInstance; // Currently active weapon instance
 
-    public void EquipWeapon(GameObject weaponPrefab)
+    public Transform meleeSlot; // Slot transform for melee weapon
+    public Transform projectileSlot; // Slot transform for projectile weapon
+
+    private enum WeaponType { None, Melee, Projectile }
+    private WeaponType activeWeaponType = WeaponType.None;
+
+    void Update()
     {
-        // Destroy the previous equipped instance if it exists
-        if (equippedWeaponInstance != null)
+        // Check for key presses to switch weapons
+        if (Input.GetKeyDown(KeyCode.Alpha1))
         {
-            Destroy(equippedWeaponInstance);
+            ActivateWeapon(WeaponType.Melee);
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            ActivateWeapon(WeaponType.Projectile);
+        }
+    }
+
+    public void EquipMeleeWeapon(GameObject weaponPrefab)
+    {
+        meleeWeaponPrefab = weaponPrefab;
+        // Automatically activate melee if it’s already the selected slot
+        if (activeWeaponType == WeaponType.Melee)
+        {
+            ActivateWeapon(WeaponType.Melee);
+        }
+    }
+
+    public void EquipProjectileWeapon(GameObject weaponPrefab)
+    {
+        projectileWeaponPrefab = weaponPrefab;
+        // Automatically activate projectile if it’s already the selected slot
+        if (activeWeaponType == WeaponType.Projectile)
+        {
+            ActivateWeapon(WeaponType.Projectile);
+        }
+    }
+
+    private void ActivateWeapon(WeaponType weaponType)
+    {
+        // If the selected weapon is already active, do nothing
+        if (activeWeaponType == weaponType) return;
+
+        // Destroy the currently active weapon instance if it exists
+        if (activeWeaponInstance != null)
+        {
+            Destroy(activeWeaponInstance);
+            activeWeaponInstance = null;
         }
 
-        if (weaponPrefab == null)
+        // Instantiate the new weapon based on the selected type
+        GameObject weaponPrefab = null;
+        Transform slot = null;
+
+        if (weaponType == WeaponType.Melee && meleeWeaponPrefab != null)
         {
-            Debug.LogError("Weapon prefab is null.");
-            return;
+            weaponPrefab = meleeWeaponPrefab;
+            slot = meleeSlot;
+        }
+        else if (weaponType == WeaponType.Projectile && projectileWeaponPrefab != null)
+        {
+            weaponPrefab = projectileWeaponPrefab;
+            slot = projectileSlot;
         }
 
-        Weapon weapon = weaponPrefab.GetComponent<Weapon>();
-        Transform slot = weapon is MeleeWeapon ? meleeSlot : projectileSlot;
-
-        // Instantiate a new instance of the weapon prefab and store it
-        equippedWeaponInstance = Instantiate(weaponPrefab, slot.position, Quaternion.identity, slot);
-
-        // Call Equip method on the weapon instance
-        Weapon equippedWeapon = equippedWeaponInstance.GetComponent<Weapon>();
-        if (equippedWeapon != null)
+        // Instantiate the weapon if a valid prefab is provided
+        if (weaponPrefab != null && slot != null)
         {
-            equippedWeapon.Equip(transform);
-            Debug.Log("Equipped weapon: " + equippedWeapon.weaponName);
+            activeWeaponInstance = Instantiate(weaponPrefab, slot.position, Quaternion.identity, slot);
+            activeWeaponInstance.GetComponent<Weapon>()?.Equip(transform);
+            Debug.Log("Activated " + weaponType.ToString().ToLower() + " weapon: " + activeWeaponInstance.name);
+            activeWeaponType = weaponType;
+        }
+        else
+        {
+            Debug.LogWarning("No weapon prefab set for " + weaponType.ToString().ToLower() + " weapon.");
+            activeWeaponType = WeaponType.None; // Reset to None if instantiation fails
         }
     }
 }

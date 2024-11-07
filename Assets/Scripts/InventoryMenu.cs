@@ -7,6 +7,7 @@ public class InventoryMenu : MonoBehaviour
     public InventorySlot[] itemSlots;
     public PlayerWeaponHandler playerWeaponHandler;
 
+    // Updates the UI by assigning items to slots
     public void UpdateInventoryUI(List<GameObject> items)
     {
         for (int i = 0; i < itemSlots.Length; i++)
@@ -22,6 +23,7 @@ public class InventoryMenu : MonoBehaviour
         }
     }
 
+    // Called by InventorySlot when an item is clicked
     public void OnItemClicked(GameObject itemPrefab)
     {
         if (itemPrefab != null)
@@ -30,7 +32,8 @@ public class InventoryMenu : MonoBehaviour
         }
     }
 
-    public void EquipSelectedItem(GameObject itemPrefab)
+    // Equip the item in the appropriate slot based on type
+    public void EquipSelectedItem(GameObject item)
     {
         if (playerWeaponHandler == null)
         {
@@ -38,14 +41,42 @@ public class InventoryMenu : MonoBehaviour
             return;
         }
 
-        playerWeaponHandler.EquipWeapon(itemPrefab); // Pass the prefab to be instantiated
+        Weapon weapon = item.GetComponent<Weapon>();
+        if (weapon == null)
+        {
+            Debug.LogError("No Weapon component found on the item: " + item.name);
+            return;
+        }
+
+        // Check the type of weapon and call the appropriate equip method
+        if (weapon is MeleeWeapon)
+        {
+            playerWeaponHandler.EquipMeleeWeapon(item); // Set melee weapon prefab in PlayerWeaponHandler
+        }
+        else if (weapon is ProjectileWeapon)
+        {
+            playerWeaponHandler.EquipProjectileWeapon(item); // Set projectile weapon prefab in PlayerWeaponHandler
+        }
+        else
+        {
+            Debug.LogWarning("Unknown weapon type for item: " + item.name);
+        }
+
+        Debug.Log("Equipped: " + weapon.weaponName);
     }
 
+    // Deselects all slots in the inventory UI
     public void DeselectAllSlots()
     {
         foreach (var slot in itemSlots)
         {
             slot.Deselect();
         }
+    }
+
+    // Toggles the visibility of the inventory UI
+    public void ToggleInventory()
+    {
+        inventoryUI.SetActive(!inventoryUI.activeSelf);
     }
 }
