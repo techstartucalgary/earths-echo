@@ -64,7 +64,7 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        if (Input.GetKeyDown(KeyCode.I))
+        if (Input.GetKeyDown(KeyCode.G))
         {
             if (currentState == GameState.Playing)
             {

@@ -3,7 +3,7 @@
 public class MeleeWeapon : Weapon
 {
     public float swingSpeed; // Speed of the melee attack
-    private BoxCollider weaponCollider; // Declare weaponCollider
+    private BoxCollider2D weaponCollider; // Declare weaponCollider
     private float lastSwingTime; // Time of the last swing
 
     private void Start()
@@ -11,7 +11,7 @@ public class MeleeWeapon : Weapon
         // Assuming instantiatedWeapon is set when equipped
         if (instantiatedWeapon != null)
         {
-            weaponCollider = instantiatedWeapon.GetComponent<BoxCollider>();
+            weaponCollider = instantiatedWeapon.GetComponent<BoxCollider2D>();
             if (weaponCollider == null)
             {
                 Debug.LogError("Weapon collider not found. Make sure weapon prefab has a BoxCollider component.");

@@ -3,10 +3,11 @@
 public class WeaponPickup : MonoBehaviour
 {
     public Weapon weapon; // Reference to the weapon script
+    private bool hasBeenPickedUp = false; // Flag to prevent duplicate pickups
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("Player") && !hasBeenPickedUp)
         {
             Debug.Log("Player is near the weapon. Press 'E' to pick up.");
         }
@@ -14,27 +15,27 @@ public class WeaponPickup : MonoBehaviour
 
     private void OnTriggerStay2D(Collider2D other)
     {
-        if (other.CompareTag("Player") )//&& Input.GetKeyDown(KeyCode.E))
+        if (other.CompareTag("Player") && !hasBeenPickedUp)
         {
+            hasBeenPickedUp = true;
             PickupWeapon(other.gameObject);
         }
     }
 
-	private void PickupWeapon(GameObject player)
-	{
-		Debug.Log("Weapon picked up: " + weapon.weaponName);
+    private void PickupWeapon(GameObject player)
+    {
+        Debug.Log("Weapon picked up: " + weapon.weaponName);
 
-		InventoryHandler inventoryHandler = player.GetComponent<InventoryHandler>();
-		if (inventoryHandler != null)
-		{
-			inventoryHandler.AddItem(weapon.weaponPrefab);
-		}
-		else
-		{
-			Debug.LogWarning("InventoryHandler not found on player.");
-		}
+        InventoryHandler inventoryHandler = player.GetComponent<InventoryHandler>();
+        if (inventoryHandler != null)
+        {
+            inventoryHandler.AddItem(weapon.weaponPrefab);
+        }
+        else
+        {
+            Debug.LogWarning("InventoryHandler not found on player.");
+        }
 
-		Destroy(gameObject);
-	}
-
+        Destroy(gameObject); // Prevent further pickups
+    }
 }

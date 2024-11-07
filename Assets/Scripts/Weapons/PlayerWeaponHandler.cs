@@ -1,51 +1,37 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class PlayerWeaponHandler : MonoBehaviour
 {
-    private Weapon equippedMeleeWeapon;
-    private Weapon equippedProjectileWeapon;
+    private GameObject equippedWeaponInstance; // Store instance of equipped weapon
+    public Transform meleeSlot;
+    public Transform projectileSlot;
 
-    public Transform equippedMeleeSlot;
-    public Transform equippedProjectileSlot;
-
-    public void EquipMeleeWeapon(GameObject weaponPrefab)
+    public void EquipWeapon(GameObject weaponPrefab)
     {
-        if (equippedMeleeWeapon != null)
+        // Destroy the previous equipped instance if it exists
+        if (equippedWeaponInstance != null)
         {
-            UnequipWeapon(equippedMeleeWeapon);
+            Destroy(equippedWeaponInstance);
         }
 
-        GameObject weaponInstance = Instantiate(weaponPrefab, equippedMeleeSlot.position, Quaternion.identity, equippedMeleeSlot);
-        equippedMeleeWeapon = weaponInstance.GetComponent<MeleeWeapon>();
-
-        if (equippedMeleeWeapon != null)
+        if (weaponPrefab == null)
         {
-            equippedMeleeWeapon.Equip(transform);
-            Debug.Log("Equipped melee weapon: " + equippedMeleeWeapon.weaponName);
-        }
-    }
-
-    public void EquipProjectileWeapon(GameObject weaponPrefab)
-    {
-        if (equippedProjectileWeapon != null)
-        {
-            UnequipWeapon(equippedProjectileWeapon);
+            Debug.LogError("Weapon prefab is null.");
+            return;
         }
 
-        GameObject weaponInstance = Instantiate(weaponPrefab, equippedProjectileSlot.position, Quaternion.identity, equippedProjectileSlot);
-        equippedProjectileWeapon = weaponInstance.GetComponent<ProjectileWeapon>();
+        Weapon weapon = weaponPrefab.GetComponent<Weapon>();
+        Transform slot = weapon is MeleeWeapon ? meleeSlot : projectileSlot;
 
-        if (equippedProjectileWeapon != null)
+        // Instantiate a new instance of the weapon prefab and store it
+        equippedWeaponInstance = Instantiate(weaponPrefab, slot.position, Quaternion.identity, slot);
+
+        // Call Equip method on the weapon instance
+        Weapon equippedWeapon = equippedWeaponInstance.GetComponent<Weapon>();
+        if (equippedWeapon != null)
         {
-            equippedProjectileWeapon.Equip(transform);
-            Debug.Log("Equipped projectile weapon: " + equippedProjectileWeapon.weaponName);
+            equippedWeapon.Equip(transform);
+            Debug.Log("Equipped weapon: " + equippedWeapon.weaponName);
         }
-    }
-
-    private void UnequipWeapon(Weapon weapon)
-    {
-        weapon.Unequip();
-        Destroy(weapon.gameObject);
     }
 }
