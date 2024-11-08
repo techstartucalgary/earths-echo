@@ -26,12 +26,6 @@ public class EnemyAI : MonoBehaviour
     Seeker seeker;
     Rigidbody2D rb;
 
-    void Awake() {
-        // cSensor = chaseSensorObject.GetComponent<Sensor>();
-        
-        // aSensor = actionSensorObject.GetComponent<Sensor>();
-    }
-
     // Start is called before the first frame update
     void Start()
     {
