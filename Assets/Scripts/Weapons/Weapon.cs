@@ -6,6 +6,8 @@ public abstract class Weapon : MonoBehaviour
     public string weaponName;
     public float damage;
     public float range;
+    [TextArea]
+    public string description;
 
     // Abstract attack methods that subclasses must implement
     public abstract void PrimaryAttack();

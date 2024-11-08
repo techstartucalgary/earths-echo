@@ -1,15 +1,23 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using TMPro;
 
 public class InventorySlot : MonoBehaviour, IPointerClickHandler
 {
     public GameObject itemPrefab; // Store the weapon prefab instead of an instance
     private InventoryMenu inventoryMenu;
     private Image itemIcon;
+    private bool isSelected; // Track if the item has been selected once
+    public string itemName;
+    public string itemDescription;
 
     [SerializeField] private GameObject selectedShader;
     [SerializeField] private Image[] selectedIcons; // Array to hold selected icons (0 = melee, 1 = projectile)
+
+    public Image itemDescriptionImage;
+    public TMP_Text itemDescriptionNameText;
+    public TMP_Text itemDescriptionText;
 
     void Start()
     {
@@ -25,6 +33,13 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler
     public void SetItem(GameObject newItemPrefab)
     {
         itemPrefab = newItemPrefab;
+        Weapon weapon = itemPrefab.GetComponent<Weapon>();
+
+        if (weapon != null)
+        {
+            itemName = weapon.weaponName;
+            itemDescription = weapon.description;
+        }
 
         if (itemIcon != null)
         {
@@ -46,16 +61,45 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler
     {
         if (eventData.button == PointerEventData.InputButton.Left)
         {
-            if (itemPrefab != null) // Check if itemPrefab is still valid
+            if (itemPrefab != null)
             {
-                inventoryMenu.DeselectAllSlots();
-                Select();
-                inventoryMenu.OnItemClicked(itemPrefab); // Pass the prefab reference
+                if (!isSelected)
+                {
+                    // Show item description on first click
+                    ShowItemDescription();
+                    isSelected = true;
+                }
+                else
+                {
+                    // Equip item on subsequent click
+                    inventoryMenu.DeselectAllSlots();
+                    Select();
+                    inventoryMenu.OnItemClicked(itemPrefab);
+                    isSelected = false; // Reset selection state
+                }
             }
             else
             {
                 Debug.LogWarning("Attempted to select a destroyed or null item.");
             }
+        }
+    }
+
+    private void ShowItemDescription()
+    {
+        // Display item details in the UI
+        if (itemDescriptionImage != null)
+        {
+            itemDescriptionImage.sprite = itemIcon.sprite;
+            itemDescriptionImage.enabled = true;
+        }
+        if (itemDescriptionNameText != null)
+        {
+            itemDescriptionNameText.text = itemName;
+        }
+        if (itemDescriptionText != null)
+        {
+            itemDescriptionText.text = itemDescription;
         }
     }
 
@@ -100,5 +144,7 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler
         {
             selectedShader.SetActive(false);
         }
+        isSelected = false; // Reset selection state when deselected
     }
 }
+

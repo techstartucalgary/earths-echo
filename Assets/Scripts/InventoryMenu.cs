@@ -3,11 +3,11 @@ using UnityEngine;
 
 public class InventoryMenu : MonoBehaviour
 {
-    public GameObject inventoryUI;
-    public InventorySlot[] itemSlots;
-    public PlayerWeaponHandler playerWeaponHandler;
+    public GameObject inventoryUI; // The main inventory UI
+    public InventorySlot[] itemSlots; // Array of InventorySlot components
+    public PlayerWeaponHandler playerWeaponHandler; // Reference to player's weapon handler
 
-    // Updates the UI by assigning items to slots
+    // Updates the inventory UI by assigning items to slots
     public void UpdateInventoryUI(List<GameObject> items)
     {
         for (int i = 0; i < itemSlots.Length; i++)
@@ -23,7 +23,7 @@ public class InventoryMenu : MonoBehaviour
         }
     }
 
-    // Called by InventorySlot when an item is clicked
+    // Called by InventorySlot to equip the item
     public void OnItemClicked(GameObject itemPrefab)
     {
         if (itemPrefab != null)
@@ -51,11 +51,11 @@ public class InventoryMenu : MonoBehaviour
         // Check the type of weapon and call the appropriate equip method
         if (weapon is MeleeWeapon)
         {
-            playerWeaponHandler.EquipMeleeWeapon(item); // Set melee weapon prefab in PlayerWeaponHandler
+            playerWeaponHandler.EquipMeleeWeapon(item);
         }
         else if (weapon is ProjectileWeapon)
         {
-            playerWeaponHandler.EquipProjectileWeapon(item); // Set projectile weapon prefab in PlayerWeaponHandler
+            playerWeaponHandler.EquipProjectileWeapon(item);
         }
         else
         {
@@ -80,3 +80,4 @@ public class InventoryMenu : MonoBehaviour
         inventoryUI.SetActive(!inventoryUI.activeSelf);
     }
 }
+
