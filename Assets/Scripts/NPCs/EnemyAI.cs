@@ -15,6 +15,7 @@ public class EnemyAI : MonoBehaviour
     [Header("Movement")]
     public float speed = 200f;
     public float nextWaypointDistance = 3f;
+    public bool useSensorForPath = true;
 
     [Header("Graphics")]
     public Transform enemyGFX;
@@ -32,7 +33,17 @@ public class EnemyAI : MonoBehaviour
         seeker = GetComponent<Seeker>();
         rb = GetComponent<Rigidbody2D>();
 
-        InvokeRepeating("UpdatePath", 0f, .5f);
+        if (useSensorForPath) {
+            chaseSensor.OnTargetChanged += CheckChaseSensor;
+        }
+        else {
+            InvokeRepeating("UpdatePath", 0f, .5f);
+        }
+    }
+
+    void CheckChaseSensor()
+    {
+        UpdatePath();
     }
 
     void UpdatePath()
