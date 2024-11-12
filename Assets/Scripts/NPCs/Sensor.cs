@@ -8,7 +8,10 @@ public class Sensor : MonoBehaviour
 {
     [SerializeField] float detectionRadius = 5f;
     [SerializeField] float timerInterval = 1f;
+
     CircleCollider2D detectionRange;
+
+    string targetTag = "";
 
     public event Action OnTargetChanged = delegate { };
     
@@ -48,15 +51,17 @@ public class Sensor : MonoBehaviour
     }
 
     void OnTriggerEnter2D(Collider2D other) {
-        if(!other.CompareTag("Player")) return;
-        Debug.Log("Player entered trigger");
+        if(!other.CompareTag(targetTag)) return;
         UpdateTargetPosition(other.gameObject);
     }
 
     void OnTriggerExit2D(Collider2D other) {
-        if(!other.CompareTag("Player")) return;
-        Debug.Log("Player exited trigger");
+        if(!other.CompareTag(targetTag)) return;
         UpdateTargetPosition();
+    }
+
+    public void setTargetTag(string tag) {
+        targetTag = tag;
     }
 
     void OnDrawGizmos() {

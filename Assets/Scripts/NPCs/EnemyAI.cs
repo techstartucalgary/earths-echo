@@ -33,6 +33,9 @@ public class EnemyAI : MonoBehaviour
         seeker = GetComponent<Seeker>();
         rb = GetComponent<Rigidbody2D>();
 
+        chaseSensor.setTargetTag(target.tag);
+        actionSensor.setTargetTag(target.tag);
+
         if (useSensorForPath) {
             chaseSensor.OnTargetChanged += CheckChaseSensor;
         }
@@ -62,7 +65,7 @@ public class EnemyAI : MonoBehaviour
     }
 
     // FixedUpdate is called fixed number of times per second, ideal for physics stuff
-    void FixedUpdate()
+    void Update()
     {
         if (path == null) return;
 
