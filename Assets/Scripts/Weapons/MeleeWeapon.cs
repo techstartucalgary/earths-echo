@@ -1,24 +1,51 @@
 ﻿using UnityEngine;
+using UnityEngine.UI; // Required for UI components
+using TMPro;
 
 public class MeleeWeapon : Weapon
 {
     public float swingSpeed; // Speed of the melee attack
     private BoxCollider2D weaponCollider; // The weapon's own collider
     private float lastSwingTime; // Time of the last swing
+    public TMP_Text cooldownText; // Reference to the cooldown text UI element
 
     private void Start()
     {
         // Get the BoxCollider2D attached to this weapon GameObject
-        // Attempt to get the BoxCollider component
         weaponCollider = GetComponent<BoxCollider2D>();
-        
+
         if (weaponCollider == null)
         {
             Debug.LogError("Weapon collider not found. Make sure weapon prefab has a BoxCollider component.");
-            // Optional: Automatically add a BoxCollider if missing
             weaponCollider = gameObject.AddComponent<BoxCollider2D>();
             Debug.Log("BoxCollider added automatically to the weapon.");
         }
+
+        // Check if cooldownText is assigned
+        if (cooldownText == null)
+        {
+            cooldownText = GameObject.Find("CooldownText")?.GetComponent<TMP_Text>();
+
+            if (cooldownText == null)
+            {
+                Debug.LogError("CooldownText TMP_Text component not found in the scene. Make sure there is a TextMeshPro UI element named 'CooldownText'.");
+            }
+        }
+    }
+
+    private void Update()
+    {
+        // Update the cooldown text
+        if (cooldownText != null)
+        {
+            float cooldownRemaining = Mathf.Max(0f, (lastSwingTime + swingSpeed) - Time.time);
+            cooldownText.text = $"Cooldown: {cooldownRemaining:F1} s";
+        }
+    }
+
+    private void coolDown()
+    {
+
     }
 
     private void EnableCollider()
@@ -36,37 +63,28 @@ public class MeleeWeapon : Weapon
             weaponCollider.enabled = false;
         }
     }
-/*
+
     private void PerformAttack()
     {
         EnableCollider();
-        
-        // Detect enemies within the collider area
+
         Collider2D[] hitEnemies = Physics2D.OverlapBoxAll(
             weaponCollider.bounds.center,
             weaponCollider.bounds.size,
             0f,
-            LayerMask.GetMask("Enemy") // Adjust to match your enemy layer name
+            LayerMask.GetMask("Enemy")
         );
-
-        foreach (Collider2D enemy in hitEnemies)
-        {
-            // Assuming enemies have a script with a TakeDamage method
-            enemy.GetComponent<Enemy>()?.TakeDamage(damage);
-            Debug.Log("Hit " + enemy.name + " with " + weaponName);
-        }
 
         DisableCollider();
     }
-*/
+
     public override void PrimaryAttack()
     {
         if (Time.time >= lastSwingTime + swingSpeed)
         {
             lastSwingTime = Time.time;
             Debug.Log("Melee primary attack with " + weaponName);
-            //PerformAttack();
-            // Optional: Trigger animation here
+            PerformAttack();
         }
     }
 
@@ -76,8 +94,7 @@ public class MeleeWeapon : Weapon
         {
             lastSwingTime = Time.time;
             Debug.Log("Melee side attack with " + weaponName);
-            //PerformAttack();
-            // Optional: Rotate or adjust position to simulate side attack
+            PerformAttack();
         }
     }
 
@@ -87,8 +104,7 @@ public class MeleeWeapon : Weapon
         {
             lastSwingTime = Time.time;
             Debug.Log("Melee up attack with " + weaponName);
-            //PerformAttack();
-            // Optional: Adjust collider or animation for up attack
+            PerformAttack();
         }
     }
 
@@ -98,8 +114,7 @@ public class MeleeWeapon : Weapon
         {
             lastSwingTime = Time.time;
             Debug.Log("Melee down attack with " + weaponName);
-            //PerformAttack();
-            // Optional: Adjust collider or animation for down attack
+            PerformAttack();
         }
     }
 

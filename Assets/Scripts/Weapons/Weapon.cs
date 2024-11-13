@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections;
 
 public abstract class Weapon : MonoBehaviour
 {
@@ -21,9 +22,21 @@ public abstract class Weapon : MonoBehaviour
         // Activate the weapon GameObject and parent it to the player
         gameObject.SetActive(true);
         transform.SetParent(playerTransform);
-        transform.localPosition = new Vector3(0.5f, -0.5f, 0); // Adjust as needed
+
+        // Determine direction based on player's local scale
+        bool isFacingRight = playerTransform.localScale.x > 0;
+
+        // Flip weapon's position and orientation based on the player's direction
+        if (isFacingRight)
+        {
+            transform.localPosition = new Vector3(0.5f, -0.5f, 0); // Adjust as needed
+        }
+        else
+        {
+            transform.localPosition = new Vector3(-0.5f, -0.5f, 0); // Adjust as needed
+        }
+
         transform.localRotation = Quaternion.identity;
-        
         Debug.Log(weaponName + " equipped.");
     }
 
@@ -34,4 +47,20 @@ public abstract class Weapon : MonoBehaviour
         gameObject.SetActive(false);
         Debug.Log(weaponName + " unequipped.");
     }
+
+    // Helper method to update weapon's orientation dynamically if needed
+    public void UpdateWeaponOrientation(Transform playerTransform)
+    {
+        bool isFacingRight = playerTransform.localScale.x > 0;
+
+        if (isFacingRight)
+        {
+            transform.localPosition = new Vector3(0.5f, -0.5f, 0);
+        }
+        else
+        {
+            transform.localPosition = new Vector3(-0.5f, -0.5f, 0);
+        }
+    }
+
 }
