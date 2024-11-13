@@ -11,20 +11,25 @@ public class PlayerWeaponHandler : MonoBehaviour
 
     private enum WeaponType { None, Melee, Projectile }
     private WeaponType activeWeaponType = WeaponType.None;
+    private MeleeWeapon MeleeWeapon;
+    private ProjectileWeapon ProjectileWeapon;
 
     void Update()
     {
         // Check for key presses to switch weapons
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
-			Destroy(activeWeaponInstance);
+            Destroy(activeWeaponInstance);
             ActivateWeapon(WeaponType.Melee);
         }
         else if (Input.GetKeyDown(KeyCode.Alpha2))
         {
-			Destroy(activeWeaponInstance);
+            Destroy(activeWeaponInstance);
             ActivateWeapon(WeaponType.Projectile);
         }
+
+        // Call attack handling method
+        AttackByType();
     }
 
     public void EquipMeleeWeapon(GameObject weaponPrefab)
@@ -49,17 +54,16 @@ public class PlayerWeaponHandler : MonoBehaviour
 
     private void ActivateWeapon(WeaponType weaponType)
     {
-        // If the selected weapon is already active, do nothing
         if (activeWeaponType == weaponType) return;
 
-        // Destroy the currently active weapon instance if it exists
         if (activeWeaponInstance != null)
         {
             Destroy(activeWeaponInstance);
             activeWeaponInstance = null;
+            MeleeWeapon = null;
+            ProjectileWeapon = null;
         }
 
-        // Instantiate the new weapon based on the selected type
         GameObject weaponPrefab = null;
         Transform slot = null;
 
@@ -74,18 +78,50 @@ public class PlayerWeaponHandler : MonoBehaviour
             slot = projectileSlot;
         }
 
-        // Instantiate the weapon if a valid prefab is provided
         if (weaponPrefab != null && slot != null)
         {
             activeWeaponInstance = Instantiate(weaponPrefab, slot.position, Quaternion.identity, slot);
             activeWeaponInstance.GetComponent<Weapon>()?.Equip(transform);
+
+            if (weaponType == WeaponType.Melee)
+                MeleeWeapon = activeWeaponInstance.GetComponent<MeleeWeapon>();
+            else if (weaponType == WeaponType.Projectile)
+                ProjectileWeapon = activeWeaponInstance.GetComponent<ProjectileWeapon>();
+
             Debug.Log("Activated " + weaponType.ToString().ToLower() + " weapon: " + activeWeaponInstance.name);
             activeWeaponType = weaponType;
         }
         else
         {
             Debug.LogWarning("No weapon prefab set for " + weaponType.ToString().ToLower() + " weapon.");
-            activeWeaponType = WeaponType.None; // Reset to None if instantiation fails
+            activeWeaponType = WeaponType.None;
+        }
+    }
+
+    private void AttackByType()
+    {
+        switch (activeWeaponType)
+        {
+            case WeaponType.Melee:
+                if (Input.GetMouseButtonDown(0) && MeleeWeapon != null)
+                {
+                    MeleeWeapon.PrimaryAttack();
+                }
+                if (Input.GetMouseButtonDown(1) && MeleeWeapon != null)
+                {
+                    MeleeWeapon.SideAttack();
+                }
+                break;
+
+            case WeaponType.Projectile:
+                if (Input.GetMouseButtonDown(0) && ProjectileWeapon != null)
+                {
+                    ProjectileWeapon.PrimaryAttack();
+                }
+                break;
+
+            case WeaponType.None:
+                break;
         }
     }
 }
