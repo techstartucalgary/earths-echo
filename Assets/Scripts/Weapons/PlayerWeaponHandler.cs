@@ -14,6 +14,7 @@ public class PlayerWeaponHandler : MonoBehaviour
     private MeleeWeapon MeleeWeapon;
     private ProjectileWeapon ProjectileWeapon;
 
+
     void Update()
     {
         // Check for key presses to switch weapons
@@ -107,9 +108,17 @@ public class PlayerWeaponHandler : MonoBehaviour
                 {
                     MeleeWeapon.PrimaryAttack();
                 }
-                if (Input.GetMouseButtonDown(1) && MeleeWeapon != null)
+                if (Input.GetMouseButtonDown(1) && MeleeWeapon != null && !Input.GetKey(KeyCode.W) && !Input.GetKey(KeyCode.S))
                 {
                     MeleeWeapon.SideAttack();
+                }
+                if (Input.GetKey(KeyCode.S) && Input.GetMouseButtonDown(1) && MeleeWeapon != null)
+                {
+                    MeleeWeapon.DownAttack();
+                }
+                if (Input.GetKey(KeyCode.W) && Input.GetMouseButtonDown(1) && MeleeWeapon != null)
+                {
+                    MeleeWeapon.UpAttack();
                 }
                 break;
 
