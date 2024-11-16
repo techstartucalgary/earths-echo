@@ -6,6 +6,7 @@ public class InventoryMenu : MonoBehaviour
     public GameObject inventoryUI; // The main inventory UI
     public InventorySlot[] itemSlots; // Array of InventorySlot components
     public PlayerWeaponHandler playerWeaponHandler; // Reference to player's weapon handler
+    public InventoryHandler inventoryHandler; // Reference to the InventoryHandler
 
     // Updates the inventory UI by assigning items to slots
     public void UpdateInventoryUI(List<GameObject> items)

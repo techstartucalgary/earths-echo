@@ -14,28 +14,47 @@ public class PlayerWeaponHandler : MonoBehaviour
     private MeleeWeapon MeleeWeapon;
     private ProjectileWeapon ProjectileWeapon;
 
-
     void Update()
     {
-        // Check for key presses to switch weapons
+        HandleWeaponSwitching();
+        AttackByType();
+    }
+
+    private void HandleWeaponSwitching()
+    {
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
-            Destroy(activeWeaponInstance);
+            // If melee weapon is already active, do nothing
+            if (activeWeaponType == WeaponType.Melee)
+            {
+                Debug.Log("Melee weapon is already active.");
+                return;
+            }
+
             ActivateWeapon(WeaponType.Melee);
         }
         else if (Input.GetKeyDown(KeyCode.Alpha2))
         {
-            Destroy(activeWeaponInstance);
+            // If projectile weapon is already active, do nothing
+            if (activeWeaponType == WeaponType.Projectile)
+            {
+                Debug.Log("Projectile weapon is already active.");
+                return;
+            }
+
             ActivateWeapon(WeaponType.Projectile);
         }
-
-        // Call attack handling method
-        AttackByType();
+        else if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            // Put away any active weapon
+            UnequipWeapon();
+        }
     }
 
     public void EquipMeleeWeapon(GameObject weaponPrefab)
     {
         meleeWeaponPrefab = weaponPrefab;
+
         // Automatically activate melee if it’s already the selected slot
         if (activeWeaponType == WeaponType.Melee)
         {
@@ -46,6 +65,7 @@ public class PlayerWeaponHandler : MonoBehaviour
     public void EquipProjectileWeapon(GameObject weaponPrefab)
     {
         projectileWeaponPrefab = weaponPrefab;
+
         // Automatically activate projectile if it’s already the selected slot
         if (activeWeaponType == WeaponType.Projectile)
         {
@@ -55,15 +75,14 @@ public class PlayerWeaponHandler : MonoBehaviour
 
     private void ActivateWeapon(WeaponType weaponType)
     {
-        if (activeWeaponType == weaponType) return;
-
-        if (activeWeaponInstance != null)
+        if (activeWeaponType == weaponType)
         {
-            Destroy(activeWeaponInstance);
-            activeWeaponInstance = null;
-            MeleeWeapon = null;
-            ProjectileWeapon = null;
+            Debug.Log($"Weapon type {weaponType} is already active.");
+            return;
         }
+
+        // Destroy currently active weapon
+        UnequipWeapon();
 
         GameObject weaponPrefab = null;
         Transform slot = null;
@@ -89,14 +108,28 @@ public class PlayerWeaponHandler : MonoBehaviour
             else if (weaponType == WeaponType.Projectile)
                 ProjectileWeapon = activeWeaponInstance.GetComponent<ProjectileWeapon>();
 
-            Debug.Log("Activated " + weaponType.ToString().ToLower() + " weapon: " + activeWeaponInstance.name);
+            Debug.Log($"Activated {weaponType.ToString().ToLower()} weapon: {activeWeaponInstance.name}");
             activeWeaponType = weaponType;
         }
         else
         {
-            Debug.LogWarning("No weapon prefab set for " + weaponType.ToString().ToLower() + " weapon.");
+            Debug.LogWarning($"No weapon prefab set for {weaponType.ToString().ToLower()} weapon.");
             activeWeaponType = WeaponType.None;
         }
+    }
+
+    private void UnequipWeapon()
+    {
+        if (activeWeaponInstance != null)
+        {
+            Debug.Log($"Unequipping weapon: {activeWeaponInstance.name}");
+            Destroy(activeWeaponInstance);
+        }
+
+        activeWeaponInstance = null;
+        MeleeWeapon = null;
+        ProjectileWeapon = null;
+        activeWeaponType = WeaponType.None;
     }
 
     private void AttackByType()
@@ -130,6 +163,7 @@ public class PlayerWeaponHandler : MonoBehaviour
                 break;
 
             case WeaponType.None:
+                // No weapon equipped, no attack possible
                 break;
         }
     }

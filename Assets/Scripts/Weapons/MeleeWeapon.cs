@@ -6,7 +6,6 @@ using System.Collections;
 public class MeleeWeapon : Weapon
 {
     public float swingSpeed; // Speed of the melee attack
-    public float attackRange = 1.5f; // Range of the circular swing attack
     private BoxCollider2D weaponCollider; // The weapon's own collider
     private float lastSwingTime; // Time of the last swing
     public TMP_Text cooldownText; // Reference to the cooldown text UI element
@@ -76,9 +75,9 @@ public class MeleeWeapon : Weapon
         }
 
         // Calculate attack position using attackPoint
-        Vector2 attackPosition = (Vector2)attackPoint.transform.position + attackDirection * attackRange;
+        Vector2 attackPosition = (Vector2)attackPoint.transform.position + attackDirection * range;
 
-        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(attackPosition, attackRange, enemies);
+        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(attackPosition, range, enemies);
 
         foreach (var enemy in hitEnemies)
         {
@@ -107,8 +106,8 @@ public class MeleeWeapon : Weapon
             Vector2 attackDirection = transform.localScale.x > 0 ? Vector2.right : Vector2.left;
 
             Debug.Log("Melee side attack with " + weaponName);
-            PerformCircularAttack(attackDirection); // Right or left direction for side attack
             Debug.Log("Performed circular attack " + (attackDirection == Vector2.right ? "right" : "left"));
+            PerformCircularAttack(attackDirection); // Right or left direction for side attack
         }
     }
 
@@ -145,10 +144,10 @@ public class MeleeWeapon : Weapon
         }
 
         // Define the size of the vertical hitbox
-        Vector2 boxSize = new Vector2(0.5f, attackRange); // Narrow width, tall height
+        Vector2 boxSize = new Vector2(0.5f, range); // Narrow width, tall height
 
         // Calculate the center of the hitbox based on the attack direction
-        Vector2 attackPosition = (Vector2)attackPoint.position + attackDirection * (attackRange / 2f);
+        Vector2 attackPosition = (Vector2)attackPoint.position + attackDirection * (range / 2f);
 
         // Detect enemies in the rectangular area
         Collider2D[] hitEnemies = Physics2D.OverlapBoxAll(attackPosition, boxSize, 0f, enemies);
@@ -159,8 +158,6 @@ public class MeleeWeapon : Weapon
             // Add logic to deal damage to the enemy here
         }
 
-        // Optional: Visualize the hitbox in debug mode
-        Debug.DrawLine(attackPoint.position, attackPosition, Color.red, 0.5f);
     }
 
 
@@ -175,14 +172,14 @@ public class MeleeWeapon : Weapon
         if (attackPoint != null)
         {
             Gizmos.color = Color.green;
-            Gizmos.DrawWireSphere(attackPoint.transform.position, attackRange);
+            Gizmos.DrawWireSphere(attackPoint.transform.position, range);
             // Visualize the upward attack box
-            Vector2 upAttackPosition = (Vector2)attackPoint.position + Vector2.up * (attackRange / 2f);
-            Gizmos.DrawWireCube(upAttackPosition, new Vector2(0.5f, attackRange));
+            Vector2 upAttackPosition = (Vector2)attackPoint.position + Vector2.up * (range / 2f);
+            Gizmos.DrawWireCube(upAttackPosition, new Vector2(0.5f, range));
 
             // Visualize the downward attack box
-            Vector2 downAttackPosition = (Vector2)attackPoint.position + Vector2.down * (attackRange / 2f);
-            Gizmos.DrawWireCube(downAttackPosition, new Vector2(0.5f, attackRange));
+            Vector2 downAttackPosition = (Vector2)attackPoint.position + Vector2.down * (range / 2f);
+            Gizmos.DrawWireCube(downAttackPosition, new Vector2(0.5f, range));
         }
     }
 }
