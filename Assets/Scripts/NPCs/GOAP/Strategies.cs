@@ -40,6 +40,8 @@ public class WanderStrategy : IActionStrategy {
             Vector3 testDestination = agent.transform.position + randomDirection;
             agent.UpdateTestPath(testDestination);
 
+            // TODO change logic to wait for path to finish calculating, then test length
+
             if (agent.TestPathTotalLength <= wanderRadius) {
                 agent.setDestination(testDestination);
                 return;
