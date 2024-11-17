@@ -138,7 +138,7 @@ public class PlayerWeaponHandler : MonoBehaviour
             case WeaponType.Melee:
                 if (Input.GetMouseButtonDown(0) && MeleeWeapon != null)
                 {
-                    MeleeWeapon.PrimaryAttack();
+                    //MeleeWeapon.PrimaryAttack();
                 }
                 if (Input.GetMouseButtonDown(1) && MeleeWeapon != null && !Input.GetKey(KeyCode.W) && !Input.GetKey(KeyCode.S))
                 {
@@ -155,9 +155,16 @@ public class PlayerWeaponHandler : MonoBehaviour
                 break;
 
             case WeaponType.Projectile:
-                if (Input.GetMouseButtonDown(0) && ProjectileWeapon != null)
+                if (ProjectileWeapon != null)
                 {
-                    ProjectileWeapon.PrimaryAttack();
+                    if (Input.GetMouseButtonDown(0))
+                    {
+                        ProjectileWeapon.PrimaryAttack();
+                    }
+                    else if (Input.GetMouseButtonUp(0))
+                    {
+                        ProjectileWeapon.ReleasePullback();
+                    }
                 }
                 break;
 
