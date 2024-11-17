@@ -4,17 +4,20 @@ using Pathfinding;
 using UnityEngine;
 using UnityEngine.AI;
 
-[RequireComponent(typeof(NavMeshAgent))]
+// [RequireComponent(typeof(NavMeshAgent))]
+[RequireComponent(typeof(SeekerAgent))]
 // [RequireComponent(typeof(AnimationController))]
 public class GoapAgent : MonoBehaviour {
     [Header("Sensors")]
     [SerializeField] Sensor chaseSensor;
     [SerializeField] Sensor actionSensor;
+    public GameObject target;
 
     [Header("Known Locations")]     // can add more as needed
     [SerializeField] Transform restingPosition;
     
-    NavMeshAgent navMeshAgent;
+    // NavMeshAgent navMeshAgent;
+    SeekerAgent seekerAgent;
     // AnimationController animations;
     Rigidbody2D rb;
 
@@ -24,7 +27,6 @@ public class GoapAgent : MonoBehaviour {
 
     CountdownTimer statsTimer;
 
-    GameObject target;
     Vector3 destination;
 
     AgentGoal lastGoal;
@@ -39,7 +41,8 @@ public class GoapAgent : MonoBehaviour {
     IGoapPlanner gPlanner;
 
     void Awake() {
-        navMeshAgent = GetComponent<NavMeshAgent>();
+        // navMeshAgent = GetComponent<NavMeshAgent>();
+        seekerAgent = GetComponent<SeekerAgent>();
         // animations = GetComponent<AnimationController>();
         rb = GetComponent<Rigidbody2D>();
         rb.freezeRotation = true;
@@ -52,6 +55,12 @@ public class GoapAgent : MonoBehaviour {
         SetupBeliefs();
         SetupActions();
         SetupGoals();
+        SetupSensors();
+    }
+
+    void SetupSensors() {
+        chaseSensor.setTargetTag(target.tag);
+        actionSensor.setTargetTag(target.tag);
     }
 
     void SetupBeliefs() {
@@ -60,8 +69,11 @@ public class GoapAgent : MonoBehaviour {
 
         factory.AddBelief("Nothing", () => false);
 
-        factory.AddBelief("AgentIdle", () => !navMeshAgent.hasPath);
-        factory.AddBelief("AgentMoving", () => navMeshAgent.hasPath);
+        // factory.AddBelief("AgentIdle", () => !navMeshAgent.hasPath);
+        // factory.AddBelief("AgentMoving", () => navMeshAgent.hasPath);
+
+        factory.AddBelief("AgentIdle", () => !seekerAgent.HasPath);
+        factory.AddBelief("AgentMoving", () => seekerAgent.HasPath);
     }
 
     void SetupActions() {
@@ -72,8 +84,13 @@ public class GoapAgent : MonoBehaviour {
             .AddEffect(beliefs["Nothing"])
             .Build());
 
+        // actions.Add(new AgentAction.Builder("Wander Around")
+        //     .WithStrategy(new WanderStrategy(navMeshAgent, 10))
+        //     .AddEffect(beliefs["AgentMoving"])
+        //     .Build());
+
         actions.Add(new AgentAction.Builder("Wander Around")
-            .WithStrategy(new WanderStrategy(navMeshAgent, 10))
+            .WithStrategy(new WanderStrategy(seekerAgent, 10))
             .AddEffect(beliefs["AgentMoving"])
             .Build());
     }
@@ -129,7 +146,8 @@ public class GoapAgent : MonoBehaviour {
             CalculatePlan();
 
             if (actionPlan != null && actionPlan.Actions.Count > 0) {
-                navMeshAgent.ResetPath();
+                // navMeshAgent.ResetPath();
+                seekerAgent.ResetPath();
 
                 currentGoal = actionPlan.AgentGoal;
                 currentAction = actionPlan.Actions.Pop();

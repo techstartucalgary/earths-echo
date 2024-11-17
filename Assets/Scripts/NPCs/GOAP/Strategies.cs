@@ -1,4 +1,5 @@
 using System;
+using Pathfinding.Ionic.Zip;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Analytics;
@@ -21,23 +22,28 @@ public interface IActionStrategy {
 }
 
 public class WanderStrategy : IActionStrategy {
-    readonly NavMeshAgent agent;
+    readonly SeekerAgent agent;
     readonly float wanderRadius;
 
     public bool CanPerform => !Complete;
-    public bool Complete => agent.remainingDistance <= 2f && !agent.pathPending;
+    public bool Complete => agent.RemainingDistance() <= 1f && agent.IsDone;
 
-    public WanderStrategy(NavMeshAgent agent, float wanderRadius) {
+    public WanderStrategy(SeekerAgent agent, float wanderRadius) {
         this.agent = agent;
         this.wanderRadius = wanderRadius;
     }
 
     public void Start() {
-        for (int i = 0; i < 5; i++) {
-            Vector2 randomDirection = (UnityEngine.Random.insideUnitCircle * wanderRadius).With(y: 0);
 
-            // TODO: if path can be generated, set destination
-            return;
+        for (int i = 0; i < 5; i++) {
+            Vector3 randomDirection = (UnityEngine.Random.insideUnitCircle * wanderRadius).With(y: 0);
+            Vector3 testDestination = agent.transform.position + randomDirection;
+            agent.UpdateTestPath(testDestination);
+
+            if (agent.TestPathTotalLength <= wanderRadius) {
+                agent.setDestination(testDestination);
+                return;
+            }
         }
     }
 }
