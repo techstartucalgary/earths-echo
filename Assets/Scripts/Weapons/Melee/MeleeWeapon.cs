@@ -10,7 +10,9 @@ public class MeleeWeapon : Weapon
     private float lastSwingTime; // Time of the last swing
     public TMP_Text cooldownText; // Reference to the cooldown text UI element
     private GameObject player;
-    public LayerMask enemies;
+    public LayerMask enemies; //temporary reference for testing, remove all later and use IDamageable to apply damage.
+    public float damage;
+    public float range;
 
     public Transform attackPoint; // The point from which attacks originate
 
@@ -37,12 +39,7 @@ public class MeleeWeapon : Weapon
         }
 
         // Initialize player reference
-        player = GameObject.FindWithTag("Player");
-        if (player == null)
-        {
-            Debug.LogError("Player GameObject not found. Make sure there is a GameObject tagged 'Player' in the scene.");
-        }
-        attackPoint = player.transform.Find("AttackPoint"); // Assumes a child object named "AttackPoint"
+        attackPoint = transform.Find("AttackPoint"); // Assumes a child object named "AttackPoint"
 
         // Ensure attackPoint is assigned
         if (attackPoint == null)
@@ -82,7 +79,11 @@ public class MeleeWeapon : Weapon
         foreach (var enemy in hitEnemies)
         {
             Debug.Log("Hit enemy: " + enemy.name);
-            // Add logic to deal damage to the enemy here
+            IDamageable iDamageable = gameObject.GetComponent<IDamageable>();
+            if (iDamageable != null)
+            {
+                iDamageable.Damage(damage);
+            }
         }
     }
 

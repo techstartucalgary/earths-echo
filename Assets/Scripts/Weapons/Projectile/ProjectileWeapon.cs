@@ -1,11 +1,17 @@
 ﻿using UnityEngine;
+using UnityEngine.UI; // Required for UI components
+using TMPro;
+using System.Collections;
 
 public class ProjectileWeapon : Weapon
 {
     public GameObject projectilePrefab; // The prefab for the projectile to shoot
     public Transform firePoint; // Where the projectile will spawn
-
+    public float shootDelay;
+    private float lastShootDelay;
     private BoxCollider2D boxCollider;
+    public TMP_Text cooldownText; // Reference to the cooldown text UI element
+
 
     void Start()
     {
@@ -19,32 +25,59 @@ public class ProjectileWeapon : Weapon
             boxCollider = gameObject.AddComponent<BoxCollider2D>();
             Debug.Log("BoxCollider added automatically to the weapon.");
         }
-    }
+        // Check if cooldownText is assigned
+        if (cooldownText == null)
+        {
+            cooldownText = GameObject.Find("CooldownText")?.GetComponent<TMP_Text>();
 
+            if (cooldownText == null)
+            {
+                Debug.LogError("CooldownText TMP_Text component not found in the scene. Make sure there is a TextMeshPro UI element named 'CooldownText'.");
+            }
+        }
+    }
+    private void Update()
+    {
+        // Update the cooldown text
+        if (cooldownText != null)
+        {
+            float cooldownRemaining = Mathf.Max(0f, (lastShootDelay + shootDelay) - Time.time);
+            cooldownText.text = $"Cooldown: {cooldownRemaining:F1} s";
+        }
+
+        if (DialogueManager.GetInstance().dialogueIsPlaying)
+        {
+            return;
+        }
+    }
     public override void PrimaryAttack()
     {
-        Debug.Log(weaponName + " primary projectile attack!");
-        //ShootProjectile();
+        if (Time.time >= lastShootDelay + shootDelay) {
+            lastShootDelay = Time.time;
+            Debug.Log(weaponName + " primary projectile attack!");
+            ShootProjectile();
+        }
+            
     }
 
     public override void SideAttack()
     {
         Debug.Log(weaponName + " side projectile attack!");
-        //ShootProjectile();
+ 
     }
 
     public override void UpAttack()
     {
         Debug.Log(weaponName + " up projectile attack!");
-        //ShootProjectile();
+
     }
 
     public override void DownAttack()
     {
         Debug.Log(weaponName + " down projectile attack!");
-        //ShootProjectile();
+ 
     }
-/*
+
  
  private void ShootProjectile()
     {
@@ -58,6 +91,6 @@ public class ProjectileWeapon : Weapon
             Debug.LogWarning("Projectile prefab or fire point not set.");
         }
     }
-*/
+
     
 }

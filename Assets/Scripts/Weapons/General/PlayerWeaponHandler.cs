@@ -14,6 +14,7 @@ public class PlayerWeaponHandler : MonoBehaviour
     private MeleeWeapon MeleeWeapon;
     private ProjectileWeapon ProjectileWeapon;
 
+
     void Update()
     {
         HandleWeaponSwitching();
@@ -85,22 +86,19 @@ public class PlayerWeaponHandler : MonoBehaviour
         UnequipWeapon();
 
         GameObject weaponPrefab = null;
-        Transform slot = null;
 
         if (weaponType == WeaponType.Melee && meleeWeaponPrefab != null)
         {
             weaponPrefab = meleeWeaponPrefab;
-            slot = meleeSlot;
         }
         else if (weaponType == WeaponType.Projectile && projectileWeaponPrefab != null)
         {
             weaponPrefab = projectileWeaponPrefab;
-            slot = projectileSlot;
         }
 
-        if (weaponPrefab != null && slot != null)
+        if (weaponPrefab != null)
         {
-            activeWeaponInstance = Instantiate(weaponPrefab, slot.position, Quaternion.identity, slot);
+            activeWeaponInstance = Instantiate(weaponPrefab);
             activeWeaponInstance.GetComponent<Weapon>()?.Equip(transform);
 
             if (weaponType == WeaponType.Melee)
@@ -117,6 +115,7 @@ public class PlayerWeaponHandler : MonoBehaviour
             activeWeaponType = WeaponType.None;
         }
     }
+
 
     private void UnequipWeapon()
     {
