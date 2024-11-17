@@ -114,6 +114,8 @@ public class ProjectileWeapon : Weapon
 
             if (projectileBehaviour != null && projectileBehaviour.projectileType == ProjectileBehaviour.ProjectileType.Physics)
             {
+                projectileBehaviour.AdjustDamageScale(powerPercentage);
+
                 float adjustedGravityScale = Mathf.Lerp(5f, 0.5f, powerPercentage); // Adjust gravity based on pullback
                 projectileBehaviour.AdjustGravityScale(adjustedGravityScale);
             }

@@ -91,6 +91,15 @@ public class ProjectileBehaviour : MonoBehaviour
             Debug.LogWarning("Cannot adjust gravity scale for a non-Physics projectile.");
         }
     }
+    public void AdjustDamageScale(float newDamagePercentage)
+    {
+        if (projectileType == ProjectileType.Physics)
+        {
+            damage *= (2*newDamagePercentage);
+            Debug.Log($"Projectile damage adjusted to: {damage}");
+
+        }
+    }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
