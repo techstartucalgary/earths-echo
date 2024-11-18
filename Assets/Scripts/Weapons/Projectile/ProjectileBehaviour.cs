@@ -13,8 +13,8 @@ public class ProjectileBehaviour : MonoBehaviour
     [SerializeField] private float normalProjectileVelocity;
 
     [Header("Physics Projectile Stats")]
-    [SerializeField] private float physicsProjectileVelocity;
-    [SerializeField] private float gravityScale;
+    public float physicsProjectileVelocity;
+    public float gravityScale;
 
     private Rigidbody2D rb;
 

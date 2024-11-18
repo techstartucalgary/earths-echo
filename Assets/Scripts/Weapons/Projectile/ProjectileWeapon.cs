@@ -140,6 +140,17 @@ public class ProjectileWeapon : Weapon
     {
         Debug.Log(weaponName + " down projectile attack!");
     }
+
+    public float GetPullbackPower()
+    {
+        if (projectileMechanic == ProjectileMechanic.Pullback && isPullingBack)
+        {
+            return Mathf.Clamp01((Time.time - pullbackStartTime) / pullbackDuration);
+        }
+
+        return 1f; // Default to full power for instant mechanics
+    }
+
 }
 
 
