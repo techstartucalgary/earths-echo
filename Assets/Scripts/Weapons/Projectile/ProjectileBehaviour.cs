@@ -116,4 +116,20 @@ public class ProjectileBehaviour : MonoBehaviour
             Destroy(gameObject);
         }
     }
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.red;
+        Vector2 position = transform.position;
+        Vector2 velocity = rb.velocity;
+        for (int i = 0; i < 50; i++)
+        {
+            float time = i * Time.fixedDeltaTime;
+            Vector2 gravityEffect = 0.5f * Physics2D.gravity * rb.gravityScale * time * time;
+            Vector2 nextPosition = position + velocity * time + gravityEffect;
+
+            Gizmos.DrawLine(position, nextPosition);
+            position = nextPosition;
+        }
+    }
+
 }

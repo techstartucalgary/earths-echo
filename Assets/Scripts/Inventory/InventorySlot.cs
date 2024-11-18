@@ -32,6 +32,13 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler
 
     public void SetItem(GameObject newItemPrefab)
     {
+        if (newItemPrefab == null)
+        {
+            Debug.LogError("Attempted to set a null itemPrefab in InventorySlot.");
+            ClearItem(); // Clear the slot UI if the item is null
+            return;
+        }
+
         itemPrefab = newItemPrefab;
         Weapon weapon = itemPrefab.GetComponent<Weapon>();
 
@@ -40,22 +47,43 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler
             itemName = weapon.weaponName;
             itemDescription = weapon.description;
         }
+        else
+        {
+            Debug.LogWarning("No Weapon component found on the assigned itemPrefab.");
+            itemName = "Unknown Item";
+            itemDescription = "No description available.";
+        }
 
         if (itemIcon != null)
         {
-            if (itemPrefab != null)
+            Sprite itemSprite = itemPrefab.GetComponent<SpriteRenderer>()?.sprite;
+            if (itemSprite != null)
             {
-                Sprite itemSprite = itemPrefab.GetComponent<SpriteRenderer>()?.sprite;
                 itemIcon.sprite = itemSprite;
                 itemIcon.enabled = true;
             }
             else
             {
+                Debug.LogWarning("ItemPrefab does not have a SpriteRenderer or a valid sprite.");
                 itemIcon.sprite = null;
                 itemIcon.enabled = false;
             }
         }
     }
+
+    private void ClearItem()
+    {
+        itemPrefab = null;
+        itemName = string.Empty;
+        itemDescription = string.Empty;
+
+        if (itemIcon != null)
+        {
+            itemIcon.sprite = null;
+            itemIcon.enabled = false;
+        }
+    }
+
 
     public void OnPointerClick(PointerEventData eventData)
     {

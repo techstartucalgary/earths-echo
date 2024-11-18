@@ -65,24 +65,24 @@ public class TrajectoryLine : MonoBehaviour
         float adjustedSpeed = Mathf.Lerp(projectileSpeed * 0.5f, projectileSpeed, powerPercentage);
         float adjustedGravity = Mathf.Lerp(projectileGravityFromRB * 2f, projectileGravityFromRB, powerPercentage);
 
-        // Set the start position
+        // Start position and velocity
         Vector2 startPos = projectileSpawnPoint.position;
+        Vector2 startVelocity = projectileSpawnPoint.right * adjustedSpeed;
+
         segments[0] = startPos;
         lineRenderer.SetPosition(0, startPos);
 
-        // Set starting velocity
-        Vector2 startVelocity = transform.right * adjustedSpeed;
-
+        // Iterate through trajectory points
         for (int i = 1; i < segmentCount; i++)
         {
-            float timeOffset = (i * Time.fixedDeltaTime * curveLength);
+            // Time for this segment
+            float time = i * Time.fixedDeltaTime * curveLength;
 
-            // Compute gravity offset
-            Vector2 gravityOffset = TIME_CURVE_ADDITON * Physics2D.gravity * adjustedGravity * Mathf.Pow(timeOffset, 2);
+            // Position using the kinematic equation: x = x0 + vt + 0.5 * a * t^2
+            Vector2 position = startPos + startVelocity * time + 0.5f * (Physics2D.gravity * adjustedGravity) * time * time;
 
-            // Set position of point in line renderer
-            segments[i] = segments[0] + startVelocity * timeOffset + gravityOffset;
-            lineRenderer.SetPosition(i, segments[i]);
+            segments[i] = position;
+            lineRenderer.SetPosition(i, position);
         }
     }
 }

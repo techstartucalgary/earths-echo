@@ -20,6 +20,12 @@ public class InventoryHandler : MonoBehaviour
             return;
         }
 
+        if (item == null)
+        {
+            Debug.LogError("Attempted to add a null item to the inventory.");
+            return;
+        }
+
         if (items.Count >= inventoryLimit)
         {
             Debug.Log("Inventory is full. Cannot add more items.");
@@ -33,9 +39,18 @@ public class InventoryHandler : MonoBehaviour
         }
 
         items.Add(item);
-        inventoryMenu.UpdateInventoryUI(items);
-        Debug.Log("Item added to inventory: " + item.name);
+
+        try
+        {
+            inventoryMenu.UpdateInventoryUI(items);
+            Debug.Log("Item added to inventory: " + item.name);
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"Failed to update inventory UI: {ex.Message}");
+        }
     }
+
 
     public List<GameObject> GetItems()
     {

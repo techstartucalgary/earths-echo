@@ -54,9 +54,15 @@ public class PlayerWeaponHandler : MonoBehaviour
 
     public void EquipMeleeWeapon(GameObject weaponPrefab)
     {
+        if (meleeWeaponPrefab == weaponPrefab)
+        {
+            Debug.Log("The same melee weapon is already equipped.");
+            return;
+        }
+
         meleeWeaponPrefab = weaponPrefab;
 
-        // Automatically activate melee if it’s already the selected slot
+        // If melee is currently active, replace the weapon
         if (activeWeaponType == WeaponType.Melee)
         {
             ActivateWeapon(WeaponType.Melee);
@@ -65,9 +71,15 @@ public class PlayerWeaponHandler : MonoBehaviour
 
     public void EquipProjectileWeapon(GameObject weaponPrefab)
     {
+        if (projectileWeaponPrefab == weaponPrefab)
+        {
+            Debug.Log("The same projectile weapon is already equipped.");
+            return;
+        }
+
         projectileWeaponPrefab = weaponPrefab;
 
-        // Automatically activate projectile if it’s already the selected slot
+        // If projectile is currently active, replace the weapon
         if (activeWeaponType == WeaponType.Projectile)
         {
             ActivateWeapon(WeaponType.Projectile);
@@ -76,14 +88,11 @@ public class PlayerWeaponHandler : MonoBehaviour
 
     private void ActivateWeapon(WeaponType weaponType)
     {
-        if (activeWeaponType == weaponType)
+        // Unequip the current weapon if switching types or replacing the same type
+        if (activeWeaponType != WeaponType.None)
         {
-            Debug.Log($"Weapon type {weaponType} is already active.");
-            return;
+            UnequipWeapon();
         }
-
-        // Destroy currently active weapon
-        UnequipWeapon();
 
         GameObject weaponPrefab = null;
 
@@ -98,24 +107,30 @@ public class PlayerWeaponHandler : MonoBehaviour
 
         if (weaponPrefab != null)
         {
-            activeWeaponInstance = Instantiate(weaponPrefab);
+            Transform weaponSlot = weaponType == WeaponType.Melee ? meleeSlot : projectileSlot;
+
+            // Instantiate the new weapon in the correct slot
+            activeWeaponInstance = Instantiate(weaponPrefab, weaponSlot.position, weaponSlot.rotation, weaponSlot);
             activeWeaponInstance.GetComponent<Weapon>()?.Equip(transform);
 
             if (weaponType == WeaponType.Melee)
+            {
                 MeleeWeapon = activeWeaponInstance.GetComponent<MeleeWeapon>();
+            }
             else if (weaponType == WeaponType.Projectile)
+            {
                 ProjectileWeapon = activeWeaponInstance.GetComponent<ProjectileWeapon>();
+            }
 
-            Debug.Log($"Activated {weaponType.ToString().ToLower()} weapon: {activeWeaponInstance.name}");
             activeWeaponType = weaponType;
+            Debug.Log($"Activated {weaponType} weapon: {activeWeaponInstance.name}");
         }
         else
         {
-            Debug.LogWarning($"No weapon prefab set for {weaponType.ToString().ToLower()} weapon.");
+            Debug.LogWarning($"No weapon prefab set for {weaponType} weapon.");
             activeWeaponType = WeaponType.None;
         }
     }
-
 
     private void UnequipWeapon()
     {
@@ -130,6 +145,7 @@ public class PlayerWeaponHandler : MonoBehaviour
         ProjectileWeapon = null;
         activeWeaponType = WeaponType.None;
     }
+
 
     private void AttackByType()
     {

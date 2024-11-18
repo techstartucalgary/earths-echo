@@ -11,6 +11,7 @@ public class MeleeWeapon : Weapon
     public float damage; // Amount of damage dealt
     public float range; // Range of the melee attack
 
+
     public Transform attackPoint; // Point where the attack originates
     //private Animator animator; // Animator for melee animations
 
@@ -74,6 +75,11 @@ public class MeleeWeapon : Weapon
 
     public override void PrimaryAttack()
     {
+        if (!GameManager.instance.CanProcessGameplayActions())
+        {
+            Debug.Log("Gameplay is paused or in a restricted state. Cannot attack.");
+            return;
+        }
         if (Time.time >= lastSwingTime + swingSpeed)
         {
             lastSwingTime = Time.time;
@@ -88,6 +94,11 @@ public class MeleeWeapon : Weapon
 
     public override void SideAttack()
     {
+        if (!GameManager.instance.CanProcessGameplayActions())
+        {
+            Debug.Log("Gameplay is paused or in a restricted state. Cannot attack.");
+            return;
+        }
         if (Time.time >= lastSwingTime + swingSpeed)
         {
             lastSwingTime = Time.time;
@@ -103,6 +114,11 @@ public class MeleeWeapon : Weapon
 
     public override void UpAttack()
     {
+        if (!GameManager.instance.CanProcessGameplayActions())
+        {
+            Debug.Log("Gameplay is paused or in a restricted state. Cannot attack.");
+            return;
+        }
         if (Time.time >= lastSwingTime + swingSpeed)
         {
             lastSwingTime = Time.time;
@@ -116,6 +132,11 @@ public class MeleeWeapon : Weapon
 
     public override void DownAttack()
     {
+        if (!GameManager.instance.CanProcessGameplayActions())
+        {
+            Debug.Log("Gameplay is paused or in a restricted state. Cannot attack.");
+            return;
+        }
         if (Time.time >= lastSwingTime + swingSpeed)
         {
             lastSwingTime = Time.time;

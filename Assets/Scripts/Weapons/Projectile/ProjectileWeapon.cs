@@ -63,7 +63,11 @@ public class ProjectileWeapon : Weapon
 
     public override void PrimaryAttack()
     {
-        if (projectileMechanic == ProjectileMechanic.Instant)
+        if (!GameManager.instance.CanProcessGameplayActions())
+        {
+            return;
+        }
+            if (projectileMechanic == ProjectileMechanic.Instant)
         {
             if (Time.time >= lastShootDelay + shootDelay)
             {
@@ -128,16 +132,28 @@ public class ProjectileWeapon : Weapon
 
     public override void SideAttack()
     {
+        if (!GameManager.instance.CanProcessGameplayActions())
+        {
+            return;
+        }
         Debug.Log(weaponName + " side projectile attack!");
     }
 
     public override void UpAttack()
     {
+        if (!GameManager.instance.CanProcessGameplayActions())
+        {
+            return;
+        }
         Debug.Log(weaponName + " up projectile attack!");
     }
 
     public override void DownAttack()
     {
+        if (!GameManager.instance.CanProcessGameplayActions())
+        {
+            return;
+        }
         Debug.Log(weaponName + " down projectile attack!");
     }
 

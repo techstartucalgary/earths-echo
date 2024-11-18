@@ -76,6 +76,11 @@ public class GameManager : MonoBehaviour
             }
         }
     }
+    public bool CanProcessGameplayActions()
+    {
+        // Gameplay actions are allowed only when in the Playing state
+        return currentState == GameState.Playing;
+    }
 
     public void ChangeState(GameState newState)
     {
