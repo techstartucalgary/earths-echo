@@ -47,7 +47,15 @@ public class Player : MonoBehaviour {
 	bool wallSliding;
 	int wallDirX;
 
-	void Start() {
+    // Ladder stuff
+    public GameObject touchingLadder = null;
+    public bool canClimb = false;
+    public bool climbing = false;
+    public float climbSpeed = 5f;
+    public float dismountTime = 1.5f;
+    public float timeToReclimb = 0f;
+
+    void Start() {
 		controller = GetComponent<Controller2D> ();
 
 		gravity = -(2 * maxJumpHeight) / Mathf.Pow (timeToJumpApex, 2);
@@ -58,10 +66,29 @@ public class Player : MonoBehaviour {
     }
 
 	void Update() {
-		CalculateVelocity ();
-		HandleWallSliding ();
+		
+        if (canClimb && directionalInput.y > 0 && timeToReclimb <= 0)
+        {
+            climbing = true;
+            AlignToLadder();
+        }
+        else if (timeToReclimb > 0)
+        {
+            timeToReclimb -= Time.deltaTime;
+        }
 
-		controller.Move (velocity * Time.deltaTime, directionalInput);
+        if (climbing)
+        {
+            ClimbLadder();
+        }
+        else
+        {
+            CalculateVelocity();
+        }
+
+        HandleWallSliding();
+
+        controller.Move (velocity * Time.deltaTime, directionalInput);
 
 		if (controller.collisions.above || controller.collisions.below) {
 			if (controller.collisions.slidingDownMaxSlope) {
@@ -75,11 +102,72 @@ public class Player : MonoBehaviour {
         HandleSliding();
     }
 
-	public void SetDirectionalInput (Vector2 input) {
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.CompareTag("Ladder"))
+        {
+            touchingLadder = collision.gameObject; // Save the ladder object
+            canClimb = true;                      // Set climbing state to true
+        }
+    }
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        // Check if the player leaves a ladder
+        if (collision.CompareTag("Ladder"))
+        {
+            touchingLadder = null; // Clear the ladder reference
+            canClimb = false;     // Set climbing state to false
+        }
+    }
+
+    public void AlignToLadder()
+    {
+        if (touchingLadder != null)
+        {
+            Vector3 ladderPosition = touchingLadder.transform.position;
+
+            // Align the player's X position to the ladder's X position
+            Vector3 newPlayerPosition = transform.position;
+            newPlayerPosition.x = ladderPosition.x;
+            transform.position = newPlayerPosition;
+        }
+    }
+
+    public void ClimbLadder()
+    {
+        BoxCollider2D ladderCollider = touchingLadder.GetComponent<BoxCollider2D>();
+        float ladderTop = ladderCollider.bounds.max.y; // Top of the ladder
+        float ladderBottom = ladderCollider.bounds.min.y; // Bottom of the ladder
+
+        BoxCollider2D playerCollider = GetComponent<BoxCollider2D>();
+        float playerTop = playerCollider.bounds.max.y; // Top of the player
+        float playerBottom = playerCollider.bounds.min.y; // Bottom of the player
+
+        velocity.x = 0;
+        velocity.y = directionalInput.y * climbSpeed;
+
+        if (directionalInput.y == 0 || 
+           (playerBottom >= ladderTop && directionalInput.y > 0) || 
+           (playerTop <= ladderBottom && directionalInput.y < 0))
+        {
+            velocity.y = 0;
+        }
+    }
+
+    public void SetDirectionalInput (Vector2 input) {
 		directionalInput = input;
 	}
 
 	public void OnJumpInputDown() {
+
+        bool wasClimbing = false;
+        if (climbing)
+        {
+            climbing = false;
+            wasClimbing = true;
+            timeToReclimb = dismountTime;
+        }
+
         if (wallSliding)
         {
             if (wallDirX == directionalInput.x)
@@ -98,7 +186,7 @@ public class Player : MonoBehaviour {
                 velocity.y = wallLeap.y;
             }
         }
-        if (controller.collisions.below)
+        if (controller.collisions.below || wasClimbing)
         {
             if (controller.collisions.slidingDownMaxSlope)
             {
