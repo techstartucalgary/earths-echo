@@ -56,33 +56,35 @@ public class TrajectoryLine : MonoBehaviour
         projectileGravityFromRB = projectileBehaviour.gravityScale;
     }
 
-    private void Update()
-    {
-        // Get pullback progress to adjust speed and gravity dynamically
-        float powerPercentage = projectileWeapon.GetPullbackPower();
+	private void Update()
+	{
+		// Get pullback progress to adjust speed and gravity dynamically
+		float powerPercentage = projectileWeapon.GetPullbackPower();
 
-        // Adjust projectile speed and gravity based on pullback progress
-        float adjustedSpeed = Mathf.Lerp(projectileSpeed * 0.5f, projectileSpeed, powerPercentage);
-        float adjustedGravity = Mathf.Lerp(projectileGravityFromRB * 2f, projectileGravityFromRB, powerPercentage);
+		// Adjust projectile speed and gravity based on pullback progress
+		float adjustedSpeed = Mathf.Lerp(projectileSpeed * 0.5f, projectileSpeed, powerPercentage);
+		float adjustedGravity = Mathf.Lerp(projectileGravityFromRB * 2f, projectileGravityFromRB, powerPercentage);
 
-        // Start position and velocity
-        Vector2 startPos = projectileSpawnPoint.position;
-        Vector2 startVelocity = projectileSpawnPoint.right * adjustedSpeed;
+		// Start position and velocity
+		Vector2 startPos = projectileSpawnPoint.position;
+		Vector2 startVelocity = projectileSpawnPoint.right * adjustedSpeed;
 
-        segments[0] = startPos;
-        lineRenderer.SetPosition(0, startPos);
+		segments[0] = startPos;
+		lineRenderer.SetPosition(0, startPos);
 
-        // Iterate through trajectory points
-        for (int i = 1; i < segmentCount; i++)
-        {
-            // Time for this segment
-            float time = i * Time.fixedDeltaTime * curveLength;
+		// Iterate through trajectory points
+		for (int i = 1; i < segmentCount; i++)
+		{
+			// Time for this segment
+			float time = i * Time.fixedDeltaTime * curveLength;
 
-            // Position using the kinematic equation: x = x0 + vt + 0.5 * a * t^2
-            Vector2 position = startPos + startVelocity * time + 0.5f * (Physics2D.gravity * adjustedGravity) * time * time;
+			// Position using the kinematic equation: x = x0 + vt + 0.5 * a * t^2
+			Vector2 position = startPos + startVelocity * time + 0.5f * Physics2D.gravity * adjustedGravity * time * time;
 
-            segments[i] = position;
-            lineRenderer.SetPosition(i, position);
-        }
-    }
+			// Set segment position
+			segments[i] = position;
+			lineRenderer.SetPosition(i, position);
+		}
+	}
+
 }

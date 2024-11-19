@@ -8,11 +8,13 @@ public class PlayerWeaponHandler : MonoBehaviour
 
     public Transform meleeSlot; // Slot transform for melee weapon
     public Transform projectileSlot; // Slot transform for projectile weapon
+    
 
     private enum WeaponType { None, Melee, Projectile }
     private WeaponType activeWeaponType = WeaponType.None;
     private MeleeWeapon MeleeWeapon;
     private ProjectileWeapon ProjectileWeapon;
+    
 
 
     void Update()
@@ -152,19 +154,19 @@ public class PlayerWeaponHandler : MonoBehaviour
         switch (activeWeaponType)
         {
             case WeaponType.Melee:
-                if (Input.GetMouseButtonDown(0) && MeleeWeapon != null)
+                if (Input.GetMouseButtonDown(1) && MeleeWeapon != null)
                 {
                     //MeleeWeapon.PrimaryAttack();
                 }
-                if (Input.GetMouseButtonDown(1) && MeleeWeapon != null && !Input.GetKey(KeyCode.W) && !Input.GetKey(KeyCode.S))
+                if (Input.GetMouseButtonDown(0) && MeleeWeapon != null && !Input.GetKey(KeyCode.W) && !Input.GetKey(KeyCode.S))
                 {
                     MeleeWeapon.SideAttack();
                 }
-                if (Input.GetKey(KeyCode.S) && Input.GetMouseButtonDown(1) && MeleeWeapon != null)
+                if (Input.GetKey(KeyCode.S) && Input.GetMouseButtonDown(0) && MeleeWeapon != null)
                 {
                     MeleeWeapon.DownAttack();
                 }
-                if (Input.GetKey(KeyCode.W) && Input.GetMouseButtonDown(1) && MeleeWeapon != null)
+                if (Input.GetKey(KeyCode.W) && Input.GetMouseButtonDown(0) && MeleeWeapon != null)
                 {
                     MeleeWeapon.UpAttack();
                 }
@@ -178,6 +180,14 @@ public class PlayerWeaponHandler : MonoBehaviour
                         ProjectileWeapon.PrimaryAttack();
                     }
                     else if (Input.GetMouseButtonUp(0))
+                    {
+                        ProjectileWeapon.ReleasePullback();
+                    }
+                    if (Input.GetMouseButtonDown(1))
+                    {
+                        ProjectileWeapon.SideAttack();
+                    }
+                    else if (Input.GetMouseButtonUp(1))
                     {
                         ProjectileWeapon.ReleasePullback();
                     }

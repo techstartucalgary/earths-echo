@@ -6,12 +6,14 @@ using TMPro;
 public class ProjectileWeapon : Weapon
 {
     public GameObject projectilePrefab; // The prefab for the projectile to shoot
+    public GameObject secondaryProjectilePrefab;
+    private GameObject chosenPrefab;
     public Transform firePoint; // Where the projectile will spawn
     public float shootDelay;
     public float pullbackDuration; // Time to hold for pullback weapons
     private float lastShootDelay;
     private float pullbackStartTime;
-
+    
     private bool isPullingBack;
 
     public TMP_Text cooldownText; // Reference to the cooldown text UI element
@@ -67,6 +69,7 @@ public class ProjectileWeapon : Weapon
         {
             return;
         }
+        chosenPrefab = projectilePrefab;
             if (projectileMechanic == ProjectileMechanic.Instant)
         {
             if (Time.time >= lastShootDelay + shootDelay)
@@ -111,9 +114,9 @@ public class ProjectileWeapon : Weapon
 
     public void ShootProjectile(float powerPercentage)
     {
-        if (projectilePrefab != null && firePoint != null)
+        if (chosenPrefab != null && firePoint != null)
         {
-            GameObject projectile = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
+            GameObject projectile = Instantiate(chosenPrefab, firePoint.position, firePoint.rotation);
             ProjectileBehaviour projectileBehaviour = projectile.GetComponent<ProjectileBehaviour>();
 
             if (projectileBehaviour != null && projectileBehaviour.projectileType == ProjectileBehaviour.ProjectileType.Physics)
@@ -136,7 +139,26 @@ public class ProjectileWeapon : Weapon
         {
             return;
         }
-        Debug.Log(weaponName + " side projectile attack!");
+        chosenPrefab = secondaryProjectilePrefab;
+            if (projectileMechanic == ProjectileMechanic.Instant)
+        {
+            if (Time.time >= lastShootDelay + shootDelay)
+            {
+                lastShootDelay = Time.time;
+                Debug.Log(weaponName + " primary projectile attack!");
+
+                ShootProjectile(1f); // Fire at full power for instant mechanics
+            }
+        }
+        else if (projectileMechanic == ProjectileMechanic.Pullback)
+        {
+            if (Time.time >= lastShootDelay + shootDelay)
+            {
+                isPullingBack = true;
+                pullbackStartTime = Time.time;
+                Debug.Log("Pullback started...");
+            }
+        }
     }
 
     public override void UpAttack()

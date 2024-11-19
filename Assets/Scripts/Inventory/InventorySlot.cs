@@ -19,6 +19,12 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler
     public TMP_Text itemDescriptionNameText;
     public TMP_Text itemDescriptionText;
 
+    [Header("Ammo Info UI")]
+    public Image ammo1Image; // Image for ammo 1
+    public TMP_Text ammo1NameText; // Name for ammo 1
+    public Image ammo2Image; // Image for ammo 2
+    public TMP_Text ammo2NameText; // Name for ammo 2
+
     void Start()
     {
         inventoryMenu = FindObjectOfType<InventoryMenu>();
@@ -84,17 +90,20 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler
         }
     }
 
-
     public void OnPointerClick(PointerEventData eventData)
     {
         if (eventData.button == PointerEventData.InputButton.Left)
         {
             if (itemPrefab != null)
             {
+				Weapon weapon = itemPrefab.GetComponent<Weapon>();
+				if(weapon is MeleeWeapon)
+					DeselectAmmoStats();
                 if (!isSelected)
                 {
-                    // Show item description on first click
+                    // Show item description and ammo info on the first click
                     ShowItemDescription();
+                    ShowAmmoInfo();
                     isSelected = true;
                 }
                 else
@@ -131,6 +140,43 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler
         }
     }
 
+    private void ShowAmmoInfo()
+    {
+        // Check if the itemPrefab is a projectile weapon
+        ProjectileWeapon projectileWeapon = itemPrefab.GetComponent<ProjectileWeapon>();
+        if (projectileWeapon == null)
+        {
+            Debug.LogWarning("Item is not a projectile weapon, cannot display ammo info.");
+            return;
+        }
+
+        // Update Ammo1 Info
+        if (projectileWeapon.projectilePrefab != null)
+        {
+            ProjectileBehaviour ammo1 = projectileWeapon.projectilePrefab.GetComponent<ProjectileBehaviour>();
+            if (ammo1Image != null && ammo1 != null)
+            {
+                Sprite ammo1Sprite = projectileWeapon.projectilePrefab.GetComponent<SpriteRenderer>()?.sprite;
+                ammo1Image.sprite = ammo1Sprite;
+                ammo1Image.enabled = true;
+                ammo1NameText.text = ammo1.name;
+            }
+        }
+
+        // Update Ammo2 Info
+        if (projectileWeapon.secondaryProjectilePrefab != null)
+        {
+            ProjectileBehaviour ammo2 = projectileWeapon.secondaryProjectilePrefab.GetComponent<ProjectileBehaviour>();
+            if (ammo2Image != null && ammo2 != null)
+            {
+                Sprite ammo2Sprite = projectileWeapon.secondaryProjectilePrefab.GetComponent<SpriteRenderer>()?.sprite;
+                ammo2Image.sprite = ammo2Sprite;
+                ammo2Image.enabled = true;
+                ammo2NameText.text = ammo2.name;
+            }
+        }
+    }
+
     public void Select()
     {
         if (selectedShader != null)
@@ -138,19 +184,18 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler
             selectedShader.SetActive(true);
         }
 
-        // Check if itemPrefab is still valid before proceeding
         if (itemPrefab == null)
         {
             Debug.LogWarning("Select method called, but itemPrefab is null or destroyed.");
             return;
         }
 
-        // Attempt to get the Weapon component only if itemPrefab is valid
         Weapon weapon = itemPrefab.GetComponent<Weapon>();
         if (weapon != null)
         {
             if (weapon is MeleeWeapon && selectedIcons.Length > 0 && selectedIcons[0] != null)
             {
+				DeselectAmmoStats();
                 selectedIcons[0].sprite = itemIcon.sprite;
                 selectedIcons[0].enabled = true;
             }
@@ -174,5 +219,30 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler
         }
         isSelected = false; // Reset selection state when deselected
     }
+	public void DeselectAmmoStats()
+	{
+		// Clear Ammo1 Info
+		if (ammo1Image != null)
+		{
+			ammo1Image.sprite = null;
+			ammo1Image.enabled = false;
+		}
+		if (ammo1NameText != null)
+		{
+			ammo1NameText.text = string.Empty;
+		}
+
+		// Clear Ammo2 Info
+		if (ammo2Image != null)
+		{
+			ammo2Image.sprite = null;
+			ammo2Image.enabled = false;
+		}
+		if (ammo2NameText != null)
+		{
+			ammo2NameText.text = string.Empty;
+		}
+	}
+
 }
 
