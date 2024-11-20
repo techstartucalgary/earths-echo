@@ -25,18 +25,19 @@ public class ProjectileBehaviour : MonoBehaviour
     }
     public ProjectileType projectileType;
 
-    private void Start()
-    {
-        rb = GetComponent<Rigidbody2D>();
-        if (rb == null)
-        {
-            Debug.LogError("Rigidbody2D not found on the projectile!");
-            return;
-        }
+	private void Start()
+	{
+		rb = GetComponent<Rigidbody2D>();
+		if (rb == null)
+		{
+			Debug.LogError($"Rigidbody2D not found on the projectile '{gameObject.name}'. Make sure the prefab has a Rigidbody2D component.");
+			return;
+		}
 
-        SetDestroyTime();
-        InitializeProjectile();
-    }
+		SetDestroyTime();
+		InitializeProjectile();
+	}
+
 
     private void FixedUpdate()
     {
@@ -78,19 +79,26 @@ public class ProjectileBehaviour : MonoBehaviour
     }
 
     public void AdjustGravityScale(float newGravityScale)
-    {
-        if (projectileType == ProjectileType.Physics)
-        {
-            gravityScale = newGravityScale;
-            rb.gravityScale = gravityScale;
+	{
+		if (rb == null)
+		{
+			Debug.LogError($"Rigidbody2D is missing on projectile '{gameObject.name}'. Cannot adjust gravity scale.");
+			return;
+		}
 
-            Debug.Log($"Projectile gravity scale adjusted to: {gravityScale}");
-        }
-        else
-        {
-            Debug.LogWarning("Cannot adjust gravity scale for a non-Physics projectile.");
-        }
-    }
+		if (projectileType == ProjectileType.Physics)
+		{
+			gravityScale = newGravityScale;
+			rb.gravityScale = gravityScale;
+
+			Debug.Log($"Projectile gravity scale adjusted to: {gravityScale}");
+		}
+		else
+		{
+			Debug.LogWarning("Cannot adjust gravity scale for a non-Physics projectile.");
+		}
+	}
+
     public void AdjustDamageScale(float newDamagePercentage)
     {
         if (projectileType == ProjectileType.Physics)

@@ -6,24 +6,35 @@ public class WeaponPickup : MonoBehaviour
     private bool isPlayerNearby = false; // Flag to track if the player is within range
     private GameObject nearbyPlayer; // Reference to the player object
 
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        if (other.CompareTag("Player"))
-        {
-            isPlayerNearby = true;
-            nearbyPlayer = other.gameObject;
-            Debug.Log("Player is near the weapon. Press 'E' to pick up.");
-        }
-    }
+	private void Awake()
+	{
+		if (weaponPrefab == null)
+		{
+			Debug.LogError($"WeaponPickup on '{gameObject.name}' has a null weaponPrefab. Assign it in the Inspector.");
+		}
+	}
 
-    private void OnTriggerExit2D(Collider2D other)
-    {
-        if (other.CompareTag("Player"))
-        {
-            isPlayerNearby = false;
-            nearbyPlayer = null;
-        }
-    }
+
+	private void OnTriggerEnter2D(Collider2D other)
+	{
+		if (other != null && other.CompareTag("Player"))
+		{
+			isPlayerNearby = true;
+			nearbyPlayer = other.gameObject;
+			Debug.Log($"Player entered pickup range of '{gameObject.name}'. Press 'E' to pick up.");
+		}
+	}
+
+	private void OnTriggerExit2D(Collider2D other)
+	{
+		if (other != null && other.CompareTag("Player"))
+		{
+			isPlayerNearby = false;
+			nearbyPlayer = null;
+			Debug.Log($"Player left pickup range of '{gameObject.name}'.");
+		}
+	}
+
 
     private void Update()
     {
@@ -34,27 +45,32 @@ public class WeaponPickup : MonoBehaviour
         }
     }
 
-    private void PickupWeapon(GameObject player)
-    {
-        if (weaponPrefab == null)
-        {
-            Debug.LogError("WeaponPrefab is null. Cannot pick up weapon.");
-            return;
-        }
+	private void PickupWeapon(GameObject player)
+	{
+		if (weaponPrefab == null)
+		{
+			Debug.LogError($"WeaponPrefab is null on '{gameObject.name}'. Cannot pick up weapon.");
+			return;
+		}
 
-        Debug.Log("Weapon picked up: " + weaponPrefab.name);
+		InventoryHandler inventoryHandler = player.GetComponent<InventoryHandler>();
+		if (inventoryHandler == null)
+		{
+			Debug.LogWarning($"Player '{player.name}' does not have an InventoryHandler. Cannot add weapon to inventory.");
+			return;
+		}
 
-        InventoryHandler inventoryHandler = player.GetComponent<InventoryHandler>();
-        if (inventoryHandler != null)
-        {
-            inventoryHandler.AddItem(weaponPrefab);
-        }
-        else
-        {
-            Debug.LogWarning("InventoryHandler not found on player.");
-        }
+		if (!inventoryHandler.GetItems().Contains(weaponPrefab))
+		{
+			Debug.Log($"Weapon picked up: {weaponPrefab.name}");
+			inventoryHandler.AddItem(weaponPrefab);
+			Destroy(gameObject); // Destroy the pickup object
+		}
+		else
+		{
+			Debug.LogWarning($"Player already has '{weaponPrefab.name}' in inventory.");
+		}
+	}
 
-        Destroy(gameObject); // Destroy the pickup object after picking up
-    }
 
 }

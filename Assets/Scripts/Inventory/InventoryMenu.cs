@@ -9,20 +9,21 @@ public class InventoryMenu : MonoBehaviour
     public InventoryHandler inventoryHandler; // Reference to the InventoryHandler
 
     // Updates the inventory UI by assigning items to slots
-    public void UpdateInventoryUI(List<GameObject> items)
-    {
-        for (int i = 0; i < itemSlots.Length; i++)
-        {
-            if (i < items.Count)
-            {
-                itemSlots[i].SetItem(items[i]);
-            }
-            else
-            {
-                itemSlots[i].SetItem(null);
-            }
-        }
-    }
+	public void UpdateInventoryUI(List<GameObject> items)
+	{
+		for (int i = 0; i < itemSlots.Length; i++)
+		{
+			if (i < items.Count && items[i] != null)
+			{
+				itemSlots[i].SetItem(items[i]);
+			}
+			else
+			{
+				itemSlots[i].SetItem(null); // Clear the slot
+			}
+		}
+	}
+
 
     // Called by InventorySlot to equip the item
     public void OnItemClicked(GameObject itemPrefab)

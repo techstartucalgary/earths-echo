@@ -36,46 +36,52 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler
         }
     }
 
-    public void SetItem(GameObject newItemPrefab)
-    {
-        if (newItemPrefab == null)
-        {
-            Debug.LogError("Attempted to set a null itemPrefab in InventorySlot.");
-            ClearItem(); // Clear the slot UI if the item is null
-            return;
-        }
+	public void SetItem(GameObject newItemPrefab)
+	{
+		if (newItemPrefab == null)
+		{
+			// Suppress warnings for intentional clearing
+			if (itemPrefab != null)
+			{
+				Debug.LogWarning("Clearing item in InventorySlot.");
+			}
+			ClearItem();
+			return;
+		}
 
-        itemPrefab = newItemPrefab;
-        Weapon weapon = itemPrefab.GetComponent<Weapon>();
+		itemPrefab = newItemPrefab;
+		Weapon weapon = itemPrefab.GetComponent<Weapon>();
 
-        if (weapon != null)
-        {
-            itemName = weapon.weaponName;
-            itemDescription = weapon.description;
-        }
-        else
-        {
-            Debug.LogWarning("No Weapon component found on the assigned itemPrefab.");
-            itemName = "Unknown Item";
-            itemDescription = "No description available.";
-        }
+		if (weapon != null)
+		{
+			itemName = weapon.weaponName;
+			itemDescription = weapon.description;
+		}
+		else
+		{
+			Debug.LogWarning("No Weapon component found on the assigned itemPrefab.");
+			itemName = "Unknown Item";
+			itemDescription = "No description available.";
+		}
 
-        if (itemIcon != null)
-        {
-            Sprite itemSprite = itemPrefab.GetComponent<SpriteRenderer>()?.sprite;
-            if (itemSprite != null)
-            {
-                itemIcon.sprite = itemSprite;
-                itemIcon.enabled = true;
-            }
-            else
-            {
-                Debug.LogWarning("ItemPrefab does not have a SpriteRenderer or a valid sprite.");
-                itemIcon.sprite = null;
-                itemIcon.enabled = false;
-            }
-        }
-    }
+		// Update UI
+		if (itemIcon != null)
+		{
+			Sprite itemSprite = itemPrefab.GetComponent<SpriteRenderer>()?.sprite;
+			if (itemSprite != null)
+			{
+				itemIcon.sprite = itemSprite;
+				itemIcon.enabled = true;
+			}
+			else
+			{
+				Debug.LogWarning("ItemPrefab does not have a SpriteRenderer or a valid sprite.");
+				itemIcon.sprite = null;
+				itemIcon.enabled = false;
+			}
+		}
+	}
+
 
     private void ClearItem()
     {
@@ -175,6 +181,19 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler
                 ammo2NameText.text = ammo2.name;
             }
         }
+        if (projectileWeapon.projectilePrefab != null && projectileWeapon.secondaryProjectilePrefab == null)
+        {
+			DeselectAmmoStats();
+			ProjectileBehaviour ammo1 = projectileWeapon.projectilePrefab.GetComponent<ProjectileBehaviour>();
+            if (ammo1Image != null && ammo1 != null)
+            {
+                Sprite ammo1Sprite = projectileWeapon.projectilePrefab.GetComponent<SpriteRenderer>()?.sprite;
+                ammo1Image.sprite = ammo1Sprite;
+                ammo1Image.enabled = true;
+                ammo1NameText.text = ammo1.name;
+                
+			}
+		}
     }
 
     public void Select()

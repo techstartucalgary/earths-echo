@@ -13,43 +13,37 @@ public class InventoryHandler : MonoBehaviour
     }
 
     public void AddItem(GameObject item)
-    {
-        if (inventoryMenu == null)
-        {
-            Debug.LogError("InventoryMenu is not assigned in InventoryHandler.");
-            return;
-        }
+	{
+		if (item == null)
+		{
+			Debug.LogError("Attempted to add a null item to the inventory.");
+			return;
+		}
 
-        if (item == null)
-        {
-            Debug.LogError("Attempted to add a null item to the inventory.");
-            return;
-        }
+		if (inventoryMenu == null)
+		{
+			Debug.LogError("InventoryMenu is not assigned in InventoryHandler.");
+			return;
+		}
 
-        if (items.Count >= inventoryLimit)
-        {
-            Debug.Log("Inventory is full. Cannot add more items.");
-            return;
-        }
+		if (items.Count >= inventoryLimit)
+		{
+			Debug.LogWarning("Inventory is full. Cannot add more items.");
+			return;
+		}
 
-        if (items.Contains(item))
-        {
-            Debug.LogWarning("Item is already in inventory.");
-            return;
-        }
+		if (items.Contains(item))
+		{
+			Debug.LogWarning("Item is already in inventory.");
+			return;
+		}
 
-        items.Add(item);
+		items.Add(item);
+		Debug.Log($"Added item: {item.name}");
 
-        try
-        {
-            inventoryMenu.UpdateInventoryUI(items);
-            Debug.Log("Item added to inventory: " + item.name);
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogError($"Failed to update inventory UI: {ex.Message}");
-        }
-    }
+		inventoryMenu.UpdateInventoryUI(items);
+	}
+
 
 
     public List<GameObject> GetItems()
