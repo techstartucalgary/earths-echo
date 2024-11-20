@@ -2,6 +2,7 @@
 using System.Collections;
 
 [RequireComponent (typeof (Controller2D))]
+[RequireComponent(typeof(BoxCollider2D))]
 public class Player : MonoBehaviour {
 
 	public float maxJumpHeight = 4;
@@ -42,6 +43,7 @@ public class Player : MonoBehaviour {
 	float velocityXSmoothing;
 
 	Controller2D controller;
+    BoxCollider2D boxCollider;
 
 	Vector2 directionalInput;
 	bool wallSliding;
@@ -57,6 +59,7 @@ public class Player : MonoBehaviour {
 
     void Start() {
 		controller = GetComponent<Controller2D> ();
+        boxCollider = GetComponent<BoxCollider2D> ();
 
 		gravity = -(2 * maxJumpHeight) / Mathf.Pow (timeToJumpApex, 2);
 		maxJumpVelocity = Mathf.Abs(gravity) * timeToJumpApex;
@@ -100,6 +103,7 @@ public class Player : MonoBehaviour {
 
         HandleSprinting();
         HandleSliding();
+        
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -304,6 +308,9 @@ public class Player : MonoBehaviour {
         isCrawling = false;
         transform.localScale = new Vector3(originalScale.x, originalScale.y * slideShrinkFactor, originalScale.z);  // Shrink player vertically
         transform.position = new Vector3(transform.position.x, transform.position.y - (originalScale.y - transform.localScale.y) / 2, transform.position.z);
+        boxCollider.transform.position = transform.position;
+        boxCollider.bounds.size.Set(transform.localScale.x, transform.localScale.y, transform.localScale.z);
+        controller.UpdateRaycastOrigins();
         velocity.x = Mathf.Max(velocity.x, (Mathf.Sign(velocity.x) * slideSpeed)); // Set sliding speed
     }
 
@@ -313,6 +320,9 @@ public class Player : MonoBehaviour {
         isCrawling = false;
         transform.localScale = originalScale; // Reset to original size
         transform.position = new Vector3(transform.position.x, transform.position.y + (originalScale.y - transform.localScale.y) / 2, transform.position.z);
+        boxCollider.transform.position = transform.position;
+        boxCollider.bounds.size.Set(transform.localScale.x, transform.localScale.y, transform.localScale.z);
+        controller.UpdateRaycastOrigins();
     }
 
     void HandleSliding()
