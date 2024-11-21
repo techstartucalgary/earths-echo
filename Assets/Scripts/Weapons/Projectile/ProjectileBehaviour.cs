@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class ProjectileBehaviour : MonoBehaviour
@@ -16,7 +14,8 @@ public class ProjectileBehaviour : MonoBehaviour
     public float physicsProjectileVelocity;
     public float gravityScale;
 
-    private Rigidbody2D rb;
+    [Header("Components")]
+    [SerializeField] private Rigidbody2D rb; // Make Rigidbody2D a serialized field
 
     public enum ProjectileType
     {
@@ -25,23 +24,25 @@ public class ProjectileBehaviour : MonoBehaviour
     }
     public ProjectileType projectileType;
 
-	private void Start()
-	{
-		rb = GetComponent<Rigidbody2D>();
-		if (rb == null)
-		{
-			Debug.LogError($"Rigidbody2D not found on the projectile '{gameObject.name}'. Make sure the prefab has a Rigidbody2D component.");
-			return;
-		}
+    private void Start()
+    {
+        // If rb is not assigned in the Inspector, try to fetch it dynamically
+        if (rb == null)
+        {
+            rb = GetComponent<Rigidbody2D>();
+            if (rb == null)
+            {
+                Debug.LogError($"Rigidbody2D not assigned or found on the projectile '{gameObject.name}'.");
+                return;
+            }
+        }
 
-		SetDestroyTime();
-		InitializeProjectile();
-	}
-
+        SetDestroyTime();
+        InitializeProjectile();
+    }
 
     private void FixedUpdate()
     {
-        // Rotate the projectile to align with its velocity for Physics type
         if (projectileType == ProjectileType.Physics)
         {
             transform.right = rb.velocity.normalized;
@@ -50,7 +51,6 @@ public class ProjectileBehaviour : MonoBehaviour
 
     private void InitializeProjectile()
     {
-        // Configure Rigidbody based on projectile type
         if (projectileType == ProjectileType.Normal)
         {
             rb.gravityScale = 0f;
@@ -79,33 +79,31 @@ public class ProjectileBehaviour : MonoBehaviour
     }
 
     public void AdjustGravityScale(float newGravityScale)
-	{
-		if (rb == null)
-		{
-			Debug.LogError($"Rigidbody2D is missing on projectile '{gameObject.name}'. Cannot adjust gravity scale.");
-			return;
-		}
+    {
+        if (rb == null)
+        {
+            Debug.LogError($"Rigidbody2D is missing on projectile '{gameObject.name}'. Cannot adjust gravity scale.");
+            return;
+        }
 
-		if (projectileType == ProjectileType.Physics)
-		{
-			gravityScale = newGravityScale;
-			rb.gravityScale = gravityScale;
-
-			Debug.Log($"Projectile gravity scale adjusted to: {gravityScale}");
-		}
-		else
-		{
-			Debug.LogWarning("Cannot adjust gravity scale for a non-Physics projectile.");
-		}
-	}
+        if (projectileType == ProjectileType.Physics)
+        {
+            gravityScale = newGravityScale;
+            rb.gravityScale = gravityScale;
+            Debug.Log($"Projectile gravity scale adjusted to: {gravityScale}");
+        }
+        else
+        {
+            Debug.LogWarning("Cannot adjust gravity scale for a non-Physics projectile.");
+        }
+    }
 
     public void AdjustDamageScale(float newDamagePercentage)
     {
         if (projectileType == ProjectileType.Physics)
         {
-            damage *= (2*newDamagePercentage);
+            damage *= (2 * newDamagePercentage);
             Debug.Log($"Projectile damage adjusted to: {damage}");
-
         }
     }
 
@@ -113,7 +111,6 @@ public class ProjectileBehaviour : MonoBehaviour
     {
         if ((whatDestroysProjectile.value & (1 << collision.gameObject.layer)) > 0)
         {
-            // Deal damage if applicable
             IDamageable iDamageable = collision.gameObject.GetComponent<IDamageable>();
             if (iDamageable != null)
             {
@@ -124,8 +121,11 @@ public class ProjectileBehaviour : MonoBehaviour
             Destroy(gameObject);
         }
     }
+
     private void OnDrawGizmos()
     {
+        if (rb == null) return; // Skip if Rigidbody2D is not assigned
+
         Gizmos.color = Color.red;
         Vector2 position = transform.position;
         Vector2 velocity = rb.velocity;
@@ -139,5 +139,4 @@ public class ProjectileBehaviour : MonoBehaviour
             position = nextPosition;
         }
     }
-
 }
