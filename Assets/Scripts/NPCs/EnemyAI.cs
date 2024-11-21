@@ -19,6 +19,8 @@ public class EnemyAI : MonoBehaviour
 
     [Header("Graphics")]
     public Transform enemyGFX;
+    [SerializeField] Animator animator;
+    float animatorXScale;
 
     Path path;
     int currentWaypoint = 0;
@@ -35,6 +37,8 @@ public class EnemyAI : MonoBehaviour
 
         chaseSensor.setTargetTag(target.tag);
         actionSensor.setTargetTag(target.tag);
+
+        animatorXScale = enemyGFX.localScale[0];
 
         if (useSensorForPath) {
             chaseSensor.OnTargetChanged += CheckChaseSensor;
@@ -88,11 +92,13 @@ public class EnemyAI : MonoBehaviour
             currentWaypoint++;
         }
 
+        // Animation 
+        animator.SetFloat("xVelocity", Math.Abs(rb.velocity.x));
         if (force.x >= 0.01f) {
-            enemyGFX.localScale = new Vector3(-1f, 1f, 1f);
+            enemyGFX.localScale = new Vector3(animatorXScale, enemyGFX.localScale[1], enemyGFX.localScale[2]);
         }
         else if (force.x <= -0.01f) {
-            enemyGFX.localScale = new Vector3(1f, 1f, 1f);
+            enemyGFX.localScale = new Vector3(-animatorXScale, enemyGFX.localScale[1], enemyGFX.localScale[2]);
         }
     }
 }

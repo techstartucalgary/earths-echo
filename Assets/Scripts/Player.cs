@@ -1,9 +1,16 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System;
 
 [RequireComponent (typeof (Controller2D))]
 public class Player : MonoBehaviour {
 
+	[Header("Animation")]
+	[SerializeField] Animator animator;
+	[SerializeField] Transform animatorTransform;
+	float animatorXScale;
+
+	[Header("Physics")]
 	public float maxJumpHeight = 4;
 	public float minJumpHeight = 1;
 	public float timeToJumpApex = .4f;
@@ -37,6 +44,8 @@ public class Player : MonoBehaviour {
 		gravity = -(2 * maxJumpHeight) / Mathf.Pow (timeToJumpApex, 2);
 		maxJumpVelocity = Mathf.Abs(gravity) * timeToJumpApex;
 		minJumpVelocity = Mathf.Sqrt (2 * Mathf.Abs (gravity) * minJumpHeight);
+
+		animatorXScale = animatorTransform.localScale[0];
 	}
 
 	void Update() {
@@ -52,6 +61,17 @@ public class Player : MonoBehaviour {
 				velocity.y = 0;
 			}
 		}
+
+		// Animation stuff
+		animator.SetBool("isJumping", !controller.collisions.below);
+		animator.SetFloat("xVelocity", Math.Abs(velocity.x));
+		animator.SetFloat("yVelocity", velocity.y);
+		if (velocity.x >= 0.01f) {
+            animatorTransform.localScale = new Vector3(animatorXScale, animatorTransform.localScale[1], animatorTransform.localScale[2]);
+        }
+        else if (velocity.x <= -0.01f) {
+            animatorTransform.localScale = new Vector3(-animatorXScale, animatorTransform.localScale[1], animatorTransform.localScale[2]);
+        }
 	}
 
 	public void SetDirectionalInput (Vector2 input) {
