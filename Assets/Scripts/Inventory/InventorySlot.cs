@@ -14,6 +14,7 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler
 
     [SerializeField] private GameObject selectedShader;
     [SerializeField] private Image[] selectedIcons; // Array to hold selected icons (0 = melee, 1 = projectile)
+    public TMP_Text slotIconName;
 
     public Image itemDescriptionImage;
     public TMP_Text itemDescriptionNameText;
@@ -33,7 +34,9 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler
         if (itemIcon != null)
         {
             itemIcon.enabled = false;
+            
         }
+
     }
 
 	public void SetItem(GameObject newItemPrefab)
@@ -56,6 +59,8 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler
 		{
 			itemName = weapon.weaponName;
 			itemDescription = weapon.description;
+			slotIconName.text = itemName;
+
 		}
 		else
 		{
@@ -110,6 +115,7 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler
                     // Show item description and ammo info on the first click
                     ShowItemDescription();
                     ShowAmmoInfo();
+
                     isSelected = true;
                 }
                 else
