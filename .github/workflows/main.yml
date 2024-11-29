@@ -43,7 +43,7 @@ jobs:
         if: steps.changed-files.outputs.any_changed == 'true'
         id: code_review_suggestions
         env:
-          OPEN_AI_KEY: ${{ secrets.OPEN_AI_KEY }}
+          OPEN_AI_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           # Define the prompt directly
           CODE_REVIEW_PROMPT="You are a code reviewer. Please review the following C# code changes for best practices, potential bugs, and optimization opportunities. Provide constructive feedback and suggest improvements where necessary."
