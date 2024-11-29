@@ -76,7 +76,7 @@ jobs:
             if [ $((current_chars + diff_length)) -gt $MAX_CHARS ]; then
               echo "Batch $batch_number exceeds max chars, processing batch."
               # Process the current batch
-              .github/workflows/process_batch.sh "$current_batch" "$CODE_REVIEW_PROMPT" "$batch_number" "$current_batch_files"
+              ./process_batch.sh "$current_batch" "$CODE_REVIEW_PROMPT" "$batch_number" "$current_batch_files"
               # Reset batch variables
               current_batch="$diff_content"
               current_batch_files="$diff_file"
@@ -93,7 +93,7 @@ jobs:
           # Process any remaining diffs in the last batch
           if [ -n "$current_batch" ]; then
             echo "Processing final batch $batch_number."
-            .github/workflows/process_batch.sh "$current_batch" "$CODE_REVIEW_PROMPT" "$batch_number" "$current_batch_files"
+            ./process_batch.sh "$current_batch" "$CODE_REVIEW_PROMPT" "$batch_number" "$current_batch_files"
           fi
 
           # Set the output for the next step
