@@ -37,11 +37,12 @@ jobs:
         if: steps.changed-files.outputs.any_changed == 'true'
         id: code_review_suggestions
         env:
-          OPEN_AI_KEY: "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"
+          OPEN_AI_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           # Get the code changes
           changed_code=$(cat cs_diff.txt)
-          
+
+          echo "Length of OPEN_AI_KEY: ${#OPEN_AI_KEY}"
           echo "PR Changes:"
           echo "$changed_code"
           
