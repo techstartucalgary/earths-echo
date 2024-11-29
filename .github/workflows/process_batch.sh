@@ -19,7 +19,7 @@ escaped_code=$(echo -e "$BATCH_CONTENT" | jq -s -R -r @json)
 
 # Prepare the request payload
 request_payload=$(jq -n \
-  --arg model "gpt-3.5-turbo" \
+  --arg model "gpt-4o" \
   --arg prompt "$PROMPT" \
   --arg code "$escaped_code" \
   '{
