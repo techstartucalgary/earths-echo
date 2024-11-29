@@ -2,6 +2,7 @@ name: GPT Code Review
 
 on:
   pull_request:
+
 permissions:
   contents: read
   issues: write
@@ -11,23 +12,35 @@ jobs:
   code_review:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.1.1
+      - name: Checkout Code
+        uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
 
-      - uses: GrantBirki/git-diff-action@v2.4.0  # A github action for gathering the git diff of our pull request
-        id: git-diff
+      - name: Get Changed Files
+        id: changed-files
+        uses: tj-actions/changed-files@v34
         with:
-          raw_diff_file_output: diff.txt
-          file_output_only: "true" #Makes us exclude printing the diff on the console for security purposes
+          files: |
+            **.cs
 
-      - name: Perfom Code Review With gpt-4
+      - name: Generate Diff for .cs Files
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "Generating diff for C# files..."
+          git diff origin/${{ github.base_ref }}... -- '*.cs' > cs_diff.txt
+          cat cs_diff.txt
+        shell: bash
+
+      - name: Perform Code Review With GPT-4
+        if: steps.changed-files.outputs.any_changed == 'true'
         id: code_review_suggestions
         run: |
           # Get the code changes
-          changed_code=$(cat ${{steps.git-diff.outputs.raw-diff-path}})
+          changed_code=$(cat cs_diff.txt)
           
-          echo "PR Changes $changed_code"
+          echo "PR Changes:"
+          echo "$changed_code"
           
           # Escape newlines and double quotes in the changed_code
           escaped_code=$(echo "$changed_code" | jq -s -R -r @json)
@@ -43,17 +56,26 @@ jobs:
               ]
             }")
           
-          echo "This is the response $response"
+          echo "This is the response:"
+          echo "$response"
           
           code_review_suggestions=$(echo "$response" | jq -r '.choices[0].message.content')
           
           echo "$code_review_suggestions" > code_suggestions.txt
+          
+          # Set the output for the next step
+          echo "code_review_suggestions<<EOF" >> $GITHUB_OUTPUT
+          echo "$code_review_suggestions" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        shell: bash
 
       - name: Add Code Suggestions Comment
+        if: steps.code_review_suggestions.outputs.code_review_suggestions != ''
         run: |
+          echo "Posting code review suggestions..."
           cat code_suggestions.txt
           
-          escaped_comments=$(echo "$(cat code_suggestions.txt)" | jq -s -R -r @json)
+          escaped_comments=$(jq -s -R -r @json < code_suggestions.txt)
           
           curl -s -L \
             -X POST \
@@ -61,4 +83,5 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.number }}/comments \
-            -d "{\"body\":$escaped_comments\"}"
+            -d "{\"body\":$escaped_comments}"
+        shell: bash
