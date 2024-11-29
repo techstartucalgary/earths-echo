@@ -22,7 +22,8 @@ jobs:
         uses: tj-actions/changed-files@v34
         with:
           files: |
-            **.cs
+            **/*.cs
+          fail-on-error: false
 
       - name: Generate Diff for .cs Files
         if: steps.changed-files.outputs.any_changed == 'true'
