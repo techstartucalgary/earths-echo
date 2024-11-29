@@ -39,17 +39,17 @@ jobs:
           done
         shell: bash
 
-      - name: Perform Code Review With GPT-3.5-Turbo
+      - name: Perform Code Review With GPT-4o
         if: steps.changed-files.outputs.any_changed == 'true'
         id: code_review_suggestions
         env:
-          OPEN_AI_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPEN_AI_KEY: ${{ secrets.OPEN_AI_KEY }}
         run: |
           # Define the prompt directly
           CODE_REVIEW_PROMPT="You are a code reviewer. Please review the following C# code changes for best practices, potential bugs, and optimization opportunities. Provide constructive feedback and suggest improvements where necessary."
 
           # Initialize variables
-          MAX_CHARS=9500  # Approximate limit per request
+          MAX_CHARS=15000  # Approximate limit per request (for gpt-4o)
           current_batch=""
           current_batch_files=""
           current_chars=0
@@ -57,6 +57,61 @@ jobs:
 
           # Initialize an empty file to collect all suggestions
           echo "" > all_code_suggestions.txt
+
+          # Export OPEN_AI_KEY for use in subprocesses
+          export OPEN_AI_KEY
+
+          # Function to process a batch
+          process_batch() {
+            local batch_content="$1"
+            local prompt="$2"
+            local batch_number="$3"
+            local batch_files="$4"
+
+            echo "Processing batch $batch_number with files: $batch_files"
+
+            # Escape newlines and double quotes in the batch content
+            escaped_code=$(echo -e "$batch_content" | jq -s -R -r @json)
+
+            # Prepare the request payload
+            request_payload=$(jq -n \
+              --arg model "gpt-4o" \
+              --arg prompt "$prompt" \
+              --arg code "$escaped_code" \
+              '{
+                "model": $model,
+                "messages": [
+                  { "role": "system", "content": $prompt },
+                  { "role": "user", "content": $code }
+                ]
+              }')
+
+            # Send the request to OpenAI API
+            response=$(curl -s https://api.openai.com/v1/chat/completions \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer $OPEN_AI_KEY" \
+              -d "$request_payload")
+
+            # Check for API errors
+            error_message=$(echo "$response" | jq -r '.error.message // empty')
+            if [ -n "$error_message" ]; then
+              echo "OpenAI API Error: $error_message"
+              exit 1
+            fi
+
+            # Extract the assistant's reply
+            code_review_suggestions=$(echo "$response" | jq -r '.choices[0].message.content')
+
+            # Append the suggestions to the all_code_suggestions.txt file
+            echo "## Review for Batch $batch_number" >> all_code_suggestions.txt
+            echo "### Files: $batch_files" >> all_code_suggestions.txt
+            echo "" >> all_code_suggestions.txt
+            echo "$code_review_suggestions" >> all_code_suggestions.txt
+            echo "" >> all_code_suggestions.txt
+
+            # Optional: Delay to comply with rate limits
+            sleep 5
+          }
 
           # Collect diffs into batches
           for diff_file in diffs/*.diff; do
@@ -76,7 +131,7 @@ jobs:
             if [ $((current_chars + diff_length)) -gt $MAX_CHARS ]; then
               echo "Batch $batch_number exceeds max chars, processing batch."
               # Process the current batch
-              ./process_batch.sh "$current_batch" "$CODE_REVIEW_PROMPT" "$batch_number" "$current_batch_files"
+              process_batch "$current_batch" "$CODE_REVIEW_PROMPT" "$batch_number" "$current_batch_files"
               # Reset batch variables
               current_batch="$diff_content"
               current_batch_files="$diff_file"
@@ -85,7 +140,11 @@ jobs:
             else
               # Add diff to current batch
               current_batch="$current_batch\n\n$diff_content"
-              current_batch_files="$current_batch_files, $diff_file"
+              if [ -z "$current_batch_files" ]; then
+                current_batch_files="$diff_file"
+              else
+                current_batch_files="$current_batch_files, $diff_file"
+              fi
               current_chars=$((current_chars + diff_length))
             fi
           done
@@ -93,7 +152,7 @@ jobs:
           # Process any remaining diffs in the last batch
           if [ -n "$current_batch" ]; then
             echo "Processing final batch $batch_number."
-            ./process_batch.sh "$current_batch" "$CODE_REVIEW_PROMPT" "$batch_number" "$current_batch_files"
+            process_batch "$current_batch" "$CODE_REVIEW_PROMPT" "$batch_number" "$current_batch_files"
           fi
 
           # Set the output for the next step
