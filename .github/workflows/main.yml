@@ -48,7 +48,7 @@ jobs:
           
           response=$(curl -s https://api.openai.com/v1/chat/completions \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.OPEN_AI_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.OPEN_API_KEY }}" \
             -d "{
               \"model\": \"gpt-4\",
               \"messages\": [
