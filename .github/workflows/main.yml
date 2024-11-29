@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get Changed Files
+      - name: Get Changed C# Files
         id: changed-files
         uses: tj-actions/changed-files@v34
         with:
@@ -25,54 +25,80 @@ jobs:
             **/*.cs
           fail-on-error: false
 
-      - name: Generate Diff for .cs Files
+      - name: Generate Diffs for Changed .cs Files
         if: steps.changed-files.outputs.any_changed == 'true'
         run: |
-          echo "Generating diff for C# files..."
-          git diff origin/${{ github.base_ref }}... -- '*.cs' > cs_diff.txt
-          cat cs_diff.txt
+          echo "Generating diffs for changed C# files..."
+          mkdir diffs
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            if [[ $file == *.cs ]]; then
+              echo "Processing $file"
+              # Generate the diff for the specific file
+              git diff origin/${{ github.base_ref }}... -- "$file" > "diffs/${file//\//_}.diff"
+            fi
+          done
         shell: bash
 
-      - name: Perform Code Review With GPT-4
+      - name: Perform Code Review With GPT-3.5-Turbo
         if: steps.changed-files.outputs.any_changed == 'true'
         id: code_review_suggestions
         env:
-          OPEN_AI_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPEN_AI_KEY: ${{ secrets.OPEN_AI_KEY }}
         run: |
-          # Get the code changes
-          changed_code=$(cat cs_diff.txt)
-
-          echo "Length of OPEN_AI_KEY: ${#OPEN_AI_KEY}"
-          echo "PR Changes:"
-          echo "$changed_code"
-          
-          # Escape newlines and double quotes in the changed_code
-          escaped_code=$(echo "$changed_code" | jq -s -R -r @json)
-          
           # Define the prompt directly
-          CODE_REVIEW_PROMPT="You are a code reviewer. Please review the following unity C# code changes for best practices, potential bugs, and optimization opportunities. Provide constructive feedback and suggest improvements where necessary."
-          
-          response=$(curl -s https://api.openai.com/v1/chat/completions \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $OPEN_AI_KEY" \
-            -d "{
-              \"model\": \"gpt-3.5-turbo\",
-              \"messages\": [
-                { \"role\": \"system\", \"content\": \"$CODE_REVIEW_PROMPT\" },
-                { \"role\": \"user\", \"content\": $escaped_code }
-              ]
-            }")
-          
-          echo "This is the response:"
-          echo "$response"
-          
-          code_review_suggestions=$(echo "$response" | jq -r '.choices[0].message.content')
-          
-          echo "$code_review_suggestions" > code_suggestions.txt
-          
+          CODE_REVIEW_PROMPT="You are a code reviewer. Please review the following C# code changes for best practices, potential bugs, and optimization opportunities. Provide constructive feedback and suggest improvements where necessary."
+
+          # Initialize variables
+          MAX_CHARS=9500  # Approximate limit per request
+          current_batch=""
+          current_batch_files=""
+          current_chars=0
+          batch_number=1
+
+          # Initialize an empty file to collect all suggestions
+          echo "" > all_code_suggestions.txt
+
+          # Collect diffs into batches
+          for diff_file in diffs/*.diff; do
+            echo "Reading $diff_file"
+            diff_content=$(cat "$diff_file")
+
+            # Skip empty diffs
+            if [ -z "$diff_content" ]; then
+              echo "No changes in $diff_file, skipping."
+              continue
+            fi
+
+            diff_length=${#diff_content}
+            echo "Diff length: $diff_length characters"
+
+            # If adding this diff exceeds the max chars, process the current batch
+            if [ $((current_chars + diff_length)) -gt $MAX_CHARS ]; then
+              echo "Batch $batch_number exceeds max chars, processing batch."
+              # Process the current batch
+              ./process_batch.sh "$current_batch" "$CODE_REVIEW_PROMPT" "$batch_number" "$current_batch_files"
+              # Reset batch variables
+              current_batch="$diff_content"
+              current_batch_files="$diff_file"
+              current_chars=$diff_length
+              batch_number=$((batch_number + 1))
+            else
+              # Add diff to current batch
+              current_batch="$current_batch\n\n$diff_content"
+              current_batch_files="$current_batch_files, $diff_file"
+              current_chars=$((current_chars + diff_length))
+            fi
+          done
+
+          # Process any remaining diffs in the last batch
+          if [ -n "$current_batch" ]; then
+            echo "Processing final batch $batch_number."
+            ./process_batch.sh "$current_batch" "$CODE_REVIEW_PROMPT" "$batch_number" "$current_batch_files"
+          fi
+
           # Set the output for the next step
           echo "code_review_suggestions<<EOF" >> $GITHUB_OUTPUT
-          echo "$code_review_suggestions" >> $GITHUB_OUTPUT
+          cat all_code_suggestions.txt >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
         shell: bash
 
@@ -82,10 +108,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Posting code review suggestions..."
-          cat code_suggestions.txt
-          
-          escaped_comments=$(jq -s -R -r @json < code_suggestions.txt)
-          
+          cat all_code_suggestions.txt
+
+          escaped_comments=$(jq -s -R -r @json < all_code_suggestions.txt)
+
           curl -s -L \
             -X POST \
             -H "Accept: application/vnd.github+json" \
