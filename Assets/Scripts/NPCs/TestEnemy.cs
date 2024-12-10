@@ -2,10 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TestEnemy : MonoBehaviour, IDamageable
+public class TestEnemy : MonoBehaviour, IDamageable, IHealable
 {
     public EnemyHealthBar healthBar; // Optional health bar
 
+    [SerializeField] private string enemyName; // Optional enemy name
     [SerializeField] private float maxHealth = 20f;
     private float currentHealth;
 
@@ -16,7 +17,8 @@ public class TestEnemy : MonoBehaviour, IDamageable
         // Initialize the health bar only if it is assigned
         if (healthBar != null)
         {
-            healthBar.Initialize(maxHealth);
+            // Pass the enemy name only if it's set
+            healthBar.Initialize(maxHealth, enemyName);
         }
     }
 
@@ -35,5 +37,10 @@ public class TestEnemy : MonoBehaviour, IDamageable
         {
             Destroy(gameObject);
         }
+    }
+
+    public void Heal(float healAmount)
+    {
+        //placeholder, will need further implementation with any healing items, schedules for enemies. 
     }
 }
