@@ -1,10 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
-<<<<<<< HEAD
 using System;
-=======
 using UnityEngine.SceneManagement;
->>>>>>> main
 
 [RequireComponent (typeof (Controller2D))]
 public class Player : MonoBehaviour {
@@ -16,7 +13,7 @@ public class Player : MonoBehaviour {
 
 	[Header("Physics")]
 	public float maxJumpHeight = 4;
-    	public HealthBar healthBar;
+    public HealthBar healthBar;
 
 	public float minJumpHeight = 1;
 	public float timeToJumpApex = .4f;
