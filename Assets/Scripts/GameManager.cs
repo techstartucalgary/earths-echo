@@ -64,7 +64,7 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        if (Input.GetKeyDown(KeyCode.I))
+        if (Input.GetKeyDown(KeyCode.G))
         {
             if (currentState == GameState.Playing)
             {
@@ -75,6 +75,11 @@ public class GameManager : MonoBehaviour
                 CloseInventory();
             }
         }
+    }
+    public bool CanProcessGameplayActions()
+    {
+        // Gameplay actions are allowed only when in the Playing state
+        return currentState == GameState.Playing;
     }
 
     public void ChangeState(GameState newState)
@@ -87,7 +92,7 @@ public class GameManager : MonoBehaviour
         mainMenu.SetActive(false);
         //levelCompleteMenu.SetActive(false);
         //settingsMenu.SetActive(false);
-        //inventoryMenu.SetActive(false);
+        inventoryMenu.SetActive(false);
         //make sure player is not in control of input
 
         switch (currentState)
