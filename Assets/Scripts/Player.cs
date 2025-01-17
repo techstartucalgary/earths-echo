@@ -48,6 +48,7 @@ public class Player : MonoBehaviour {
         }
         else if (collision.tag == "Checkpoint")
         {
+			GameManager.instance.SetRespawnPoint(collision.transform);
         }
         else if (collision.tag == "NextLevel")
         {

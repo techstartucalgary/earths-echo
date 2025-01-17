@@ -9,6 +9,7 @@ public enum GameState
     Playing,
     Paused,
     GameOver,
+    Respawn,
     LevelComplete,
     Cutscene,
     Settings,
@@ -21,7 +22,7 @@ public class GameManager : MonoBehaviour
 
     private GameState currentState;
 
-    private GameObject playerInstance;  // This will hold the instantiated player
+    [Header("UI References")]
     public GameObject pauseMenu;
     public GameObject gameOverMenu;
     public GameObject mainMenu;
@@ -29,13 +30,20 @@ public class GameManager : MonoBehaviour
     public GameObject settingsMenu;
     public GameObject inventoryMenu;
 
+    [Header("Spawn Points")]
+    public Transform defaultSpawnPoint; 
+    private Transform currentRespawnPoint; 
+
+    // If using a prefab, uncomment:
+    // public GameObject playerPrefab;
+    private GameObject playerInstance;
+
     private void Awake()
     {
-        // Ensure only one instance of GameManager exists
         if (instance == null)
         {
             instance = this;
-            DontDestroyOnLoad(gameObject);  // Keeps the GameManager persistent across scenes
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -45,17 +53,16 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        ChangeState(GameState.MainMenu);  // Initial state
+        ChangeState(GameState.MainMenu);  // Start at Main Menu
     }
 
     private void Update()
     {
-        // Handle basic inputs for pausing and opening menus
+        // Basic inputs for pausing and opening menus
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             if (currentState == GameState.Playing)
             {
-                Debug.Log("Game Paused");  // Add this line for debugging
                 PauseGame();
             }
             else if (currentState == GameState.Paused)
@@ -67,18 +74,15 @@ public class GameManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.G))
         {
             if (currentState == GameState.Playing)
-            {
                 OpenInventory();
-            }
             else if (currentState == GameState.Inventory)
-            {
                 CloseInventory();
-            }
         }
     }
+
+    // Gameplay actions only valid in Playing
     public bool CanProcessGameplayActions()
     {
-        // Gameplay actions are allowed only when in the Playing state
         return currentState == GameState.Playing;
     }
 
@@ -86,50 +90,58 @@ public class GameManager : MonoBehaviour
     {
         currentState = newState;
 
-        // Reset UI elements visibility
+        // Reset UI
         pauseMenu.SetActive(false);
         gameOverMenu.SetActive(false);
         mainMenu.SetActive(false);
-        //levelCompleteMenu.SetActive(false);
-        //settingsMenu.SetActive(false);
         inventoryMenu.SetActive(false);
-        //make sure player is not in control of input
 
         switch (currentState)
         {
             case GameState.MainMenu:
                 mainMenu.SetActive(true);
                 Time.timeScale = 0f;
-                AudioManager.instance.PlayMusic(AudioManager.instance.mainMenuMusic);  // Play main menu music
+                AudioManager.instance.PlayMusic(AudioManager.instance.mainMenuMusic);
                 break;
 
             case GameState.Playing:
                 Time.timeScale = 1f;
-                InstantiatePlayer();
-                AudioManager.instance.PlayMusic(AudioManager.instance.gameplayMusic);  // Play gameplay music
+                AudioManager.instance.PlayMusic(AudioManager.instance.gameplayMusic);
                 break;
 
             case GameState.Paused:
                 pauseMenu.SetActive(true);
                 Time.timeScale = 0f;
-                AudioManager.instance.PlayMusic(AudioManager.instance.pauseMusic);  // Play pause music
+                AudioManager.instance.PlayMusic(AudioManager.instance.pauseMusic);
                 break;
 
             case GameState.GameOver:
                 gameOverMenu.SetActive(true);
                 Time.timeScale = 0f;
-                AudioManager.instance.PlayMusic(AudioManager.instance.gameOverMusic);  // Play game over music
+                AudioManager.instance.PlayMusic(AudioManager.instance.gameOverMusic);
+                break;
+
+            case GameState.Respawn:
+                Time.timeScale = 1f;
+                // Actually re-spawn the player here
+                SetupSpawnPoints();
+                InstantiatePlayer();
+                AudioManager.instance.PlayMusic(AudioManager.instance.gameplayMusic);
+
+                // Option 1: stay in Respawn state (player is now alive)
+                // Option 2: immediately go back to Playing
+                ChangeState(GameState.Playing);
                 break;
 
             case GameState.LevelComplete:
                 levelCompleteMenu.SetActive(true);
                 Time.timeScale = 0f;
-                AudioManager.instance.PlayMusic(AudioManager.instance.gameplayMusic);  // Keep gameplay music or add victory music
+                AudioManager.instance.PlayMusic(AudioManager.instance.gameplayMusic);
                 break;
 
             case GameState.Cutscene:
-                Time.timeScale = 1f;  // Cutscenes may require time movement
-                // Play cutscene here
+                Time.timeScale = 1f;
+                // ...
                 break;
 
             case GameState.Settings:
@@ -139,23 +151,82 @@ public class GameManager : MonoBehaviour
 
             case GameState.Inventory:
                 inventoryMenu.SetActive(true);
-                Time.timeScale = 0f;  // Freeze time while in the inventory
+                Time.timeScale = 0f; 
                 break;
         }
     }
 
+    // Called (e.g.) from a button press or from the main menu
     public void StartGame()
     {
-        // Load the first level and set the state to Playing
-        //SceneManager.LoadScene("Level1");  // Replace with the actual scene name
+        // Could load a level if needed
+        // SceneManager.LoadScene("Level1");
+        
+        // Do an initial spawn, then switch to Playing
+        SetupSpawnPoints();
+        InstantiatePlayer();
+
         ChangeState(GameState.Playing);
+    }
+
+    private void SetupSpawnPoints()
+    {
+        if (currentRespawnPoint == null && defaultSpawnPoint != null)
+        {
+            currentRespawnPoint = defaultSpawnPoint;
+        }
+    }
+
+    public void SetRespawnPoint(Transform newRespawn)
+    {
+        currentRespawnPoint = newRespawn;
     }
 
     private void InstantiatePlayer()
     {
-        // Find the player and instantiate him instead of creating it from the prefab
-        playerInstance = GameObject.FindGameObjectWithTag("Player");
+        // 1) Try to find an existing player if one isn't stored
+        if (playerInstance == null)
+        {
+            playerInstance = GameObject.FindGameObjectWithTag("Player");
+        }
+
+        // 2) Optionally instantiate from a prefab if no Player is found
+        // if (playerInstance == null && playerPrefab != null)
+        // {
+        //     playerInstance = Instantiate(playerPrefab, currentRespawnPoint.position, Quaternion.identity);
+        // }
+
+        if (playerInstance != null && currentRespawnPoint != null)
+        {
+            // Move the player to the respawn point
+            playerInstance.transform.position = currentRespawnPoint.position;
+
+            // Reset health
+            Health.totalHealth = 1.0f;
+
+            // Reset health bar
+            HealthBar healthBar = FindObjectOfType<HealthBar>();
+            if (healthBar != null)
+            {
+                healthBar.ResetHealthBar();
+            }
+            // Example of clearing velocity:
+            // Rigidbody2D rb = playerInstance.GetComponent<Rigidbody2D>();
+            // if (rb != null) rb.velocity = Vector2.zero;
+        }
+        else
+        {
+            Debug.LogWarning("No valid player or respawn point assigned!");
+        }
     }
+
+    // -- Public method so the Player (or another script) can call for a respawn
+    public void RespawnPlayer()
+    {
+        ChangeState(GameState.Respawn);
+    }
+
+    // --- Basic Menu Management ---
 
     public void PauseGame()
     {
@@ -179,7 +250,6 @@ public class GameManager : MonoBehaviour
 
     public void StartNextLevel(string nextLevelName)
     {
-        // Load next level and transition back to Playing state
         SceneManager.LoadScene(nextLevelName);
         ChangeState(GameState.Playing);
     }
@@ -206,14 +276,14 @@ public class GameManager : MonoBehaviour
 
     public void RestartGame()
     {
-        // Reload the current scene and reset the game state
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        // Re-spawn the Player once the scene reloads
         ChangeState(GameState.Playing);
     }
 
     public void QuitToMainMenu()
     {
-        SceneManager.LoadScene("MainMenu");  // Replace with actual Main Menu scene name
+        gameOverMenu.SetActive(false);
         ChangeState(GameState.MainMenu);
     }
 
@@ -222,3 +292,5 @@ public class GameManager : MonoBehaviour
         Application.Quit();
     }
 }
+
+
