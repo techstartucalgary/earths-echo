@@ -5,21 +5,31 @@ using System.Collections;
 [RequireComponent(typeof(BoxCollider2D))]
 public class Player : MonoBehaviour {
 
-	public float maxJumpHeight = 4;
-	public float minJumpHeight = 1;
-	public float timeToJumpApex = .4f;
-	float accelerationTimeAirborne = .2f;
-	float accelerationTimeGrounded = .1f;
-	float moveSpeed = 6;
+    // Jumping variables
+    public float maxJumpHeight = 4;
+    public float minJumpHeight = 1;
+    public float timeToJumpApex = .4f;
+    float accelerationTimeAirborne = .2f;
+    float accelerationTimeGrounded = .1f;
+    float gravity;
+    float maxJumpVelocity;
+    float minJumpVelocity;
 
+    // Movement variables
+    Vector2 directionalInput;
+    float moveSpeed = 6;
+    public Vector3 velocity;
+    float velocityXSmoothing;
     [SerializeField] public float playerSpeed;
-
     [SerializeField] private float sprintMultiplier = 1.5f;  // Speed multiplier when sprinting
     [SerializeField] private float sprintRampUpTime = 1f;    // Time to reach full sprint speed
     private float currentSprintTime = 0f;                    // Tracks ramp-up progress
     public bool isSprinting = false;
 
-    [SerializeField] private float slideSpeed = 10f;            // Speed boost during slide
+    // Sliding variables
+    [SerializeField] private float slideMultiplier = 0.3f;            // Speed boost during slide
+    [SerializeField] private float slideRampDownTime = 2f;    // Time to reach lowest slide speed
+    private float currentSlideTime = 0f;
     [SerializeField] private float slideJumpBoost = 1.5f;       // Horizontal boost when slide jumping
     [SerializeField] private float crawlSpeed = 2f;             // Slow speed during crawling
     [SerializeField] private float slideCooldown = 0.5f;        // Time between slide jumps
@@ -28,26 +38,20 @@ public class Player : MonoBehaviour {
     private bool isCrawling = false;
     private Vector3 originalScale;                              // Store the original player scale
 
+    // Wall interaction variables
     public Vector2 wallJumpClimb;
-	public Vector2 wallJumpOff;
-	public Vector2 wallLeap;
+    public Vector2 wallJumpOff;
+    public Vector2 wallLeap;
+    public float wallSlideSpeedMax = 3;
+    public float wallStickTime = .25f;
+    float timeToWallUnstick;
+    bool wallSliding;
+    int wallDirX;
 
-	public float wallSlideSpeedMax = 3;
-	public float wallStickTime = .25f;
-	float timeToWallUnstick;
-
-	float gravity;
-	float maxJumpVelocity;
-	float minJumpVelocity;
-	public Vector3 velocity;
-	float velocityXSmoothing;
-
-	Controller2D controller;
+    // References
+    Controller2D controller;
     BoxCollider2D boxCollider;
-
-	Vector2 directionalInput;
-	bool wallSliding;
-	int wallDirX;
+    // public HealthBar healthBar;
 
     // Ladder stuff
     public GameObject touchingLadder = null;
@@ -114,6 +118,7 @@ public class Player : MonoBehaviour {
             canClimb = true;                      // Set climbing state to true
         }
     }
+    
     private void OnTriggerExit2D(Collider2D collision)
     {
         // Check if the player leaves a ladder
@@ -267,13 +272,18 @@ public class Player : MonoBehaviour {
         {
             targetVelocityX = directionalInput.x * moveSpeed;
         }
-        
+
 
         // Apply sprint multiplier if sprinting
-        if (isSprinting)
+        if (isSprinting && !isSliding)
         {
             float sprintFactor = Mathf.Lerp(1, sprintMultiplier, currentSprintTime / sprintRampUpTime);
             targetVelocityX *= sprintFactor;
+        }
+        else if (isSliding)
+        {
+            float slideFactor = Mathf.Lerp(sprintMultiplier, slideMultiplier, currentSlideTime / slideRampDownTime);
+            targetVelocityX *= slideFactor;
         }
 
         velocity.x = Mathf.SmoothDamp(velocity.x, targetVelocityX, ref velocityXSmoothing, (controller.collisions.below) ? accelerationTimeGrounded : accelerationTimeAirborne);
@@ -311,7 +321,7 @@ public class Player : MonoBehaviour {
         boxCollider.transform.position = transform.position;
         boxCollider.bounds.size.Set(transform.localScale.x, transform.localScale.y, transform.localScale.z);
         controller.UpdateRaycastOrigins();
-        velocity.x = Mathf.Max(velocity.x, (Mathf.Sign(velocity.x) * slideSpeed)); // Set sliding speed
+        
     }
 
     public void StopSlide()
@@ -327,7 +337,18 @@ public class Player : MonoBehaviour {
 
     void HandleSliding()
     {
-        if (!isSliding) return;
+        if (isSliding)
+        {
+            if (currentSlideTime < slideRampDownTime)
+            {
+                currentSlideTime += Time.deltaTime;
+            }
+        }
+        if (!isSliding)
+        {
+            currentSlideTime = 0f;
+            return;
+        }
 
         if (directionalInput.y < 0)
         {
