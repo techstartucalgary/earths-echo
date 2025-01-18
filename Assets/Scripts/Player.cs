@@ -51,7 +51,7 @@ public class Player : MonoBehaviour {
     // References
     Controller2D controller;
     BoxCollider2D boxCollider;
-    // public HealthBar healthBar;
+    public HealthBar healthBar;
 
     // Ladder stuff
     public GameObject touchingLadder = null;
