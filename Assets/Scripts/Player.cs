@@ -1,9 +1,10 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-[RequireComponent (typeof (Controller2D))]
+[RequireComponent(typeof(Controller2D))]
 [RequireComponent(typeof(BoxCollider2D))]
-public class Player : MonoBehaviour {
+public class Player : MonoBehaviour
+{
 
     // Jumping variables
     public float maxJumpHeight = 4;
@@ -61,19 +62,21 @@ public class Player : MonoBehaviour {
     public float dismountTime = 1.5f;
     public float timeToReclimb = 0f;
 
-    void Start() {
-		controller = GetComponent<Controller2D> ();
-        boxCollider = GetComponent<BoxCollider2D> ();
+    void Start()
+    {
+        controller = GetComponent<Controller2D>();
+        boxCollider = GetComponent<BoxCollider2D>();
 
-		gravity = -(2 * maxJumpHeight) / Mathf.Pow (timeToJumpApex, 2);
-		maxJumpVelocity = Mathf.Abs(gravity) * timeToJumpApex;
-		minJumpVelocity = Mathf.Sqrt (2 * Mathf.Abs (gravity) * minJumpHeight);
+        gravity = -(2 * maxJumpHeight) / Mathf.Pow(timeToJumpApex, 2);
+        maxJumpVelocity = Mathf.Abs(gravity) * timeToJumpApex;
+        minJumpVelocity = Mathf.Sqrt(2 * Mathf.Abs(gravity) * minJumpHeight);
 
         originalScale = transform.localScale; // Save original size for scaling during slide
     }
 
-	void Update() {
-		
+    void Update()
+    {
+
         if (canClimb && directionalInput.y > 0 && timeToReclimb <= 0)
         {
             climbing = true;
@@ -95,30 +98,57 @@ public class Player : MonoBehaviour {
 
         HandleWallSliding();
 
-        controller.Move (velocity * Time.deltaTime, directionalInput);
+        controller.Move(velocity * Time.deltaTime, directionalInput);
 
-		if (controller.collisions.above || controller.collisions.below) {
-			if (controller.collisions.slidingDownMaxSlope) {
-				velocity.y += controller.collisions.slopeNormal.y * -gravity * Time.deltaTime;
-			} else {
-				velocity.y = 0;
-			}
-		}
+        if (controller.collisions.above || controller.collisions.below)
+        {
+            if (controller.collisions.slidingDownMaxSlope)
+            {
+                velocity.y += controller.collisions.slopeNormal.y * -gravity * Time.deltaTime;
+            }
+            else
+            {
+                velocity.y = 0;
+            }
+        }
 
         HandleSprinting();
         HandleSliding();
-        
-    }
 
-    private void OnTriggerEnter2D(Collider2D collision)
+    }
+	private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.CompareTag("Ladder"))
+        if (collision.tag == "FallDetector")
+        {
+        }
+        else if (collision.tag == "Checkpoint")
+        {
+			GameManager.instance.SetRespawnPoint(collision.transform);
+        }
+        else if (collision.tag == "NextLevel")
+        {
+            //SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+            // Can also use SceneManager.LoadScene(1); to load a specific scene
+        }
+        else if (collision.tag == "PreviousLevel")
+        {
+            //SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex - 1);
+        }
+        else if (collision.CompareTag("Ladder"))
         {
             touchingLadder = collision.gameObject; // Save the ladder object
             canClimb = true;                      // Set climbing state to true
         }
     }
-    
+	
+	private void OnTriggerStay2D(Collider2D collision)
+    {
+        if (collision.tag == "spike")
+        {
+            healthBar.Damage(0.002f);
+        }
+    }
+
     private void OnTriggerExit2D(Collider2D collision)
     {
         // Check if the player leaves a ladder
@@ -155,19 +185,21 @@ public class Player : MonoBehaviour {
         velocity.x = 0;
         velocity.y = directionalInput.y * climbSpeed;
 
-        if (directionalInput.y == 0 || 
-           (playerBottom >= ladderTop && directionalInput.y > 0) || 
+        if (directionalInput.y == 0 ||
+           (playerBottom >= ladderTop && directionalInput.y > 0) ||
            (playerTop <= ladderBottom && directionalInput.y < 0))
         {
             velocity.y = 0;
         }
     }
 
-    public void SetDirectionalInput (Vector2 input) {
-		directionalInput = input;
-	}
+    public void SetDirectionalInput(Vector2 input)
+    {
+        directionalInput = input;
+    }
 
-	public void OnJumpInputDown() {
+    public void OnJumpInputDown()
+    {
 
         bool wasClimbing = false;
         if (climbing)
@@ -217,42 +249,51 @@ public class Player : MonoBehaviour {
                 velocity.y = maxJumpVelocity;
             }
         }
-	}
+    }
 
-	public void OnJumpInputUp() {
-		if (velocity.y > minJumpVelocity) {
-			velocity.y = minJumpVelocity;
-		}
-	}	
+    public void OnJumpInputUp()
+    {
+        if (velocity.y > minJumpVelocity)
+        {
+            velocity.y = minJumpVelocity;
+        }
+    }
 
-	void HandleWallSliding() {
-		wallDirX = (controller.collisions.left) ? -1 : 1;
-		wallSliding = false;
-		if ((controller.collisions.left || controller.collisions.right) && !controller.collisions.below && velocity.y < 0) {
-			wallSliding = true;
+    void HandleWallSliding()
+    {
+        wallDirX = (controller.collisions.left) ? -1 : 1;
+        wallSliding = false;
+        if ((controller.collisions.left || controller.collisions.right) && !controller.collisions.below && velocity.y < 0)
+        {
+            wallSliding = true;
 
-			if (velocity.y < -wallSlideSpeedMax) {
-				velocity.y = -wallSlideSpeedMax;
-			}
+            if (velocity.y < -wallSlideSpeedMax)
+            {
+                velocity.y = -wallSlideSpeedMax;
+            }
 
-			if (timeToWallUnstick > 0) {
-				velocityXSmoothing = 0;
-				velocity.x = 0;
+            if (timeToWallUnstick > 0)
+            {
+                velocityXSmoothing = 0;
+                velocity.x = 0;
 
-				if (directionalInput.x != wallDirX && directionalInput.x != 0) {
-					timeToWallUnstick -= Time.deltaTime;
-				}
-				else {
-					timeToWallUnstick = wallStickTime;
-				}
-			}
-			else {
-				timeToWallUnstick = wallStickTime;
-			}
+                if (directionalInput.x != wallDirX && directionalInput.x != 0)
+                {
+                    timeToWallUnstick -= Time.deltaTime;
+                }
+                else
+                {
+                    timeToWallUnstick = wallStickTime;
+                }
+            }
+            else
+            {
+                timeToWallUnstick = wallStickTime;
+            }
 
-		}
+        }
 
-	}
+    }
 
     void CalculateVelocity()
     {
@@ -321,7 +362,7 @@ public class Player : MonoBehaviour {
         boxCollider.transform.position = transform.position;
         boxCollider.bounds.size.Set(transform.localScale.x, transform.localScale.y, transform.localScale.z);
         controller.UpdateRaycastOrigins();
-        
+
     }
 
     public void StopSlide()
@@ -363,3 +404,4 @@ public class Player : MonoBehaviour {
     }
 
 }
+

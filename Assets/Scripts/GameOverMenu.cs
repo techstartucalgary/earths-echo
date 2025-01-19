@@ -16,13 +16,12 @@ public class GameOverMenu : MonoBehaviour
         if (gameOverMenu.activeSelf)
         {
             Time.timeScale = 0;
-            gameOverMenu.SetActive(true);
             Cursor.visible = true;
         }
         else
         {
             Time.timeScale = 1;
-            gameOverMenu.SetActive(false);
+            //gameOverMenu.SetActive(false);
             Cursor.visible = false;
         }
     }
