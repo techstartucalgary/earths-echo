@@ -116,13 +116,36 @@ public class Player : MonoBehaviour
         HandleSliding();
 
     }
-
-    private void OnTriggerEnter2D(Collider2D collision)
+	private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.CompareTag("Ladder"))
+        if (collision.tag == "FallDetector")
+        {
+        }
+        else if (collision.tag == "Checkpoint")
+        {
+			GameManager.instance.SetRespawnPoint(collision.transform);
+        }
+        else if (collision.tag == "NextLevel")
+        {
+            //SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+            // Can also use SceneManager.LoadScene(1); to load a specific scene
+        }
+        else if (collision.tag == "PreviousLevel")
+        {
+            //SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex - 1);
+        }
+        else if (collision.CompareTag("Ladder"))
         {
             touchingLadder = collision.gameObject; // Save the ladder object
             canClimb = true;                      // Set climbing state to true
+        }
+    }
+	
+	private void OnTriggerStay2D(Collider2D collision)
+    {
+        if (collision.tag == "spike")
+        {
+            healthBar.Damage(0.002f);
         }
     }
 

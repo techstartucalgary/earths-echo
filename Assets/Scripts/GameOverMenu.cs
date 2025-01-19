@@ -21,6 +21,7 @@ public class GameOverMenu : MonoBehaviour
         else
         {
             Time.timeScale = 1;
+            //gameOverMenu.SetActive(false);
             Cursor.visible = false;
         }
     }
