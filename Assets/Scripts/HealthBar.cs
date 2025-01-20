@@ -8,39 +8,60 @@ public class HealthBar : MonoBehaviour
     private RectTransform bar;
     private Image barImage;
 
-    // Start is called before the first frame update
     void Start()
     {
         bar = GetComponent<RectTransform>();
         barImage = GetComponent<Image>();
+        UpdateBarVisuals();
+    }
+
+    // Dedicate a method to updating the bar's visuals 
+    // (scale + color), so we can call it whenever we want to refresh.
+    private void UpdateBarVisuals()
+    {
+        // 1. Update bar scale
+        SetSize(Health.totalHealth);
+
+        // 2. Check for low health color
         if (Health.totalHealth < 0.3f)
         {
             barImage.color = Color.red;
         }
-        SetSize(Health.totalHealth);
+        else
+        {
+            // Default color: pick whatever color you consider "full" or "normal"
+            barImage.color = Color.green;
+        }
     }
 
     public void Damage(float damage)
     {
-        if((Health.totalHealth -= damage) >= 0f)
-        {
-            Health.totalHealth -= damage;
-        }
-        else
+        Health.totalHealth -= damage;
+
+        if (Health.totalHealth < 0f)
         {
             Health.totalHealth = 0f;
         }
 
-        if(Health.totalHealth < 0.3f)
+        // Trigger GameOver if health is 0
+        if (Health.totalHealth <= 0f)
         {
-            barImage.color = Color.red;
+            GameManager.instance.GameOver();
         }
 
-        SetSize(Health.totalHealth);
+        UpdateBarVisuals();
     }
 
     public void SetSize(float size)
     {
         bar.localScale = new Vector3(size, 1f);
+    }
+
+    // Call this to fully reset the health bar visually
+    public void ResetHealthBar()
+    {
+        // No need to subtract damage or anything, 
+        // just refresh the UI based on the new Health.totalHealth
+        UpdateBarVisuals();
     }
 }
