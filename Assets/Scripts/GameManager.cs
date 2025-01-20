@@ -13,7 +13,8 @@ public enum GameState
     LevelComplete,
     Cutscene,
     Settings,
-    Inventory
+    Inventory,
+    Minimap
 }
 
 public class GameManager : MonoBehaviour
@@ -29,10 +30,11 @@ public class GameManager : MonoBehaviour
     public GameObject levelCompleteMenu;
     public GameObject settingsMenu;
     public GameObject inventoryMenu;
+    public GameObject miniMap;
 
     [Header("Spawn Points")]
-    public Transform defaultSpawnPoint; 
-    private Transform currentRespawnPoint; 
+    public Transform defaultSpawnPoint;
+    private Transform currentRespawnPoint;
 
     // If using a prefab, uncomment:
     // public GameObject playerPrefab;
@@ -78,6 +80,14 @@ public class GameManager : MonoBehaviour
             else if (currentState == GameState.Inventory)
                 CloseInventory();
         }
+
+        if (Input.GetKeyDown(KeyCode.M))
+        {
+            if (currentState == GameState.Playing)
+                OpenMap();
+            else if (currentState == GameState.Minimap)
+                CloseMap();
+        }
     }
 
     // Gameplay actions only valid in Playing
@@ -95,6 +105,7 @@ public class GameManager : MonoBehaviour
         gameOverMenu.SetActive(false);
         mainMenu.SetActive(false);
         inventoryMenu.SetActive(false);
+        miniMap.SetActive(false);
 
         switch (currentState)
         {
@@ -151,7 +162,12 @@ public class GameManager : MonoBehaviour
 
             case GameState.Inventory:
                 inventoryMenu.SetActive(true);
-                Time.timeScale = 0f; 
+                Time.timeScale = 0f;
+                break;
+
+            case GameState.Minimap:
+                miniMap.SetActive(true);
+                Time.timeScale = 0f;
                 break;
         }
     }
@@ -161,7 +177,7 @@ public class GameManager : MonoBehaviour
     {
         // Could load a level if needed
         // SceneManager.LoadScene("Level1");
-        
+
         // Do an initial spawn, then switch to Playing
         SetupSpawnPoints();
         InstantiatePlayer();
@@ -274,6 +290,15 @@ public class GameManager : MonoBehaviour
         ChangeState(GameState.Playing);
     }
 
+    public void OpenMap()
+    {
+        ChangeState(GameState.Minimap);
+    }
+    public void CloseMap()
+    {
+        ChangeState(GameState.Playing);
+    }
+
     public void RestartGame()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
@@ -292,4 +317,3 @@ public class GameManager : MonoBehaviour
         Application.Quit();
     }
 }
-
