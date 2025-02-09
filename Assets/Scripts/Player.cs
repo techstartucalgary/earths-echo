@@ -26,6 +26,7 @@ public class Player : MonoBehaviour
     [SerializeField] private float sprintRampUpTime = 1f;    // Time to reach full sprint speed
     private float currentSprintTime = 0f;                    // Tracks ramp-up progress
     public bool isSprinting = false;
+    [SerializeField] public float maxFallSpeed = -20f; // Adjust based on game balance
 
     // Sliding variables
     [SerializeField] private float slideMultiplier = 0.3f;            // Speed boost during slide
@@ -329,6 +330,7 @@ public class Player : MonoBehaviour
 
         velocity.x = Mathf.SmoothDamp(velocity.x, targetVelocityX, ref velocityXSmoothing, (controller.collisions.below) ? accelerationTimeGrounded : accelerationTimeAirborne);
         velocity.y += gravity * Time.deltaTime;
+        velocity.y = Mathf.Max(velocity.y, maxFallSpeed);
     }
 
     void HandleSprinting()
