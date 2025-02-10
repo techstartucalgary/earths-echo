@@ -8,6 +8,8 @@ public abstract class Weapon : MonoBehaviour
     [TextArea]
     public string description;
 
+    FindGrandchildren finder;
+
     // Abstract attack methods that subclasses must implement
     public abstract void PrimaryAttack();
     public abstract void SideAttack();
@@ -19,14 +21,18 @@ public abstract class Weapon : MonoBehaviour
     {
         // Find the appropriate attachment point
         Transform attachmentPoint = null;
+        finder = new FindGrandchildren();
 
         if (this is MeleeWeapon)
         {
-            attachmentPoint = playerTransform.Find("MeleeWeaponAttachment");
+            // Debug.Log($"Finder result: " + finder.FindDeepChild(playerTransform, "MeleeWeaponAttachment").name);
+            attachmentPoint = finder.FindDeepChild(playerTransform, "MeleeWeaponAttachment");
         }
         else if (this is ProjectileWeapon)
         {
-            attachmentPoint = playerTransform.Find("ProjectileWeaponAttachment");
+
+            // Debug.Log($"Finder result: " + finder.FindDeepChild(playerTransform, "ProjectileWeaponAttachment").name);
+            attachmentPoint = finder.FindDeepChild(playerTransform, "ProjectileWeaponAttachment");
         }
 
         if (attachmentPoint == null)
