@@ -303,12 +303,14 @@ public class GameManager : MonoBehaviour
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         // Re-spawn the Player once the scene reloads
-        ChangeState(GameState.Playing);
+
+        ChangeState(GameState.Respawn);
     }
 
     public void QuitToMainMenu()
     {
         gameOverMenu.SetActive(false);
+
         ChangeState(GameState.MainMenu);
     }
 
