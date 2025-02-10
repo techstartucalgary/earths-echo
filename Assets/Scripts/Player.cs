@@ -165,8 +165,12 @@ public class Player : MonoBehaviour
     {
         if (collision.tag == "spike")
         {
-            healthBar.Damage(0.002f);
+            healthBar.Damage(0.05f);
         }
+        if (collision.tag == "water"){
+			healthBar.Damage(0.05f);
+		}
+        
     }
 
     private void OnTriggerExit2D(Collider2D collision)
