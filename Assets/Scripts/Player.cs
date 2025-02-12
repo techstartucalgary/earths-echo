@@ -126,15 +126,19 @@ public class Player : MonoBehaviour
         HandleSliding();
 
         // Animation stuff
-		animator.SetBool("isJumping", !controller.collisions.below);
-		animator.SetFloat("xVelocity", Math.Abs(velocity.x));
-		animator.SetFloat("yVelocity", velocity.y);
-		if (velocity.x >= 0.01f) {
-            animatorTransform.localScale = new Vector3(animatorXScale, animatorTransform.localScale[1], animatorTransform.localScale[2]);
-        }
-        else if (velocity.x <= -0.01f) {
-            animatorTransform.localScale = new Vector3(-animatorXScale, animatorTransform.localScale[1], animatorTransform.localScale[2]);
-        }
+        if (animator != null){
+			
+			animator.SetBool("isJumping", !controller.collisions.below);
+			animator.SetFloat("xVelocity", Math.Abs(velocity.x));
+			animator.SetFloat("yVelocity", velocity.y);
+		
+			if (velocity.x >= 0.01f) {
+				animatorTransform.localScale = new Vector3(animatorXScale, animatorTransform.localScale[1], animatorTransform.localScale[2]);
+			}
+			else if (velocity.x <= -0.01f) {
+				animatorTransform.localScale = new Vector3(-animatorXScale, animatorTransform.localScale[1], animatorTransform.localScale[2]);
+			}
+		}
     }
 	private void OnTriggerEnter2D(Collider2D collision)
     {

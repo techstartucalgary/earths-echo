@@ -7,10 +7,11 @@ public class InventoryHandler : MonoBehaviour
     private List<GameObject> items = new List<GameObject>();
     [SerializeField] InventoryMenu inventoryMenu;
 
-    void Start()
+	private void Awake()
     {
         // inventoryMenu = FindObjectOfType<InventoryMenu>();
     }
+
 
     public void AddItem(GameObject item)
 	{
