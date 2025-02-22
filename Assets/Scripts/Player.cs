@@ -2,6 +2,7 @@
 using System.Collections;
 using System;
 using UnityEngine.SceneManagement;
+using Unity.VisualScripting;
 
 [RequireComponent(typeof(Controller2D))]
 [RequireComponent(typeof(BoxCollider2D))]
@@ -70,6 +71,20 @@ public class Player : MonoBehaviour
     public float dismountTime = 1.5f;
     public float timeToReclimb = 0f;
 
+    //Attack stuff
+    [Header("Melee Attack Settings")]
+
+    public float attackDamage = 1f;
+    public float attackCooldown = 0f;
+    public float attackRange = 0.5f;
+
+    public float lastMeleeAttackTime = 0f;
+    private Transform UpwardsHitpoint;
+    private Transform DownwardHitpoint;
+    private Transform SideHitpoint;
+    public LayerMask enemyLayer;
+    FindGrandchildren finder;
+
     void Start()
     {
         controller = GetComponent<Controller2D>();
@@ -82,6 +97,11 @@ public class Player : MonoBehaviour
         originalScale = transform.localScale; // Save original size for scaling during slide
 
         animatorXScale = animatorTransform.localScale[0];
+        finder = new FindGrandchildren();
+        UpwardsHitpoint = finder.FindDeepChild(transform, "UpwardHitpoint");
+        DownwardHitpoint = finder.FindDeepChild(transform, "DownwardHitpoint");
+        SideHitpoint = finder.FindDeepChild(transform, "SideHitpoint");
+
     }
 
     void Update()
@@ -404,6 +424,53 @@ public class Player : MonoBehaviour
         controller.UpdateRaycastOrigins();
     }
 
+    public void PerformSideAttack(float attackDamage, float attackRange)
+    {
+        if (Time.time < lastMeleeAttackTime + attackCooldown) return;
+        lastMeleeAttackTime = Time.time;
+        ApplyHitbox(SideHitpoint, attackDamage, attackRange);
+    }
+    public void PerformUpAttack(float attackDamage, float attackRange)
+    {
+        if (Time.time < lastMeleeAttackTime + attackCooldown) return;
+        lastMeleeAttackTime = Time.time;
+        ApplyHitbox(UpwardsHitpoint, attackDamage, attackRange);
+
+    }
+    public void PerformDownAttack(float attackDamage, float attackRange)
+    {
+        if (Time.time < lastMeleeAttackTime + attackCooldown) return;
+        lastMeleeAttackTime = Time.time;
+        ApplyHitbox(DownwardHitpoint, attackDamage, attackRange);
+
+    }
+    private void ApplyHitbox(Transform attackDirection, float attackDamage, float attackRange)
+    {
+        if (attackDirection == null) return;
+
+        // Detect all enemies in the attack range
+        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(new Vector2(attackDirection.position.x,attackDirection.position.y), attackRange, enemyLayer);
+
+        foreach (var enemy in hitEnemies)
+        {
+            ApplyDamage(enemy, attackDamage);
+        }
+    }
+    
+    private void ApplyDamage(Collider2D enemy, float attackDamage)
+    {
+        // Apply damage if the enemy implements IDamageable
+        IDamageable iDamageable = enemy.GetComponent<IDamageable>();
+        if (iDamageable != null)
+        {
+            iDamageable.Damage(attackDamage);
+            Debug.Log($"Dealt {attackDamage} damage to {enemy.name}");
+        }
+        else
+        {
+            Debug.Log($"{enemy.name} does not implement IDamageable.");
+        }
+    }
     void HandleSliding()
     {
         if (isSliding)
