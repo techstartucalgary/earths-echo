@@ -39,6 +39,23 @@ public class PlayerInput : MonoBehaviour {
         {
             player.StopSlide();
         }
+        
+        // Attacks
+        if (Input.GetMouseButtonDown(0)) {
+            if (Input.GetKey(KeyCode.W)) {
+                Debug.Log("Up Attack Triggered");
+                player.PerformUpAttack(5, 0.5f);
+            }
+            else if (Input.GetKey(KeyCode.S)) {
+                Debug.Log("Down Attack Triggered");
+                player.PerformDownAttack(5, 0.5f);
+            }
+            else {
+                Debug.Log("Side Attack Triggered");
+                player.PerformSideAttack(5, 0.5f);
+            }
+        }
+
 
 		player.playerSpeed = player.velocity.x; // So we can see the current speed
     }

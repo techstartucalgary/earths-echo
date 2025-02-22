@@ -3,6 +3,7 @@ using System.Collections;
 using System;
 using UnityEngine.SceneManagement;
 using Unity.VisualScripting;
+using UnityEditor;
 
 [RequireComponent(typeof(Controller2D))]
 [RequireComponent(typeof(BoxCollider2D))]
@@ -82,6 +83,8 @@ public class Player : MonoBehaviour
     private Transform UpwardsHitpoint;
     private Transform DownwardHitpoint;
     private Transform SideHitpoint;
+
+    private float SideHitpointLocalX;
     public LayerMask enemyLayer;
     FindGrandchildren finder;
 
@@ -97,10 +100,15 @@ public class Player : MonoBehaviour
         originalScale = transform.localScale; // Save original size for scaling during slide
 
         animatorXScale = animatorTransform.localScale[0];
+
         finder = new FindGrandchildren();
+
         UpwardsHitpoint = finder.FindDeepChild(transform, "UpwardHitpoint");
         DownwardHitpoint = finder.FindDeepChild(transform, "DownwardHitpoint");
         SideHitpoint = finder.FindDeepChild(transform, "SideHitpoint");
+        SideHitpointLocalX = SideHitpoint.localPosition.x;
+        
+
 
     }
 
@@ -145,7 +153,7 @@ public class Player : MonoBehaviour
         HandleSprinting();
         HandleSliding();
 
-        // Animation stuff
+        // y axis flip stuff
         if (animator != null){
 			
 			animator.SetBool("isJumping", !controller.collisions.below);
@@ -154,11 +162,14 @@ public class Player : MonoBehaviour
 		
 			if (velocity.x >= 0.01f) {
 				animatorTransform.localScale = new Vector3(animatorXScale, animatorTransform.localScale[1], animatorTransform.localScale[2]);
+                SideHitpoint.localPosition = new Vector3(SideHitpointLocalX, SideHitpoint.localPosition.y, SideHitpoint.localPosition.z);
 			}
 			else if (velocity.x <= -0.01f) {
 				animatorTransform.localScale = new Vector3(-animatorXScale, animatorTransform.localScale[1], animatorTransform.localScale[2]);
+                SideHitpoint.localPosition = new Vector3(-SideHitpointLocalX, SideHitpoint.localPosition.y, SideHitpoint.localPosition.z);
 			}
 		}
+
     }
 	private void OnTriggerEnter2D(Collider2D collision)
     {
@@ -497,6 +508,52 @@ public class Player : MonoBehaviour
             StopSlide();
         }
     }
+    #if UNITY_EDITOR
+    private void OnDrawGizmosSelected()
+    {
+        // Determine the range to use (for example, you might want to use a weapon's range if available)
+        float range = attackRange;
+
+        // Draw and check the Side attack hitbox
+        if (SideHitpoint != null)
+        {
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireSphere(SideHitpoint.position, range);
+            Collider2D[] sideHits = Physics2D.OverlapCircleAll(SideHitpoint.position, range, enemyLayer);
+            foreach (Collider2D hit in sideHits)
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawCube(hit.bounds.center, hit.bounds.size);
+            }
+        }
+
+        // Draw and check the Upwards attack hitbox
+        if (UpwardsHitpoint != null)
+        {
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireSphere(UpwardsHitpoint.position, range);
+            Collider2D[] upHits = Physics2D.OverlapCircleAll(UpwardsHitpoint.position, range, enemyLayer);
+            foreach (Collider2D hit in upHits)
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawCube(hit.bounds.center, hit.bounds.size);
+            }
+        }
+
+        // Draw and check the Downward attack hitbox
+        if (DownwardHitpoint != null)
+        {
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireSphere(DownwardHitpoint.position, range);
+            Collider2D[] downHits = Physics2D.OverlapCircleAll(DownwardHitpoint.position, range, enemyLayer);
+            foreach (Collider2D hit in downHits)
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawCube(hit.bounds.center, hit.bounds.size);
+            }
+        }
+    }
+#endif
 
 }
 

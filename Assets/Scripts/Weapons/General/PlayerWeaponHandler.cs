@@ -151,52 +151,52 @@ public class PlayerWeaponHandler : MonoBehaviour
 
     private void AttackByType()
     {
-        switch (activeWeaponType)
-        {
-            case WeaponType.Melee:
-                if (Input.GetMouseButtonDown(1) && MeleeWeapon != null)
-                {
-                    //MeleeWeapon.PrimaryAttack();
-                }
-                if (Input.GetMouseButtonDown(0) && MeleeWeapon != null && !Input.GetKey(KeyCode.W) && !Input.GetKey(KeyCode.S))
-                {
-                    MeleeWeapon.SideAttack();
-                }
-                if (Input.GetKey(KeyCode.S) && Input.GetMouseButtonDown(0) && MeleeWeapon != null)
-                {
-                    MeleeWeapon.DownAttack();
-                }
-                if (Input.GetKey(KeyCode.W) && Input.GetMouseButtonDown(0) && MeleeWeapon != null)
-                {
-                    MeleeWeapon.UpAttack();
-                }
-                break;
+        // switch (activeWeaponType)
+        // {
+        //     case WeaponType.Melee:
+        //         if (Input.GetMouseButtonDown(1) && MeleeWeapon != null)
+        //         {
+        //             //MeleeWeapon.PrimaryAttack();
+        //         }
+        //         if (Input.GetMouseButtonDown(0) && MeleeWeapon != null && !Input.GetKey(KeyCode.W) && !Input.GetKey(KeyCode.S))
+        //         {
+        //             MeleeWeapon.SideAttack();
+        //         }
+        //         if (Input.GetKey(KeyCode.S) && Input.GetMouseButtonDown(0) && MeleeWeapon != null)
+        //         {
+        //             MeleeWeapon.DownAttack();
+        //         }
+        //         if (Input.GetKey(KeyCode.W) && Input.GetMouseButtonDown(0) && MeleeWeapon != null)
+        //         {
+        //             MeleeWeapon.UpAttack();
+        //         }
+        //         break;
 
-            case WeaponType.Projectile:
-                if (ProjectileWeapon != null)
-                {
-                    if (Input.GetMouseButtonDown(0))
-                    {
-                        ProjectileWeapon.PrimaryAttack();
-                    }
-                    else if (Input.GetMouseButtonUp(0))
-                    {
-                        ProjectileWeapon.ReleasePullback();
-                    }
-                    if (Input.GetMouseButtonDown(1))
-                    {
-                        ProjectileWeapon.SideAttack();
-                    }
-                    else if (Input.GetMouseButtonUp(1))
-                    {
-                        ProjectileWeapon.ReleasePullback();
-                    }
-                }
-                break;
+        //     case WeaponType.Projectile:
+        //         if (ProjectileWeapon != null)
+        //         {
+        //             if (Input.GetMouseButtonDown(0))
+        //             {
+        //                 ProjectileWeapon.PrimaryAttack();
+        //             }
+        //             else if (Input.GetMouseButtonUp(0))
+        //             {
+        //                 ProjectileWeapon.ReleasePullback();
+        //             }
+        //             if (Input.GetMouseButtonDown(1))
+        //             {
+        //                 ProjectileWeapon.SideAttack();
+        //             }
+        //             else if (Input.GetMouseButtonUp(1))
+        //             {
+        //                 ProjectileWeapon.ReleasePullback();
+        //             }
+        //         }
+        //         break;
 
-            case WeaponType.None:
-                // No weapon equipped, no attack possible
-                break;
-        }
+        //     case WeaponType.None:
+        //         // No weapon equipped, no attack possible
+        //         break;
+        // }
     }
 }
