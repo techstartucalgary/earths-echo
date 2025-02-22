@@ -80,6 +80,10 @@ public class InventoryMenu : MonoBehaviour
     public void ToggleInventory()
     {
         inventoryUI.SetActive(!inventoryUI.activeSelf);
+
+       
+
     }
+
 }
 

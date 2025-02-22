@@ -13,6 +13,9 @@ public enum GameState
     LevelComplete,
     Cutscene,
     Settings,
+    AudioSetting,
+    GraphicSetting,
+    ControlSetting,
     Inventory,
     Minimap
 }
@@ -22,15 +25,25 @@ public class GameManager : MonoBehaviour
     public static GameManager instance;
 
     private GameState currentState;
+    // New field to store the previous state before entering Settings
+    private GameState previousState;
 
     [Header("UI References")]
     public GameObject pauseMenu;
     public GameObject gameOverMenu;
     public GameObject mainMenu;
     public GameObject levelCompleteMenu;
-    public GameObject settingsMenu;
     public GameObject inventoryMenu;
     public GameObject miniMap;
+
+    [Header("Settings UI References")]
+    public GameObject settingsMenu;
+    public GameObject audioSettingMenu;
+    public GameObject graphicSettingMenu;
+    public GameObject controlSettingMenu;
+
+
+
 
     [Header("Spawn Points")]
     public Transform defaultSpawnPoint;
@@ -71,6 +84,34 @@ public class GameManager : MonoBehaviour
             {
                 ResumeGame();
             }
+            else if (currentState == GameState.Settings ||
+                    currentState == GameState.GraphicSetting ||
+                     currentState == GameState.ControlSetting ||
+                     currentState == GameState.AudioSetting ||
+                    currentState == GameState.Inventory)
+            {
+                if(currentState == GameState.Settings)
+                {
+                    CloseSettings();
+                }
+                if (currentState == GameState.AudioSetting)
+                {
+                    CloseAudio();
+                }
+                if (currentState == GameState.ControlSetting)
+                {
+                    CloseControls();
+                }
+                if (currentState == GameState.GraphicSetting)
+                {
+                    CloseGraphics();
+                } 
+                if(currentState == GameState.Inventory)
+                {
+                    CloseInventory();
+                }
+            }
+
         }
 
         if (Input.GetKeyDown(KeyCode.G))
@@ -106,6 +147,10 @@ public class GameManager : MonoBehaviour
         mainMenu.SetActive(false);
         inventoryMenu.SetActive(false);
         miniMap.SetActive(false);
+        settingsMenu.SetActive(false); // Also disable settings UI by default
+        audioSettingMenu.SetActive(false);
+        controlSettingMenu.SetActive(false);
+        graphicSettingMenu.SetActive(false);    
 
         switch (currentState)
         {
@@ -118,6 +163,7 @@ public class GameManager : MonoBehaviour
             case GameState.Playing:
                 Time.timeScale = 1f;
                 AudioManager.instance.PlayMusic(AudioManager.instance.gameplayMusic);
+                //UnityEngine.Cursor.visible=false;   //cursor needs to be disabled during gameplay, but currently if G is pressing while playing, the cursor does not appear but it appears when accessed through pause menu
                 break;
 
             case GameState.Paused:
@@ -167,6 +213,18 @@ public class GameManager : MonoBehaviour
 
             case GameState.Minimap:
                 miniMap.SetActive(true);
+                Time.timeScale = 0f;
+                break;
+            case GameState.AudioSetting:
+                audioSettingMenu.SetActive(true);
+                Time.timeScale = 0f;
+                break;
+            case GameState.ControlSetting:
+                controlSettingMenu.SetActive(true);
+                Time.timeScale = 0f;
+                break;
+            case GameState.GraphicSetting:
+                graphicSettingMenu.SetActive(true);
                 Time.timeScale = 0f;
                 break;
         }
@@ -270,24 +328,52 @@ public class GameManager : MonoBehaviour
         ChangeState(GameState.Playing);
     }
 
+    // Modified Settings functions:
     public void OpenSettings()
     {
+        // Only store the previous state if we are not already in Settings.
+        if (currentState != GameState.Settings)
+        {
+            previousState = currentState;
+        }
         ChangeState(GameState.Settings);
     }
 
+
     public void CloseSettings()
     {
-        ChangeState(GameState.MainMenu);
+        // If the previous state was MainMenu, return to the MainMenu state.
+        // Otherwise, restore the previous state.
+        if (previousState == GameState.MainMenu)
+        {
+            ChangeState(GameState.MainMenu);
+        }
+        else
+        {
+            ChangeState(previousState);
+        }
     }
+
 
     public void OpenInventory()
     {
+        if (currentState != GameState.Inventory)
+        {
+            previousState = currentState;
+        }
         ChangeState(GameState.Inventory);
     }
 
     public void CloseInventory()
     {
-        ChangeState(GameState.Playing);
+        if (previousState == GameState.Paused)
+        {
+            ChangeState(GameState.Paused);
+        }
+        else
+        {
+            ChangeState(previousState);
+        }
     }
 
     public void OpenMap()
@@ -298,19 +384,41 @@ public class GameManager : MonoBehaviour
     {
         ChangeState(GameState.Playing);
     }
+    public void OpenAudio()
+    {
+        ChangeState(GameState.AudioSetting);
+    }
+    public void CloseAudio()
+    {
+        ChangeState(GameState.Settings);
+    }
+    public void OpenGraphics()
+    {
+        ChangeState(GameState.GraphicSetting);
+    }
+    public void CloseGraphics()
+    {
+        ChangeState(GameState.Settings);
+    }
+    public void OpenControls()
+    {
+        ChangeState(GameState.ControlSetting);
+    }
+    public void CloseControls()
+    {
+        ChangeState(GameState.Settings);
+    }
 
     public void RestartGame()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         // Re-spawn the Player once the scene reloads
-
         ChangeState(GameState.Respawn);
     }
 
     public void QuitToMainMenu()
     {
         gameOverMenu.SetActive(false);
-
         ChangeState(GameState.MainMenu);
     }
 
