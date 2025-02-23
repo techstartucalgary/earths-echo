@@ -1,11 +1,13 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Unity.Services.Analytics;
 
 [RequireComponent (typeof (Player))]
 public class PlayerInput : MonoBehaviour {
 
 	Player player;
-
+    [SerializeField] private InventoryHandler inventoryHandler;
+    private ItemGameObject currentItemInRange;
 	void Start () {
 		player = GetComponent<Player> ();
 	}
@@ -39,7 +41,16 @@ public class PlayerInput : MonoBehaviour {
         {
             player.StopSlide();
         }
-        
+
+        if (currentItemInRange != null && Input.GetKeyDown(KeyCode.E))
+        {
+            Debug.Log("Picked up item: " + currentItemInRange.item.itemName);
+            // Add the item to the inventory.
+            inventoryHandler.AddItem(currentItemInRange.item);
+            // Remove the item from the world.
+            Destroy(currentItemInRange.gameObject);
+            currentItemInRange = null;
+        }
         // Attacks
         if (Input.GetMouseButtonDown(0)) {
             if (Input.GetKey(KeyCode.W)) {
@@ -55,8 +66,37 @@ public class PlayerInput : MonoBehaviour {
                 player.PerformSideAttack(5, 0.5f);
             }
         }
+        // Item usage (to be changed later this is for testing)
+        if(inventoryHandler != null && inventoryHandler.currentItemSO != null && inventoryHandler.IsItemEquipped && Input.GetKeyDown(KeyCode.T))
+        {
+            inventoryHandler.UseItem(inventoryHandler.currentItemSO);
+        }
+
+
+        
 
 
 		player.playerSpeed = player.velocity.x; // So we can see the current speed
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        // Check if the collided object has an ItemGameObject component.
+        ItemGameObject itemGO = collision.GetComponent<ItemGameObject>();
+        if (itemGO != null && itemGO.item != null)
+        {
+            // Store the reference so that the player can pick it up by pressing E.
+            currentItemInRange = itemGO;
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        // If the item leaves the trigger area, clear the reference.
+        ItemGameObject itemGO = collision.GetComponent<ItemGameObject>();
+        if (itemGO != null && currentItemInRange == itemGO)
+        {
+            currentItemInRange = null;
+        }
     }
 }
