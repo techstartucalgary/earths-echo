@@ -72,10 +72,6 @@ public class PlayerInput : MonoBehaviour {
             inventoryHandler.UseItem(inventoryHandler.currentItemSO);
         }
 
-
-        
-
-
 		player.playerSpeed = player.velocity.x; // So we can see the current speed
     }
 
