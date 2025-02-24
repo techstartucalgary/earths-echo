@@ -94,47 +94,50 @@ public class InventoryHandler : MonoBehaviour
     /// </summary>
    public void UseItem(ItemSO item)
 	{
-		if (item == null || !inventory.ContainsKey(item))
+		if (item == null || !inventory.ContainsKey(item) || !item.usable)
 			return;
+        if(item.stackable){
+            // Decrement the count.
+            inventory[item]--;
+            Debug.Log($"Used one {item.itemName}. New count: {inventory[item]}");
 
-		// Decrement the count.
-		inventory[item]--;
-		Debug.Log($"Used one {item.itemName}. New count: {inventory[item]}");
+            // If count is zero or less, remove the item.
+            if (inventory[item] <= 0)
+            {
+                inventory.Remove(item);
+                Debug.Log($"{item.itemName} removed from inventory.");
 
-		// If count is zero or less, remove the item.
-		if (inventory[item] <= 0)
-		{
-			inventory.Remove(item);
-			Debug.Log($"{item.itemName} removed from inventory.");
-
-			// Clear selection only on the slot(s) that display this item.
-			foreach (var slot in inventoryMenu.itemSlots)
-			{
-				if (slot.itemSO == currentItemSO)
-				{
-					slot.ClearSelectedIcon();
-				}
-			}
-			// If the removed item is currently equipped, unequip it.
-			if (currentMeleeWeaponSO == item)
-			{
-				UnequipCurrentItem();
-				currentMeleeWeaponSO = null;
-			}
-			if (currentProjectileWeaponSO == item) 
-			{
-				UnequipCurrentItem();
-				currentProjectileWeaponSO = null;
-			}
-			if (currentItemSO == item)
-			{
-				UnequipCurrentItem();
-				currentItemSO = null;
-			}
-
+                // Clear selection only on the slot(s) that display this item.
+                foreach (var slot in inventoryMenu.itemSlots)
+                {
+                    if (slot.itemSO == currentItemSO)
+                    {
+                        slot.ClearSelectedIcon();
+                    }
+                }
+                // If the removed item is currently equipped, unequip it.
+                if (currentMeleeWeaponSO == item)
+                {
+                    UnequipCurrentItem();
+                    currentMeleeWeaponSO = null;
+                }
+                if (currentProjectileWeaponSO == item) 
+                {
+                    UnequipCurrentItem();
+                    currentProjectileWeaponSO = null;
+                }
+                if (currentItemSO == item)
+                {
+                    UnequipCurrentItem();
+                    currentItemSO = null;
+                }
+            }
 
 
 		}
+        else{
+            Debug.Log($"Used {item.itemName} (non-stackable)");
+        }
 		// Only clear selection for the removed item; other slots remain as-is.
 		UpdateUI();
 	}

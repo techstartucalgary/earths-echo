@@ -16,6 +16,9 @@ public abstract class ItemSO : ScriptableObject
     [Header("Stacking Settings")]
     [Tooltip("Can this item be stacked?")]
     public bool stackable = true;
+
+    // bool for if the player can use the item using 'T'. Ex: grappling hook
+    public bool usable = true;
     
     [Tooltip("Maximum number of items allowed in a stack.")]
     public int maxStack = 99;

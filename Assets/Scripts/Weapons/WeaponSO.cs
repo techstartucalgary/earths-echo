@@ -19,6 +19,7 @@ public abstract class WeaponSO : ItemSO
     {
         // Weapons should not be stackable.
         stackable = false;
+        usable = false;
         maxStack = 1;
     }
 }
