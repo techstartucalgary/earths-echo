@@ -7,6 +7,4 @@ public class MeleeWeaponSO : WeaponSO
     [Tooltip("The cooldown time between swings for this melee weapon.")]
     public float swingSpeed = 0.5f;
     
-    [Tooltip("The amount of damage dealt by this melee weapon.")]
-    public float damage = 5f;
 }

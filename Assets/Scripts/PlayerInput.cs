@@ -55,15 +55,15 @@ public class PlayerInput : MonoBehaviour {
         if (Input.GetMouseButtonDown(0)) {
             if (Input.GetKey(KeyCode.W)) {
                 Debug.Log("Up Attack Triggered");
-                player.PerformUpAttack(5, 0.5f);
+                player.PerformUpAttack(player.attackDamage,player.attackRange);
             }
             else if (Input.GetKey(KeyCode.S)) {
                 Debug.Log("Down Attack Triggered");
-                player.PerformDownAttack(5, 0.5f);
+                player.PerformDownAttack(player.attackDamage,player.attackRange);
             }
             else {
                 Debug.Log("Side Attack Triggered");
-                player.PerformSideAttack(5, 0.5f);
+                player.PerformSideAttack(player.attackDamage,player.attackRange);
             }
         }
         // Item usage (to be changed later this is for testing)

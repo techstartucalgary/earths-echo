@@ -13,6 +13,7 @@ public abstract class WeaponSO : ItemSO
     [Tooltip("The range of the weapon's attack.")]
     public float range = 0.5f;
 
+	public float damage = 5f;
 
 
     private void OnValidate()

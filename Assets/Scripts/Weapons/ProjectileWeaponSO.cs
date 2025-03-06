@@ -11,6 +11,4 @@ public class ProjectileWeaponSO : WeaponSO
     [Tooltip("The speed at which the projectile moves.")]
     public float projectileSpeed = 10f;
     
-    [Tooltip("The amount of damage dealt by this projectile weapon.")]
-    public float damage = 3f;
 }

@@ -8,7 +8,7 @@ public class InventoryHandler : MonoBehaviour
     private Dictionary<ItemSO, int> inventory = new Dictionary<ItemSO, int>();
 
     [SerializeField] private InventoryMenu inventoryMenu;
-
+	private Player player;
     // Holder transforms for each equipped type.
     [SerializeField] private Transform meleeHolder;
     [SerializeField] private Transform projectileHolder;
@@ -23,6 +23,9 @@ public class InventoryHandler : MonoBehaviour
 	public bool IsItemEquipped {
     get { return activeState == EquippedState.Item; }
 }
+	private float defaultAttackDamage;
+	private float defaultAttackCooldown;
+	private float defaultAttackRange;
 
     private EquippedState activeState = EquippedState.None;
 
@@ -35,11 +38,18 @@ public class InventoryHandler : MonoBehaviour
     {
         // Optionally assign inventoryMenu if not set in the Inspector.
         // inventoryMenu = FindObjectOfType<InventoryMenu>();
+        
+        player = FindObjectOfType<Player>();
+        defaultAttackDamage = player.attackDamage;
+		defaultAttackCooldown = player.attackCooldown;
+		defaultAttackRange = player.attackRange;
+        
     }
 
     private void Update()
     {
         HandleEquippedSwitching();
+        HandlePlayerAttackStats();
     }
 
     #region Inventory Management
@@ -369,6 +379,25 @@ public class InventoryHandler : MonoBehaviour
         ItemGameObject itemGO = currentEquippedInstance.AddComponent<ItemGameObject>();
         itemGO.item = holdableItem;
     }
+	private void HandlePlayerAttackStats()
+	{
+		// Only update player's melee attack stats if a melee weapon is currently active.
+		if (activeState == EquippedState.Melee && currentMeleeWeaponSO != null)
+		{
+			// Assuming the WeaponSO has these properties.
+			player.attackDamage = currentMeleeWeaponSO.damage;
+			player.attackCooldown = currentMeleeWeaponSO.cooldownTime;
+			player.attackRange = currentMeleeWeaponSO.range;
+		}
+		else
+		{
+			// Revert to the player's default stats when no melee weapon is equipped.
+			player.attackDamage = defaultAttackDamage;
+			player.attackCooldown = defaultAttackCooldown;
+			player.attackRange = defaultAttackRange;
+		}
+	}
+
 
     #endregion
 }
