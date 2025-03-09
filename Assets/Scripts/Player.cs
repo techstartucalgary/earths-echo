@@ -78,6 +78,7 @@ public class Player : MonoBehaviour
 	public float attackDamage = 1f;
 	public float attackCooldown = 0f;
 	public float attackRange = 0.5f;
+	public string attackAnimPrefix = "";
 
 	public float lastMeleeAttackTime = 0f;
 	private Transform UpwardsHitpoint;
@@ -444,21 +445,30 @@ public class Player : MonoBehaviour
 		if (Time.time < lastMeleeAttackTime + attackCooldown) return;
 		lastMeleeAttackTime = Time.time;
 		ApplyHitbox(SideHitpoint, attackDamage, attackRange);
-		animator.Play("player_attack");
+		if (!controller.collisions.below) {
+			animator.Play(attackAnimPrefix + "player_forward_air");
+		}
+		animator.Play(attackAnimPrefix + "player_attack");
 	}
 	public void PerformUpAttack(float attackDamage, float attackRange)
 	{
 		if (Time.time < lastMeleeAttackTime + attackCooldown) return;
 		lastMeleeAttackTime = Time.time;
 		ApplyHitbox(UpwardsHitpoint, attackDamage, attackRange);
-		animator.Play("player_up_attack");
+		if (!controller.collisions.below) {
+			animator.Play(attackAnimPrefix + "player_up_air");
+		}
+		animator.Play(attackAnimPrefix + "player_up_attack");
 	}
 	public void PerformDownAttack(float attackDamage, float attackRange)
 	{
 		if (Time.time < lastMeleeAttackTime + attackCooldown) return;
 		lastMeleeAttackTime = Time.time;
 		ApplyHitbox(DownwardHitpoint, attackDamage, attackRange);
-		animator.Play("player_down_attack");
+		if (!controller.collisions.below) {
+			animator.Play(attackAnimPrefix + "player_down_air");
+		}
+		animator.Play(attackAnimPrefix + "player_down_attack");
 	}
 	private void ApplyHitbox(Transform attackDirection, float attackDamage, float attackRange)
 	{

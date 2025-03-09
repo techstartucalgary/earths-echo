@@ -41,6 +41,7 @@ public class InventoryHandler : MonoBehaviour
 	private float defaultAttackDamage;
 	private float defaultAttackCooldown;
 	private float defaultAttackRange;
+	private string defaultAnimPrefix;
 
     private EquippedState activeState = EquippedState.None;
 
@@ -58,6 +59,7 @@ public class InventoryHandler : MonoBehaviour
         defaultAttackDamage = player.attackDamage;
 		defaultAttackCooldown = player.attackCooldown;
 		defaultAttackRange = player.attackRange;
+		defaultAnimPrefix = player.attackAnimPrefix;
         
     }
 
@@ -462,13 +464,15 @@ public class InventoryHandler : MonoBehaviour
 			player.attackDamage = currentMeleeWeaponSO.damage;
 			player.attackCooldown = currentMeleeWeaponSO.cooldownTime;
 			player.attackRange = currentMeleeWeaponSO.range;
-		}
+			player.attackAnimPrefix = currentMeleeWeaponSO.animPrefix;
+ 		}
 		else
 		{
 			// Revert to the player's default stats when no melee weapon is equipped.
 			player.attackDamage = defaultAttackDamage;
 			player.attackCooldown = defaultAttackCooldown;
 			player.attackRange = defaultAttackRange;
+			player.attackAnimPrefix = defaultAnimPrefix;
 		}
 	}
 
