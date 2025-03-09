@@ -22,7 +22,22 @@ public class InventoryHandler : MonoBehaviour
 
 	public bool IsItemEquipped {
     get { return activeState == EquippedState.Item; }
-}
+	}
+
+	public bool IsProjectileWeaponEquipped {
+		get { return activeState == EquippedState.Projectile; }
+	}
+	public GameObject EquippedInstance 
+	{ 
+		get { return currentEquippedInstance; } 
+	}
+
+	public WeaponSO CurrentProjectileWeaponSO 
+	{ 
+		get { return currentProjectileWeaponSO; } 
+	}
+
+
 	private float defaultAttackDamage;
 	private float defaultAttackCooldown;
 	private float defaultAttackRange;
@@ -379,6 +394,65 @@ public class InventoryHandler : MonoBehaviour
         ItemGameObject itemGO = currentEquippedInstance.AddComponent<ItemGameObject>();
         itemGO.item = holdableItem;
     }
+    
+    // Add this method to your InventoryHandler class
+	public void ShootProjectile(float pullbackPercentage)
+	{
+		// Ensure a projectile weapon is active and valid.
+		if (activeState != EquippedState.Projectile || currentProjectileWeaponSO == null)
+		{
+			Debug.LogWarning("No projectile weapon equipped.");
+			return;
+		}
+
+		// Attempt to cast the equipped weapon to a ProjectileWeaponSO.
+		ProjectileWeaponSO projWeapon = currentProjectileWeaponSO as ProjectileWeaponSO;
+		if (projWeapon == null)
+		{
+			Debug.LogWarning("Equipped weapon is not a projectile weapon.");
+			return;
+		}
+
+		// Use the current equipped instance's transform as the spawn point.
+		if (currentEquippedInstance == null)
+		{
+			Debug.LogError("No equipped instance found for the projectile weapon.");
+			return;
+		}
+		
+		Vector3 spawnPosition = currentEquippedInstance.transform.position;
+		Quaternion spawnRotation = currentEquippedInstance.transform.rotation;
+
+		// Instantiate the projectile prefab.
+		GameObject projectile = Instantiate(projWeapon.projectilePrefab, spawnPosition, spawnRotation);
+
+		// Configure the projectile's initial velocity using the pullback percentage.
+		ProjectileBehaviour pb = projectile.GetComponent<ProjectileBehaviour>();
+		if (pb != null)
+		{
+			Rigidbody2D rb = projectile.GetComponent<Rigidbody2D>();
+			if (rb != null)
+			{
+				// Scale projectile speed by the pullback percentage.
+				float finalSpeed = projWeapon.projectileSpeed * pullbackPercentage;
+				rb.velocity = spawnRotation * Vector2.right * finalSpeed;
+			}
+			
+			// If it's a physics projectile, adjust gravity and damage.
+			if (pb.projectileType == ProjectileBehaviour.ProjectileType.Physics)
+			{
+				// Example: reduce gravity scale based on pullback (max reduction of 50%).
+				float newGravityScale = pb.gravityScale * (1 - 0.5f * pullbackPercentage);
+				pb.AdjustGravityScale(newGravityScale);
+				
+				// Adjust damage using the pullback percentage (e.g. full pullback doubles the damage).
+				pb.AdjustDamageScale(pullbackPercentage);
+			}
+		}
+	}
+
+
+    
 	private void HandlePlayerAttackStats()
 	{
 		// Only update player's melee attack stats if a melee weapon is currently active.

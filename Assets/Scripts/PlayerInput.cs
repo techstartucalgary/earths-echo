@@ -2,93 +2,169 @@
 using System.Collections;
 using Unity.Services.Analytics;
 
-[RequireComponent (typeof (Player))]
+[RequireComponent(typeof(Player))]
 public class PlayerInput : MonoBehaviour {
 
-	Player player;
+    Player player;
     [SerializeField] private InventoryHandler inventoryHandler;
+    [SerializeField] private TrajectoryLine trajectoryLine;  // Reference to our TrajectoryLine component
     private ItemGameObject currentItemInRange;
-	void Start () {
-		player = GetComponent<Player> ();
-	}
 
-	void Update () {
+    // Variables for projectile charge
+    private float projectileChargeTime = 0f;
+    [SerializeField] private float maxChargeTime = 1.0f; // Maximum charge time equals 100%
+
+    void Start () {
+        player = GetComponent<Player>();
+    }
+
+    void Update () {
 
         if (DialogueManager.GetInstance() != null && DialogueManager.GetInstance().dialogueIsPlaying)
         {
             return;
         }
 
-        Vector2 directionalInput = new Vector2 (Input.GetAxisRaw ("Horizontal"), Input.GetAxisRaw ("Vertical"));
-		player.SetDirectionalInput (directionalInput);
+        Vector2 directionalInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        player.SetDirectionalInput(directionalInput);
 
-		if (Input.GetKeyDown (KeyCode.Space)) {
-			player.OnJumpInputDown ();
-		}
-		if (Input.GetKeyUp (KeyCode.Space)) {
-			player.OnJumpInputUp ();
-		}
+        if (Input.GetKeyDown(KeyCode.Space)) {
+            player.OnJumpInputDown();
+        }
+        if (Input.GetKeyUp(KeyCode.Space)) {
+            player.OnJumpInputUp();
+        }
 
         // Check for sprint input (Left Shift key)
         player.SetSprinting(Input.GetKey(KeyCode.LeftShift));
 
         // Sliding logic
-        if (Input.GetKeyDown(KeyCode.C) && player.isSprinting)
-        {
+        if (Input.GetKeyDown(KeyCode.C) && player.isSprinting) {
             player.StartSlide();
         }
-        if (Input.GetKeyUp(KeyCode.C))
-        {
+        if (Input.GetKeyUp(KeyCode.C)) {
             player.StopSlide();
         }
 
-        if (currentItemInRange != null && Input.GetKeyDown(KeyCode.E))
-        {
+        if (currentItemInRange != null && Input.GetKeyDown(KeyCode.E)) {
             Debug.Log("Picked up item: " + currentItemInRange.item.itemName);
-            // Add the item to the inventory.
             inventoryHandler.AddItem(currentItemInRange.item);
-            // Remove the item from the world.
             Destroy(currentItemInRange.gameObject);
             currentItemInRange = null;
         }
-        // Attacks
-        if (Input.GetMouseButtonDown(0)) {
-            if (Input.GetKey(KeyCode.W)) {
-                Debug.Log("Up Attack Triggered");
-                player.PerformUpAttack(player.attackDamage,player.attackRange);
+
+        // Process Attack Inputs
+        // When a projectile weapon is equipped, use a charge mechanic and update trajectory line.
+        if (inventoryHandler != null && inventoryHandler.IsProjectileWeaponEquipped)
+        {
+            // On fire button press, reset the charge timer.
+            if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
+            {
+                projectileChargeTime = 0f;
             }
-            else if (Input.GetKey(KeyCode.S)) {
-                Debug.Log("Down Attack Triggered");
-                player.PerformDownAttack(player.attackDamage,player.attackRange);
+            // While the fire button is held, accumulate charge time (clamped to maxChargeTime).
+            if (Input.GetMouseButton(0) || Input.GetMouseButton(1))
+            {
+                projectileChargeTime += Time.deltaTime;
+                projectileChargeTime = Mathf.Min(projectileChargeTime, maxChargeTime);
+                
+                // Calculate pullback percentage (0 to 1).
+                float pullbackPercentage = projectileChargeTime / maxChargeTime;
+                
+                // Retrieve the currently equipped projectile weapon data.
+                // (Assumes InventoryHandler exposes currentProjectileWeaponSO and currentEquippedInstance.)
+                if (inventoryHandler.EquippedInstance != null && inventoryHandler.CurrentProjectileWeaponSO != null)
+                {
+                    ProjectileWeaponSO projWeapon = inventoryHandler.CurrentProjectileWeaponSO as ProjectileWeaponSO;
+                    if (projWeapon != null)
+                    {
+                        // Calculate final speed based on pullback.
+                        float finalSpeed = projWeapon.projectileSpeed * pullbackPercentage;
+                        
+                        // Use the equipped instance's transform as spawn data.
+                        Vector3 spawnPosition = inventoryHandler.EquippedInstance.transform.position;
+                        Quaternion spawnRotation = inventoryHandler.EquippedInstance.transform.rotation;
+                        
+                        // Calculate initial velocity.
+                        Vector3 initialVelocity = spawnRotation * Vector2.right * finalSpeed;
+                        
+                        // Determine the effective gravity scale.
+                        // For physics projectiles, we reduce gravity based on pullback.
+                        ProjectileBehaviour prefabPb = projWeapon.projectilePrefab.GetComponent<ProjectileBehaviour>();
+                        float effectiveGravityScale = 0f;
+                        if (prefabPb != null && prefabPb.projectileType == ProjectileBehaviour.ProjectileType.Physics)
+                        {
+                            effectiveGravityScale = prefabPb.gravityScale * (1 - 0.5f * pullbackPercentage);
+                        }
+                        
+                        // Update the trajectory line so it follows the cursor direction.
+                        if (trajectoryLine != null)
+                        {
+                            trajectoryLine.RenderTrajectory(spawnPosition, initialVelocity, effectiveGravityScale);
+                        }
+                    }
+                }
             }
-            else {
-                Debug.Log("Side Attack Triggered");
-                player.PerformSideAttack(player.attackDamage,player.attackRange);
+            // On fire button release, fire the projectile and hide the trajectory line.
+            if (Input.GetMouseButtonUp(0) || Input.GetMouseButtonUp(1))
+            {
+                float pullbackPercentage = projectileChargeTime / maxChargeTime;
+                inventoryHandler.ShootProjectile(pullbackPercentage);
+                projectileChargeTime = 0f;
+                if (trajectoryLine != null)
+                {
+                    trajectoryLine.HideTrajectory();
+                }
             }
         }
-        // Item usage (to be changed later this is for testing)
+        else
+        {
+            // Process melee attacks if a projectile weapon is not equipped.
+            if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
+            {
+                if (Input.GetKey(KeyCode.W))
+                {
+                    Debug.Log("Up Attack Triggered");
+                    player.PerformUpAttack(player.attackDamage, player.attackRange);
+                }
+                else if (Input.GetKey(KeyCode.S))
+                {
+                    Debug.Log("Down Attack Triggered");
+                    player.PerformDownAttack(player.attackDamage, player.attackRange);
+                }
+                else
+                {
+                    Debug.Log("Side Attack Triggered");
+                    player.PerformSideAttack(player.attackDamage, player.attackRange);
+                }
+            }
+            // Ensure the trajectory line is hidden when not charging a shot.
+            if (trajectoryLine != null)
+            {
+                trajectoryLine.HideTrajectory();
+            }
+        }
+
+        // Item usage (for testing)
         if(inventoryHandler != null && inventoryHandler.currentItemSO != null && inventoryHandler.IsItemEquipped && Input.GetKeyDown(KeyCode.T))
         {
             inventoryHandler.UseItem(inventoryHandler.currentItemSO);
         }
 
-		player.playerSpeed = player.velocity.x; // So we can see the current speed
+        player.playerSpeed = player.velocity.x; // For debugging: displays current speed
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        // Check if the collided object has an ItemGameObject component.
         ItemGameObject itemGO = collision.GetComponent<ItemGameObject>();
         if (itemGO != null && itemGO.item != null)
         {
-            // Store the reference so that the player can pick it up by pressing E.
             currentItemInRange = itemGO;
         }
     }
 
     private void OnTriggerExit2D(Collider2D collision)
     {
-        // If the item leaves the trigger area, clear the reference.
         ItemGameObject itemGO = collision.GetComponent<ItemGameObject>();
         if (itemGO != null && currentItemInRange == itemGO)
         {
@@ -96,3 +172,6 @@ public class PlayerInput : MonoBehaviour {
         }
     }
 }
+
+
+
