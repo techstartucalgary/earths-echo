@@ -28,4 +28,5 @@ public abstract class ItemSO : ScriptableObject
     public AudioClip[] audioClips;
 
     public float itemScale = 1f;
+
 }

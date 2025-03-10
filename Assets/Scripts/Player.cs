@@ -448,7 +448,10 @@ public class Player : MonoBehaviour
 		if (!controller.collisions.below) {
 			animator.Play(attackAnimPrefix + "player_forward_air");
 		}
-		animator.Play(attackAnimPrefix + "player_attack");
+		else{
+			animator.Play(attackAnimPrefix + "player_attack");
+		}
+		
 	}
 	public void PerformUpAttack(float attackDamage, float attackRange)
 	{
@@ -458,7 +461,9 @@ public class Player : MonoBehaviour
 		if (!controller.collisions.below) {
 			animator.Play(attackAnimPrefix + "player_up_air");
 		}
-		animator.Play(attackAnimPrefix + "player_up_attack");
+		else{
+			animator.Play(attackAnimPrefix + "player_up_attack");
+		}
 	}
 	public void PerformDownAttack(float attackDamage, float attackRange)
 	{
@@ -468,7 +473,9 @@ public class Player : MonoBehaviour
 		if (!controller.collisions.below) {
 			animator.Play(attackAnimPrefix + "player_down_air");
 		}
-		animator.Play(attackAnimPrefix + "player_down_attack");
+		else{
+			animator.Play(attackAnimPrefix + "player_down_attack");	
+		}
 	}
 	private void ApplyHitbox(Transform attackDirection, float attackDamage, float attackRange)
 	{

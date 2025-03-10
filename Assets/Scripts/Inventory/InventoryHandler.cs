@@ -18,7 +18,7 @@ public class InventoryHandler : MonoBehaviour
     private GameObject currentEquippedInstance;
 
     // Equipped state enum.
-    private enum EquippedState { None, Melee, Projectile, Item }
+    private enum EquippedState { None, Melee, Projectile, Item, ThrowableItem }
 
 	public bool IsItemEquipped {
     get { return activeState == EquippedState.Item; }
@@ -27,6 +27,10 @@ public class InventoryHandler : MonoBehaviour
 	public bool IsProjectileWeaponEquipped {
 		get { return activeState == EquippedState.Projectile; }
 	}
+
+    public bool isThrowableObjectEquipped {
+        get {return activeState == EquippedState.ThrowableItem;}
+    }
 	public GameObject EquippedInstance 
 	{ 
 		get { return currentEquippedInstance; } 
@@ -119,22 +123,32 @@ public class InventoryHandler : MonoBehaviour
     /// When count reaches zero, the item is removed from the inventory,
     /// any equipped instance is unequipped, and the UI slot is cleared.
     /// </summary>
-   public void UseItem(ItemSO item)
-	{
-		if (item == null || !inventory.ContainsKey(item) || !item.usable)
-			return;
-        if(item.stackable){
-            // Decrement the count.
+    public void UseItem(ItemSO item)
+    {
+        // Early exit if item is invalid.
+        if (item == null || !inventory.ContainsKey(item) || !item.usable)
+            return;
+
+        // If it's a throwable item, call ShootProjectile.
+        if (item is ThrowableItemSO)
+        {
+            Debug.Log($"Using throwable item: {item.itemName}");
+            // Use a full pullback percentage (1f). Adjust if needed.
+            ShootProjectile(1f);
+        }
+
+        // Common decrement logic for both basic and throwable items.
+        if (item.stackable)
+        {
             inventory[item]--;
             Debug.Log($"Used one {item.itemName}. New count: {inventory[item]}");
 
-            // If count is zero or less, remove the item.
             if (inventory[item] <= 0)
             {
                 inventory.Remove(item);
                 Debug.Log($"{item.itemName} removed from inventory.");
 
-                // Clear selection only on the slot(s) that display this item.
+                // Clear any UI selection and unequip if this item was currently equipped.
                 foreach (var slot in inventoryMenu.itemSlots)
                 {
                     if (slot.itemSO == currentItemSO)
@@ -142,13 +156,12 @@ public class InventoryHandler : MonoBehaviour
                         slot.ClearSelectedIcon();
                     }
                 }
-                // If the removed item is currently equipped, unequip it.
                 if (currentMeleeWeaponSO == item)
                 {
                     UnequipCurrentItem();
                     currentMeleeWeaponSO = null;
                 }
-                if (currentProjectileWeaponSO == item) 
+                if (currentProjectileWeaponSO == item)
                 {
                     UnequipCurrentItem();
                     currentProjectileWeaponSO = null;
@@ -159,15 +172,15 @@ public class InventoryHandler : MonoBehaviour
                     currentItemSO = null;
                 }
             }
-
-
-		}
-        else{
-            Debug.Log($"Used {item.itemName} (non-stackable)");
         }
-		// Only clear selection for the removed item; other slots remain as-is.
-		UpdateUI();
-	}
+        else
+        {
+            Debug.Log($"Used {item.itemName} (non-stackable)");
+            // Add any additional behavior for non-stackable non-throwable items here if needed.
+        }
+        UpdateUI();
+    }
+
 
 
 
@@ -232,8 +245,17 @@ public class InventoryHandler : MonoBehaviour
             Debug.LogError("EquipItem called with null itemData.");
             return;
         }
-        currentItemSO = itemData;
-        ActivateEquippedItem(EquippedState.Item);
+        // Check if the item is a throwable item.
+        if (itemData is ThrowableItemSO)
+        {
+            currentItemSO = itemData;
+            ActivateEquippedItem(EquippedState.ThrowableItem);
+        }
+        else
+        {
+            currentItemSO = itemData;
+            ActivateEquippedItem(EquippedState.Item);
+        }
     }
 
     #endregion
@@ -300,15 +322,24 @@ public class InventoryHandler : MonoBehaviour
                 }
                 targetHolder = handHolder;
                 break;
+            case EquippedState.ThrowableItem:
+                if (currentItemSO == null)
+                {
+                    Debug.LogWarning("No throwable item equipped.");
+                    return;
+                }
+                targetHolder = handHolder;
+                break;
             default:
                 break;
         }
 
-        if (state == EquippedState.Item)
+        // Instantiate holdable item for both Item and ThrowableItem states.
+        if (state == EquippedState.Item || state == EquippedState.ThrowableItem)
         {
             InstantiateHoldable(currentItemSO, targetHolder);
             activeState = state;
-            Debug.Log($"Activated Item: {currentItemSO.itemName}");
+            Debug.Log($"Activated {(state == EquippedState.ThrowableItem ? "Throwable Item" : "Item")}: {currentItemSO.itemName}");
         }
         else if (weaponData != null)
         {
@@ -398,60 +429,89 @@ public class InventoryHandler : MonoBehaviour
     }
     
     // Add this method to your InventoryHandler class
-	public void ShootProjectile(float pullbackPercentage)
-	{
-		// Ensure a projectile weapon is active and valid.
-		if (activeState != EquippedState.Projectile || currentProjectileWeaponSO == null)
-		{
-			Debug.LogWarning("No projectile weapon equipped.");
-			return;
-		}
+    public void ShootProjectile(float pullbackPercentage)
+    {
+        // Ensure that the equipped state is either Projectile or ThrowableItem.
+        if (activeState != EquippedState.Projectile && activeState != EquippedState.ThrowableItem)
+        {
+            Debug.LogWarning("No projectile weapon or throwable item equipped.");
+            return;
+        }
 
-		// Attempt to cast the equipped weapon to a ProjectileWeaponSO.
-		ProjectileWeaponSO projWeapon = currentProjectileWeaponSO as ProjectileWeaponSO;
-		if (projWeapon == null)
-		{
-			Debug.LogWarning("Equipped weapon is not a projectile weapon.");
-			return;
-		}
+        GameObject projectilePrefab = null;
+        float projectileSpeed = 0f;
 
-		// Use the current equipped instance's transform as the spawn point.
-		if (currentEquippedInstance == null)
-		{
-			Debug.LogError("No equipped instance found for the projectile weapon.");
-			return;
-		}
-		
-		Vector3 spawnPosition = currentEquippedInstance.transform.position;
-		Quaternion spawnRotation = currentEquippedInstance.transform.rotation;
+        if (activeState == EquippedState.Projectile)
+        {
+            if (currentProjectileWeaponSO == null)
+            {
+                Debug.LogWarning("No projectile weapon equipped.");
+                return;
+            }
 
-		// Instantiate the projectile prefab.
-		GameObject projectile = Instantiate(projWeapon.projectilePrefab, spawnPosition, spawnRotation);
+            // Attempt to cast the equipped weapon to a ProjectileWeaponSO.
+            ProjectileWeaponSO projWeapon = currentProjectileWeaponSO as ProjectileWeaponSO;
+            if (projWeapon == null)
+            {
+                Debug.LogWarning("Equipped weapon is not a projectile weapon.");
+                return;
+            }
+            projectilePrefab = projWeapon.projectilePrefab;
+            projectileSpeed = projWeapon.projectileSpeed;
+        }
+        else if (activeState == EquippedState.ThrowableItem)
+        {
+            // For throwable items, we expect currentItemSO to be a ThrowableItemSO.
+            ThrowableItemSO throwableItem = currentItemSO as ThrowableItemSO;
+            if (throwableItem == null)
+            {
+                Debug.LogWarning("Equipped item is not a throwable item.");
+                return;
+            }
+            int randomIndex = UnityEngine.Random.Range(0, throwableItem.projectilePrefab.Length);
 
-		// Configure the projectile's initial velocity using the pullback percentage.
-		ProjectileBehaviour pb = projectile.GetComponent<ProjectileBehaviour>();
-		if (pb != null)
-		{
-			Rigidbody2D rb = projectile.GetComponent<Rigidbody2D>();
-			if (rb != null)
-			{
-				// Scale projectile speed by the pullback percentage.
-				float finalSpeed = projWeapon.projectileSpeed * pullbackPercentage;
-				rb.velocity = spawnRotation * Vector2.right * finalSpeed;
-			}
-			
-			// If it's a physics projectile, adjust gravity and damage.
-			if (pb.projectileType == ProjectileBehaviour.ProjectileType.Physics)
-			{
-				// Example: reduce gravity scale based on pullback (max reduction of 50%).
-				float newGravityScale = pb.gravityScale * (1 - 0.5f * pullbackPercentage);
-				pb.AdjustGravityScale(newGravityScale);
-				
-				// Adjust damage using the pullback percentage (e.g. full pullback doubles the damage).
-				pb.AdjustDamageScale(pullbackPercentage);
-			}
-		}
-	}
+            projectilePrefab = throwableItem.projectilePrefab[randomIndex];
+            projectileSpeed = throwableItem.projectileSpeed;
+        }
+
+        if (currentEquippedInstance == null)
+        {
+            Debug.LogError("No equipped instance found for the projectile/throwable item.");
+            return;
+        }
+
+        // Use the current equipped instance's transform as the spawn point.
+        Vector3 spawnPosition = currentEquippedInstance.transform.position;
+        Quaternion spawnRotation = currentEquippedInstance.transform.rotation;
+
+        // Instantiate the projectile prefab.
+        GameObject projectile = Instantiate(projectilePrefab, spawnPosition, spawnRotation);
+
+        // Configure the projectile's initial velocity using the pullback percentage.
+        ProjectileBehaviour pb = projectile.GetComponent<ProjectileBehaviour>();
+        if (pb != null)
+        {
+            Rigidbody2D rb = projectile.GetComponent<Rigidbody2D>();
+            if (rb != null)
+            {
+                // Scale projectile speed by the pullback percentage.
+                float finalSpeed = projectileSpeed * pullbackPercentage;
+                rb.velocity = spawnRotation * Vector2.right * finalSpeed;
+            }
+            
+            // For physics projectiles, adjust gravity and damage based on pullback.
+            if (pb.projectileType == ProjectileBehaviour.ProjectileType.Physics)
+            {
+                // Example: reduce gravity scale based on pullback (max reduction of 50%).
+                float newGravityScale = pb.gravityScale * (1 - 0.5f * pullbackPercentage);
+                pb.AdjustGravityScale(newGravityScale);
+                
+                // Adjust damage using the pullback percentage.
+                pb.AdjustDamageScale(pullbackPercentage);
+            }
+        }
+    }
+
 
 
     

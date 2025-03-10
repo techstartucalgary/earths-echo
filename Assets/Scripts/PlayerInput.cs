@@ -55,7 +55,7 @@ public class PlayerInput : MonoBehaviour {
 
         // Process Attack Inputs
         // When a projectile weapon is equipped, use a charge mechanic and update trajectory line.
-        if (inventoryHandler != null && inventoryHandler.IsProjectileWeaponEquipped)
+        if (inventoryHandler != null && (inventoryHandler.IsProjectileWeaponEquipped || inventoryHandler.isThrowableObjectEquipped))
         {
             // On fire button press, reset the charge timer.
             if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
@@ -108,19 +108,33 @@ public class PlayerInput : MonoBehaviour {
             // On fire button release, fire the projectile and hide the trajectory line.
             if (Input.GetMouseButtonUp(0) || Input.GetMouseButtonUp(1))
             {
-                float pullbackPercentage = projectileChargeTime / maxChargeTime;
-                inventoryHandler.ShootProjectile(pullbackPercentage);
+                
+                if (inventoryHandler.IsProjectileWeaponEquipped){
+                    float pullbackPercentage = projectileChargeTime / maxChargeTime;
+                    inventoryHandler.ShootProjectile(pullbackPercentage);
+                }
+                // If a throwable item is equipped, call UseItem to decrement its count.
+                else if (inventoryHandler.isThrowableObjectEquipped)
+                {
+                    inventoryHandler.UseItem(inventoryHandler.currentItemSO);
+                }
+                
                 projectileChargeTime = 0f;
                 if (trajectoryLine != null)
                 {
                     trajectoryLine.HideTrajectory();
                 }
+                else{
+                    Debug.Log("No Trajectory Line Active");
+                }
             }
+            
+
         }
         else
         {
             // Process melee attacks if a projectile weapon is not equipped.
-            if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
+            if ((Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1)) && !inventoryHandler.IsProjectileWeaponEquipped && !inventoryHandler.isThrowableObjectEquipped && !inventoryHandler.IsItemEquipped)
             {
                 if (Input.GetKey(KeyCode.W))
                 {
@@ -143,14 +157,17 @@ public class PlayerInput : MonoBehaviour {
             {
                 trajectoryLine.HideTrajectory();
             }
+
+        }
+        if(Input.GetKeyDown(KeyCode.T)){
+            if (inventoryHandler != null && inventoryHandler.IsItemEquipped)
+            {
+                Debug.Log("T key pressed.");
+                inventoryHandler.UseItem(inventoryHandler.currentItemSO);
+            }
         }
 
-        // Item usage (for testing)
-        if(inventoryHandler != null && inventoryHandler.currentItemSO != null && inventoryHandler.IsItemEquipped && Input.GetKeyDown(KeyCode.T))
-        {
-            inventoryHandler.UseItem(inventoryHandler.currentItemSO);
-        }
-
+        
         player.playerSpeed = player.velocity.x; // For debugging: displays current speed
     }
 
