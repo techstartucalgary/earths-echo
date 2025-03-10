@@ -9,6 +9,12 @@ public class InventoryMenu : MonoBehaviour
     public InventorySlot[] itemSlots;         // Array of InventorySlot components
     public InventoryHandler inventoryHandler; // Reference to the InventoryHandler
 
+    [Header("Equipped HUD UI")]
+    public Image meleeHUDImage;
+    public Image projectileHUDImage;
+    public Image itemHUDImage;
+    public TMP_Text itemHUDCount;
+
     /// <summary>
     /// Updates the inventory UI by assigning items and their counts to slots.
     /// </summary>
@@ -83,4 +89,48 @@ public class InventoryMenu : MonoBehaviour
     {
         inventoryUI.SetActive(!inventoryUI.activeSelf);
     }
+
+    public void UpdateEquippedHUD()
+    {
+        if (inventoryHandler == null)
+            return;
+        
+        // Update Melee HUD
+        if (inventoryHandler.CurrentMeleeWeaponSO != null)
+        {
+            meleeHUDImage.sprite = inventoryHandler.CurrentMeleeWeaponSO.itemIcon;
+            meleeHUDImage.enabled = true;
+        }
+        else
+        {
+            meleeHUDImage.enabled = false;
+        }
+
+        // Update Projectile HUD
+        if (inventoryHandler.CurrentProjectileWeaponSO != null)
+        {
+            projectileHUDImage.sprite = inventoryHandler.CurrentProjectileWeaponSO.itemIcon;
+            projectileHUDImage.enabled = true;
+
+        }
+        else
+        {
+            projectileHUDImage.enabled = false;
+        }
+
+        // Update General Item HUD
+        if (inventoryHandler.currentItemSO != null)
+        {
+            itemHUDImage.sprite = inventoryHandler.currentItemSO.itemIcon;
+            itemHUDImage.enabled = true;
+            int count = inventoryHandler.GetItemCount(inventoryHandler.currentItemSO);
+            itemHUDCount.text = count.ToString();
+        }
+        else
+        {
+            itemHUDImage.enabled = false;
+            itemHUDCount.text = "";
+        }
+    }
+
 }

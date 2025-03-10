@@ -41,6 +41,11 @@ public class InventoryHandler : MonoBehaviour
 		get { return currentProjectileWeaponSO; } 
 	}
 
+    public WeaponSO CurrentMeleeWeaponSO 
+	{ 
+		get { return currentMeleeWeaponSO; } 
+	}
+
 
 	private float defaultAttackDamage;
 	private float defaultAttackCooldown;
@@ -115,6 +120,7 @@ public class InventoryHandler : MonoBehaviour
             inventory[newItem] = 1;
             Debug.Log($"Added item: {newItem.itemName}");
         }
+        inventoryMenu.UpdateEquippedHUD();
         UpdateUI();
     }
 
@@ -179,6 +185,8 @@ public class InventoryHandler : MonoBehaviour
             // Add any additional behavior for non-stackable non-throwable items here if needed.
         }
         UpdateUI();
+        inventoryMenu.UpdateEquippedHUD();
+
     }
 
 
@@ -219,6 +227,8 @@ public class InventoryHandler : MonoBehaviour
         }
         currentMeleeWeaponSO = weaponData;
         ActivateEquippedItem(EquippedState.Melee);
+        inventoryMenu.UpdateEquippedHUD();
+
     }
 
     /// <summary>
@@ -233,6 +243,8 @@ public class InventoryHandler : MonoBehaviour
         }
         currentProjectileWeaponSO = weaponData;
         ActivateEquippedItem(EquippedState.Projectile);
+        inventoryMenu.UpdateEquippedHUD();
+
     }
 
     /// <summary>
@@ -256,6 +268,7 @@ public class InventoryHandler : MonoBehaviour
             currentItemSO = itemData;
             ActivateEquippedItem(EquippedState.Item);
         }
+        inventoryMenu.UpdateEquippedHUD();
     }
 
     #endregion
@@ -538,4 +551,10 @@ public class InventoryHandler : MonoBehaviour
 
 
     #endregion
+    public int GetItemCount(ItemSO item)
+    {
+        if (item != null && inventory.ContainsKey(item))
+            return inventory[item];
+        return 0;
+    }
 }
