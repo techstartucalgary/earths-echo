@@ -297,11 +297,23 @@ public class InventoryHandler : MonoBehaviour
         }
         else if (Input.GetKeyDown(KeyCode.Alpha3))
         {
-            // Toggle general item state.
-            if (activeState == EquippedState.Item)
-                UnequipCurrentItem();
+            // If there's an equipped item, check if it's throwable.
+            if (currentItemSO != null && currentItemSO is ThrowableItemSO)
+            {
+                // Toggle throwable state.
+                if (activeState != EquippedState.ThrowableItem)
+                    ActivateEquippedItem(EquippedState.ThrowableItem);
+                else
+                    UnequipCurrentItem();
+            }
             else
-                ActivateEquippedItem(EquippedState.Item);
+            {
+                // Otherwise, treat it as a regular item.
+                if (activeState == EquippedState.Item)
+                    UnequipCurrentItem();
+                else
+                    ActivateEquippedItem(EquippedState.Item);
+            }
         }
     }
 

@@ -19,7 +19,9 @@ public class PlayerInput : MonoBehaviour {
     }
 
     void Update () {
-
+        if (GameManager.instance != null && !GameManager.instance.CanProcessGameplayActions())
+        return;
+        
         if (DialogueManager.GetInstance() != null && DialogueManager.GetInstance().dialogueIsPlaying)
         {
             return;
