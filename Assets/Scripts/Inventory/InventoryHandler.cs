@@ -51,6 +51,7 @@ public class InventoryHandler : MonoBehaviour
 	private float defaultAttackCooldown;
 	private float defaultAttackRange;
 	private string defaultAnimPrefix;
+	private AudioClip[] defaultAttackSounds;
 
     private EquippedState activeState = EquippedState.None;
 
@@ -69,6 +70,7 @@ public class InventoryHandler : MonoBehaviour
 		defaultAttackCooldown = player.attackCooldown;
 		defaultAttackRange = player.attackRange;
 		defaultAnimPrefix = player.attackAnimPrefix;
+		defaultAttackSounds = player.attackSounds;
         
     }
 
@@ -453,89 +455,113 @@ public class InventoryHandler : MonoBehaviour
         itemGO.item = holdableItem;
     }
     
-    // Add this method to your InventoryHandler class
-    public void ShootProjectile(float pullbackPercentage)
-    {
-        // Ensure that the equipped state is either Projectile or ThrowableItem.
-        if (activeState != EquippedState.Projectile && activeState != EquippedState.ThrowableItem)
-        {
-            Debug.LogWarning("No projectile weapon or throwable item equipped.");
-            return;
-        }
+	public void ShootProjectile(float pullbackPercentage)
+	{
+		// Ensure that the equipped state is either Projectile or ThrowableItem.
+		if (activeState != EquippedState.Projectile && activeState != EquippedState.ThrowableItem)
+		{
+			Debug.LogWarning("No projectile weapon or throwable item equipped.");
+			return;
+		}
 
-        GameObject projectilePrefab = null;
-        float projectileSpeed = 0f;
+		GameObject projectilePrefab = null;
+		float projectileSpeed = 0f;
 
-        if (activeState == EquippedState.Projectile)
-        {
-            if (currentProjectileWeaponSO == null)
-            {
-                Debug.LogWarning("No projectile weapon equipped.");
-                return;
-            }
+		if (activeState == EquippedState.Projectile)
+		{
+			if (currentProjectileWeaponSO == null)
+			{
+				Debug.LogWarning("No projectile weapon equipped.");
+				return;
+			}
 
-            // Attempt to cast the equipped weapon to a ProjectileWeaponSO.
-            ProjectileWeaponSO projWeapon = currentProjectileWeaponSO as ProjectileWeaponSO;
-            if (projWeapon == null)
-            {
-                Debug.LogWarning("Equipped weapon is not a projectile weapon.");
-                return;
-            }
-            projectilePrefab = projWeapon.projectilePrefab;
-            projectileSpeed = projWeapon.projectileSpeed;
-        }
-        else if (activeState == EquippedState.ThrowableItem)
-        {
-            // For throwable items, we expect currentItemSO to be a ThrowableItemSO.
-            ThrowableItemSO throwableItem = currentItemSO as ThrowableItemSO;
-            if (throwableItem == null)
-            {
-                Debug.LogWarning("Equipped item is not a throwable item.");
-                return;
-            }
-            int randomIndex = UnityEngine.Random.Range(0, throwableItem.projectilePrefab.Length);
+			// Attempt to cast the equipped weapon to a ProjectileWeaponSO.
+			ProjectileWeaponSO projWeapon = currentProjectileWeaponSO as ProjectileWeaponSO;
+			if (projWeapon == null)
+			{
+				Debug.LogWarning("Equipped weapon is not a projectile weapon.");
+				return;
+			}
+			projectilePrefab = projWeapon.projectilePrefab;
+			projectileSpeed = projWeapon.projectileSpeed;
+		}
+		else if (activeState == EquippedState.ThrowableItem)
+		{
+			// For throwable items, we expect currentItemSO to be a ThrowableItemSO.
+			ThrowableItemSO throwableItem = currentItemSO as ThrowableItemSO;
+			if (throwableItem == null)
+			{
+				Debug.LogWarning("Equipped item is not a throwable item.");
+				return;
+			}
+			int randomIndex = UnityEngine.Random.Range(0, throwableItem.projectilePrefab.Length);
+			projectilePrefab = throwableItem.projectilePrefab[randomIndex];
+			projectileSpeed = throwableItem.projectileSpeed;
+		}
 
-            projectilePrefab = throwableItem.projectilePrefab[randomIndex];
-            projectileSpeed = throwableItem.projectileSpeed;
-        }
+		if (currentEquippedInstance == null)
+		{
+			Debug.LogError("No equipped instance found for the projectile/throwable item.");
+			return;
+		}
 
-        if (currentEquippedInstance == null)
-        {
-            Debug.LogError("No equipped instance found for the projectile/throwable item.");
-            return;
-        }
+		// Use the current equipped instance's transform as the spawn point.
+		Vector3 spawnPosition = currentEquippedInstance.transform.position;
+		Quaternion spawnRotation = currentEquippedInstance.transform.rotation;
 
-        // Use the current equipped instance's transform as the spawn point.
-        Vector3 spawnPosition = currentEquippedInstance.transform.position;
-        Quaternion spawnRotation = currentEquippedInstance.transform.rotation;
+		// Instantiate the projectile prefab.
+		GameObject projectile = Instantiate(projectilePrefab, spawnPosition, spawnRotation);
 
-        // Instantiate the projectile prefab.
-        GameObject projectile = Instantiate(projectilePrefab, spawnPosition, spawnRotation);
+		// Configure the projectile's initial velocity using the pullback percentage.
+		ProjectileBehaviour pb = projectile.GetComponent<ProjectileBehaviour>();
+		if (pb != null)
+		{
+			Rigidbody2D rb = projectile.GetComponent<Rigidbody2D>();
+			if (rb != null)
+			{
+				// Scale projectile speed by the pullback percentage.
+				float finalSpeed = projectileSpeed * pullbackPercentage;
+				rb.velocity = spawnRotation * Vector2.right * finalSpeed;
+			}
 
-        // Configure the projectile's initial velocity using the pullback percentage.
-        ProjectileBehaviour pb = projectile.GetComponent<ProjectileBehaviour>();
-        if (pb != null)
-        {
-            Rigidbody2D rb = projectile.GetComponent<Rigidbody2D>();
-            if (rb != null)
-            {
-                // Scale projectile speed by the pullback percentage.
-                float finalSpeed = projectileSpeed * pullbackPercentage;
-                rb.velocity = spawnRotation * Vector2.right * finalSpeed;
-            }
-            
-            // For physics projectiles, adjust gravity and damage based on pullback.
-            if (pb.projectileType == ProjectileBehaviour.ProjectileType.Physics)
-            {
-                // Example: reduce gravity scale based on pullback (max reduction of 50%).
-                float newGravityScale = pb.gravityScale * (1 - 0.5f * pullbackPercentage);
-                pb.AdjustGravityScale(newGravityScale);
-                
-                // Adjust damage using the pullback percentage.
-                pb.AdjustDamageScale(pullbackPercentage);
-            }
-        }
-    }
+			// For physics projectiles, adjust gravity and damage based on pullback.
+			if (pb.projectileType == ProjectileBehaviour.ProjectileType.Physics)
+			{
+				// Example: reduce gravity scale based on pullback (max reduction of 50%).
+				float newGravityScale = pb.gravityScale * (1 - 0.5f * pullbackPercentage);
+				pb.AdjustGravityScale(newGravityScale);
+
+				// Adjust damage using the pullback percentage.
+				pb.AdjustDamageScale(pullbackPercentage);
+			}
+		}
+
+		// === Projectile Weapon Sound Integration ===
+		// Play the shoot sound (clip at index 1) when the projectile is fired.
+		if (activeState == EquippedState.Projectile && currentProjectileWeaponSO != null)
+		{
+			if (currentProjectileWeaponSO.audioClips != null && currentProjectileWeaponSO.audioClips.Length >= 2)
+			{
+				SoundFXManager.Instance.PlaySoundFXClip(currentProjectileWeaponSO.audioClips[1], transform, 0.5f);
+			}
+			else
+			{
+				Debug.LogWarning("Projectile weapon audio clips not set correctly (need at least 2 clips).");
+			}
+		}
+		else if (activeState == EquippedState.ThrowableItem && currentItemSO != null)
+		{
+			if (currentItemSO.audioClips != null && currentItemSO.audioClips.Length >= 2)
+			{
+				SoundFXManager.Instance.PlaySoundFXClip(currentItemSO.audioClips[1], transform, 0.5f);
+			}
+			else
+			{
+				Debug.LogWarning("Throwable item audio clips not set correctly (need at least 2 clips).");
+			}
+		}
+	}
+
 
 
 
@@ -550,7 +576,17 @@ public class InventoryHandler : MonoBehaviour
 			player.attackCooldown = currentMeleeWeaponSO.cooldownTime;
 			player.attackRange = currentMeleeWeaponSO.range;
 			player.attackAnimPrefix = currentMeleeWeaponSO.animPrefix;
+			player.attackSounds = currentMeleeWeaponSO.audioClips;
  		}
+ 		else if (activeState == EquippedState.Item && currentItemSO != null)
+ 		{
+
+			player.attackSounds = currentItemSO.audioClips;
+		}
+		else if (activeState == EquippedState.Projectile && currentProjectileWeaponSO !=null)
+		{
+			player.attackSounds = currentProjectileWeaponSO.audioClips;
+		}
 		else
 		{
 			// Revert to the player's default stats when no melee weapon is equipped.
@@ -558,6 +594,7 @@ public class InventoryHandler : MonoBehaviour
 			player.attackCooldown = defaultAttackCooldown;
 			player.attackRange = defaultAttackRange;
 			player.attackAnimPrefix = defaultAnimPrefix;
+			player.attackSounds = defaultAttackSounds;
 		}
 	}
 

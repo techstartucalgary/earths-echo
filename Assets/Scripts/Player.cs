@@ -79,6 +79,7 @@ public class Player : MonoBehaviour
 	public float attackCooldown = 0f;
 	public float attackRange = 0.5f;
 	public string attackAnimPrefix = "";
+	public AudioClip[] attackSounds;
 
 	public float lastMeleeAttackTime = 0f;
 	private Transform UpwardsHitpoint;
@@ -447,9 +448,11 @@ public class Player : MonoBehaviour
 		ApplyHitbox(SideHitpoint, attackDamage, attackRange);
 		if (!controller.collisions.below) {
 			animator.Play(attackAnimPrefix + "player_forward_air");
+			SoundFXManager.Instance.PlayRandomSoundFXClip(attackSounds, transform, 1f);
 		}
 		else{
 			animator.Play(attackAnimPrefix + "player_attack");
+			SoundFXManager.Instance.PlayRandomSoundFXClip(attackSounds, transform, 1f);
 		}
 		
 	}
@@ -460,9 +463,11 @@ public class Player : MonoBehaviour
 		ApplyHitbox(UpwardsHitpoint, attackDamage, attackRange);
 		if (!controller.collisions.below) {
 			animator.Play(attackAnimPrefix + "player_up_air");
+			SoundFXManager.Instance.PlayRandomSoundFXClip(attackSounds, transform, 1f);
 		}
 		else{
 			animator.Play(attackAnimPrefix + "player_up_attack");
+			SoundFXManager.Instance.PlayRandomSoundFXClip(attackSounds, transform, 1f);
 		}
 	}
 	public void PerformDownAttack(float attackDamage, float attackRange)
@@ -472,9 +477,12 @@ public class Player : MonoBehaviour
 		ApplyHitbox(DownwardHitpoint, attackDamage, attackRange);
 		if (!controller.collisions.below) {
 			animator.Play(attackAnimPrefix + "player_down_air");
+			SoundFXManager.Instance.PlayRandomSoundFXClip(attackSounds, transform, 1f);
+
 		}
 		else{
-			animator.Play(attackAnimPrefix + "player_down_attack");	
+			animator.Play(attackAnimPrefix + "player_down_attack");
+			SoundFXManager.Instance.PlayRandomSoundFXClip(attackSounds, transform, 1f);	
 		}
 	}
 	private void ApplyHitbox(Transform attackDirection, float attackDamage, float attackRange)

@@ -20,7 +20,7 @@ public class PlayerInput : MonoBehaviour {
 
     void Update () {
         if (GameManager.instance != null && !GameManager.instance.CanProcessGameplayActions())
-        return;
+            return;
         
         if (DialogueManager.GetInstance() != null && DialogueManager.GetInstance().dialogueIsPlaying)
         {
@@ -59,10 +59,34 @@ public class PlayerInput : MonoBehaviour {
         // When a projectile weapon is equipped, use a charge mechanic and update trajectory line.
         if (inventoryHandler != null && (inventoryHandler.IsProjectileWeaponEquipped || inventoryHandler.isThrowableObjectEquipped))
         {
-            // On fire button press, reset the charge timer.
+            // On fire button press, reset the charge timer and play the pullback sound (audioclip 0).
             if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
             {
                 projectileChargeTime = 0f;
+                
+                // Play pullback sound (audioclip at index 0) for projectile weapons.
+                if (inventoryHandler.IsProjectileWeaponEquipped && inventoryHandler.CurrentProjectileWeaponSO != null)
+                {
+                    if (inventoryHandler.CurrentProjectileWeaponSO.audioClips != null && inventoryHandler.CurrentProjectileWeaponSO.audioClips.Length > 0)
+                    {
+                        SoundFXManager.Instance.PlaySoundFXClip(inventoryHandler.CurrentProjectileWeaponSO.audioClips[0], transform, 1f);
+                    }
+                    else
+                    {
+                        Debug.LogWarning("No pullback audio clip found in the projectile weapon.");
+                    }
+                }
+                else if (inventoryHandler.isThrowableObjectEquipped && inventoryHandler.currentItemSO != null)
+                {
+                    if (inventoryHandler.currentItemSO.audioClips != null && inventoryHandler.currentItemSO.audioClips.Length > 0)
+                    {
+                        SoundFXManager.Instance.PlaySoundFXClip(inventoryHandler.currentItemSO.audioClips[0], transform, 1f);
+                    }
+                    else
+                    {
+                        Debug.LogWarning("No pullback audio clip found in the throwable item.");
+                    }
+                }
             }
             // While the fire button is held, accumulate charge time (clamped to maxChargeTime).
             if (Input.GetMouseButton(0) || Input.GetMouseButton(1))
@@ -74,7 +98,6 @@ public class PlayerInput : MonoBehaviour {
                 float pullbackPercentage = projectileChargeTime / maxChargeTime;
                 
                 // Retrieve the currently equipped projectile weapon data.
-                // (Assumes InventoryHandler exposes currentProjectileWeaponSO and currentEquippedInstance.)
                 if (inventoryHandler.EquippedInstance != null && inventoryHandler.CurrentProjectileWeaponSO != null)
                 {
                     ProjectileWeaponSO projWeapon = inventoryHandler.CurrentProjectileWeaponSO as ProjectileWeaponSO;
@@ -91,7 +114,6 @@ public class PlayerInput : MonoBehaviour {
                         Vector3 initialVelocity = spawnRotation * Vector2.right * finalSpeed;
                         
                         // Determine the effective gravity scale.
-                        // For physics projectiles, we reduce gravity based on pullback.
                         ProjectileBehaviour prefabPb = projWeapon.projectilePrefab.GetComponent<ProjectileBehaviour>();
                         float effectiveGravityScale = 0f;
                         if (prefabPb != null && prefabPb.projectileType == ProjectileBehaviour.ProjectileType.Physics)
@@ -110,8 +132,8 @@ public class PlayerInput : MonoBehaviour {
             // On fire button release, fire the projectile and hide the trajectory line.
             if (Input.GetMouseButtonUp(0) || Input.GetMouseButtonUp(1))
             {
-                
-                if (inventoryHandler.IsProjectileWeaponEquipped){
+                if (inventoryHandler.IsProjectileWeaponEquipped)
+                {
                     float pullbackPercentage = projectileChargeTime / maxChargeTime;
                     inventoryHandler.ShootProjectile(pullbackPercentage);
                 }
@@ -126,12 +148,11 @@ public class PlayerInput : MonoBehaviour {
                 {
                     trajectoryLine.HideTrajectory();
                 }
-                else{
+                else
+                {
                     Debug.Log("No Trajectory Line Active");
                 }
             }
-            
-
         }
         else
         {
@@ -159,7 +180,6 @@ public class PlayerInput : MonoBehaviour {
             {
                 trajectoryLine.HideTrajectory();
             }
-
         }
         if(Input.GetKeyDown(KeyCode.T)){
             if (inventoryHandler != null && inventoryHandler.IsItemEquipped)
@@ -168,7 +188,6 @@ public class PlayerInput : MonoBehaviour {
                 inventoryHandler.UseItem(inventoryHandler.currentItemSO);
             }
         }
-
         
         player.playerSpeed = player.velocity.x; // For debugging: displays current speed
     }
@@ -191,6 +210,3 @@ public class PlayerInput : MonoBehaviour {
         }
     }
 }
-
-
-
