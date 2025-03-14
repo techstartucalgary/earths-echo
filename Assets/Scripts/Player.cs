@@ -512,6 +512,59 @@ public class Player : MonoBehaviour
 			Debug.Log($"{enemy.name} does not implement IDamageable.");
 		}
 	}
+	
+	/// <summary>
+    /// Plays the pullback animation for a projectile weapon using the given prefix.
+    /// For example, if animPrefix is "bow_", it will play "bow_pullback".
+    /// </summary>
+    public void PlayProjectilePullbackAnimation(string animPrefix)
+    {
+        if (animator != null)
+        {
+            // Play the pullback animation; ensure the animation exists in your Animator.
+            animator.Play(animPrefix + "pullback");
+            Debug.Log("Playing projectile pullback animation with prefix: " + animPrefix);
+        }
+        else
+        {
+            Debug.LogWarning("Animator reference is missing in Player script!");
+        }
+    }
+
+    /// <summary>
+    /// Optionally update a blend tree parameter if you use one for a smoother transition.
+    /// </summary>
+    public void UpdateProjectilePullback(float pullbackCharge)
+    {
+        if (animator != null)
+        {
+            animator.SetFloat("PullbackCharge", pullbackCharge);
+            Debug.Log("Updating projectile pullback to: " + pullbackCharge);
+        }
+    }
+
+    /// <summary>
+    /// Resets the projectile weapon animation back to idle using the provided prefix.
+    /// For example, if animPrefix is "bow_", it will play "bow_idle".
+    /// </summary>
+    public void ResetProjectileAnimation(string animPrefix)
+    {
+        if (animator != null)
+        {
+            animator.Play(animPrefix + "idle");
+            Debug.Log("Resetting projectile animation to idle with prefix: " + animPrefix);
+        }
+    }
+    
+    public void PlayThrowableAnimation(string animPrefix)
+    {
+        if (animator != null)
+        {
+            animator.Play(animPrefix + "throw");
+            Debug.Log("Playing throwable animation with prefix: " + animPrefix);
+        }
+    }
+	
 	void HandleSliding()
 	{
 		if (isSliding)

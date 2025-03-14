@@ -26,6 +26,9 @@ public abstract class ItemSO : ScriptableObject
     [Header("Item Audio")]
     [Tooltip("Audio clips associated with item actions (e.g., swing, hit).")]
     public AudioClip[] audioClips;
+    
+    [Tooltip("Prefix must end with an underscore ex: 'dagger_'.")]
+    public string animPrefix;
 
     public float itemScale = 1f;
 

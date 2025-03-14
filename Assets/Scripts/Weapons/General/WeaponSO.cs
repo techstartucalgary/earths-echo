@@ -5,8 +5,6 @@ public abstract class WeaponSO : ItemSO
     [Header("Weapon Visuals")]
     [Tooltip("The sprite representing the weapon.")]
     public Sprite weaponSprite;
-	[Tooltip("Prefix must end with an underscore ex: 'dagger_'.")]
-	public string animPrefix;
 
     [Header("Weapon Stats")]
     [Tooltip("The cooldown time between attacks.")]
