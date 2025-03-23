@@ -29,7 +29,7 @@ public class EE_NPC : MonoBehaviour
     Seeker seeker;
     Rigidbody2D rb;
 
-    void Start()
+    protected virtual void Start()
     {
         seeker = GetComponent<Seeker>();
         rb = GetComponent<Rigidbody2D>();
@@ -70,7 +70,7 @@ public class EE_NPC : MonoBehaviour
         }
     }
 
-    void Update()
+    protected virtual void Update()
     {
         if (path == null)
             return;

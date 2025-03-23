@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class EE_Villager : EE_NPC
@@ -7,33 +5,57 @@ public class EE_Villager : EE_NPC
     [Header("Villager Settings")]
     public string villagerName;
 
-    [Header("Dialogue")]
-	[SerializeField]
-	Dialogue dialogueBox;
-    public string[] lines;
-	bool isTalking;
+    [Header("Dialogue Settings")]
+    public bool doesSpeak = true;
 
+    [SerializeField]
+    Dialogue dialogueBox;
+    public string[] lines;
+
+    bool isTalking;
     BoxCollider2D speechRange;
     private bool playerNearby;
 
-    // Start is called before the first frame update
-    void Start()
-    {
-		isTalking = false;
-        speechRange = GetComponent<BoxCollider2D>();
-    }
+    [Header("Wander Settings")]
+    public bool doesWander = true;
+    public float wanderMaxDistance;
+    private Transform spawnLocation;
 
-    // Update is called once per frame
-    void Update()
+    // Start is called before the first frame update
+    protected override void Start()
     {
-        if (playerNearby && !isTalking && Input.GetKeyDown(KeyCode.E))
+		base.Start();
+        isTalking = false;
+        speechRange = GetComponent<BoxCollider2D>();
+
+		spawnLocation = new GameObject("SpawnLocation").transform;
+        spawnLocation.position = gameObject.transform.position;
+
+		target = new GameObject("TargetLocation").transform;
+        target.position = spawnLocation.position;
+
+        if (doesWander)
         {
-			isTalking = true;
-            PlaySpeech();
+            InvokeRepeating(nameof(WanderOnTimer), 5f, 5f);
         }
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
+    // Update is called once per frame
+    protected override void Update()
+    {
+		base.Update();
+        // Dialogue updates
+        if (doesSpeak)
+        {
+            if (playerNearby && !isTalking && Input.GetKeyDown(KeyCode.E))
+            {
+                isTalking = true;
+                PlaySpeech();
+            }
+        }
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
     {
         if (other != null && other.CompareTag("Player"))
         {
@@ -42,20 +64,42 @@ public class EE_Villager : EE_NPC
         }
     }
 
-    private void OnTriggerExit2D(Collider2D other)
+    void OnTriggerExit2D(Collider2D other)
     {
         if (other != null && other.CompareTag("Player"))
         {
             playerNearby = false;
-			isTalking = false;
-			dialogueBox.ForceEndDialogue();
+            isTalking = false;
+            dialogueBox.ForceEndDialogue();
             Debug.Log($"Player exits dialogue range of '{villagerName}'.");
         }
     }
 
-    private void PlaySpeech()
+    void PlaySpeech()
     {
-		dialogueBox.lines = lines;
-		dialogueBox.StartDialogue();
+        dialogueBox.lines = lines;
+        dialogueBox.StartDialogue();
+    }
+
+    bool InRangeOf(Transform pos, float range) =>
+        Vector3.Distance(gameObject.transform.position, pos.position) < range;
+
+    void WanderOnTimer()
+    {
+        float newInterval = Random.Range(3f, 7f);
+        CancelInvoke(nameof(WanderOnTimer));
+        InvokeRepeating(nameof(WanderOnTimer), newInterval, newInterval);
+
+
+        if (InRangeOf(spawnLocation, wanderMaxDistance))
+        {
+            float newTargetX = Random.Range(-Mathf.Abs(wanderMaxDistance), wanderMaxDistance);
+            target.position = new Vector3(target.position.x + newTargetX, target.position.y, target.position.z);
+
+        	Debug.Log($"'{villagerName}' is wandering to {target.position}.");
+        }
+		else {
+			target.position = spawnLocation.position;
+		}
     }
 }
