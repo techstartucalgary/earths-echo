@@ -24,14 +24,14 @@ public class EE_Villager : EE_NPC
     // Start is called before the first frame update
     protected override void Start()
     {
-		base.Start();
+        base.Start();
         isTalking = false;
         speechRange = GetComponent<BoxCollider2D>();
 
-		spawnLocation = new GameObject("SpawnLocation").transform;
+        spawnLocation = new GameObject("SpawnLocation").transform;
         spawnLocation.position = gameObject.transform.position;
 
-		target = new GameObject("TargetLocation").transform;
+        target = new GameObject("TargetLocation").transform;
         target.position = spawnLocation.position;
 
         if (doesWander)
@@ -43,7 +43,7 @@ public class EE_Villager : EE_NPC
     // Update is called once per frame
     protected override void Update()
     {
-		base.Update();
+        base.Update();
         // Dialogue updates
         if (doesSpeak)
         {
@@ -61,6 +61,13 @@ public class EE_Villager : EE_NPC
         {
             playerNearby = true;
             Debug.Log($"Player enters dialogue range of '{villagerName}'. Press 'E' to talk.");
+
+			// stop moving if player in range to talk
+            target.position = new Vector3(
+                gameObject.transform.position.x,
+                gameObject.transform.position.y,
+                gameObject.transform.position.z
+            );
         }
     }
 
@@ -86,20 +93,28 @@ public class EE_Villager : EE_NPC
 
     void WanderOnTimer()
     {
+		// do nothing if player in range to talk
+		if (playerNearby) {
+			return;
+		}
         float newInterval = Random.Range(3f, 7f);
         CancelInvoke(nameof(WanderOnTimer));
         InvokeRepeating(nameof(WanderOnTimer), newInterval, newInterval);
 
-
         if (InRangeOf(spawnLocation, wanderMaxDistance))
         {
             float newTargetX = Random.Range(-Mathf.Abs(wanderMaxDistance), wanderMaxDistance);
-            target.position = new Vector3(target.position.x + newTargetX, target.position.y, target.position.z);
+            target.position = new Vector3(
+                target.position.x + newTargetX,
+                target.position.y,
+                target.position.z
+            );
 
-        	Debug.Log($"'{villagerName}' is wandering to {target.position}.");
+            Debug.Log($"'{villagerName}' is wandering to {target.position}.");
         }
-		else {
-			target.position = spawnLocation.position;
-		}
+        else
+        {
+            target.position = spawnLocation.position;
+        }
     }
 }

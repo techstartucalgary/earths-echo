@@ -34,13 +34,20 @@ public class EE_NPC : MonoBehaviour
         seeker = GetComponent<Seeker>();
         rb = GetComponent<Rigidbody2D>();
 
-        targetSensor.setTargetTag(target.tag);
-
         animatorXScale = npcGFX.localScale[0];
 
-        if (useSensorForPath)
+        if (target != null)
         {
-            targetSensor.OnTargetChanged += CheckTargetSensor;
+            targetSensor.setTargetTag(target.tag);
+
+            if (useSensorForPath)
+            {
+                targetSensor.OnTargetChanged += CheckTargetSensor;
+            }
+            else
+            {
+                InvokeRepeating("UpdatePath", 0f, .5f);
+            }
         }
         else
         {
