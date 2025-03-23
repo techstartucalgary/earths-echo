@@ -8,21 +8,27 @@ public class EE_Villager : EE_NPC
     public string villagerName;
 
     [Header("Dialogue")]
-    public string speech;
+	[SerializeField]
+	Dialogue dialogueBox;
+    public string[] lines;
+	bool isTalking;
+
     BoxCollider2D speechRange;
     private bool playerNearby;
 
     // Start is called before the first frame update
     void Start()
     {
+		isTalking = false;
         speechRange = GetComponent<BoxCollider2D>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (playerNearby && Input.GetKeyDown(KeyCode.E))
+        if (playerNearby && !isTalking && Input.GetKeyDown(KeyCode.E))
         {
+			isTalking = true;
             PlaySpeech();
         }
     }
@@ -41,12 +47,15 @@ public class EE_Villager : EE_NPC
         if (other != null && other.CompareTag("Player"))
         {
             playerNearby = false;
+			isTalking = false;
+			dialogueBox.ForceEndDialogue();
             Debug.Log($"Player exits dialogue range of '{villagerName}'.");
         }
     }
 
     private void PlaySpeech()
     {
-        Debug.Log($"'{villagerName}' is talking.");
+		dialogueBox.lines = lines;
+		dialogueBox.StartDialogue();
     }
 }
