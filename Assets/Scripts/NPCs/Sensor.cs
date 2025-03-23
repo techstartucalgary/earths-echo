@@ -51,11 +51,13 @@ public class Sensor : MonoBehaviour
     }
 
     void OnTriggerEnter2D(Collider2D other) {
+		if(targetTag == "") return;
         if(!other.CompareTag(targetTag)) return;
         UpdateTargetPosition(other.gameObject);
     }
 
     void OnTriggerExit2D(Collider2D other) {
+		if(targetTag == "") return;
         if(!other.CompareTag(targetTag)) return;
         UpdateTargetPosition();
     }
