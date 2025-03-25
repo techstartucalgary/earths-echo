@@ -1,8 +1,7 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class TestEnemy : MonoBehaviour, IDamageable, IHealable
+public class TestEnemy : MonoBehaviour, IDamageable
 {
     public EnemyHealthBar healthBar; // Optional health bar
 
@@ -10,47 +9,91 @@ public class TestEnemy : MonoBehaviour, IDamageable, IHealable
     [SerializeField] private float maxHealth = 20f;
     [SerializeField] private AudioClip[] damageSoundClips;
     [SerializeField] private AudioClip[] idleSoundClips;
-    [SerializeField] private float idleSoundInterval = 5f; // Time in seconds between idle sounds
+    [SerializeField] private float idleSoundInterval = 5f; // Seconds between idle sounds
 
+    // Reference to the ScreenShake script (assign this in the Inspector)
+    [SerializeField] private ScreenShake screenShake;
+    // Screen shake parameters
+    [SerializeField] private float shakeDuration = 0.2f;
+    [SerializeField] private float shakeMagnitude = 0.05f;
 
-    private float currentHealth;
+    // Enemy healing settings:
+    [SerializeField] private bool canHealEnemy = false;  // If true, the enemy heals over time.
+    [SerializeField] private float enemyHealAmount = 5f;   // Amount healed each interval.
+    [SerializeField] private float healInterval = 5f;      // Time in seconds between heals.
 
-    public void Start()
+    public float currentHealth;
+    public bool isInvincible = false;
+
+    private void Start()
     {
         currentHealth = maxHealth;
 
-        // Initialize the health bar only if it is assigned
+        // Initialize the health bar if assigned.
         if (healthBar != null)
         {
-            // Pass the enemy name only if it's set
             healthBar.Initialize(maxHealth, enemyName);
         }
-        StartCoroutine(PlayIdleSounds());
 
+        StartCoroutine(PlayIdleSounds());
+        // Start the healing coroutine once. It will handle the healing logic internally.
+        StartCoroutine(HealOverTime());
     }
+
     private IEnumerator PlayIdleSounds()
     {
         while (true)
         {
-            // Play a random idle sound using the SoundFXManager
             SoundFXManager.Instance.PlayRandomSoundFXClip(idleSoundClips, transform, 1f);
             yield return new WaitForSeconds(idleSoundInterval);
         }
     }
 
-    public void Damage(float damageAmount)
+    // Persistent coroutine that checks canHealEnemy before healing.
+    private IEnumerator HealOverTime()
     {
+        while (true)
+        {
+            // Only wait and heal if healing is enabled.
+            if (canHealEnemy)
+            {
+                yield return new WaitForSeconds(healInterval);
+                Heal(enemyHealAmount);
+            }
+            else
+            {
+                // If healing is not enabled, yield until next frame.
+                yield return null;
+            }
+        }
+    }
+
+    public void Damage(float damageAmount,  Vector2 impactPos)
+    {
+        // If the enemy is invincible, ignore damage.
+        if (isInvincible)
+            return;
+
         currentHealth -= damageAmount;
 
-        // Update the health bar only if it is assigned
         if (healthBar != null)
         {
             healthBar.Damage(damageAmount);
-            //SoundFXManager.Instance.PlaySoundFXClip(damageSoundClips, transform, 1f);
-            SoundFXManager.Instance.PlayRandomSoundFXClip(damageSoundClips, transform, 1f);
+        }
+        
+        Vector3 knockbackDirection = impactPos;
+        Debug.Log(knockbackDirection);
+        float knockbackForce = damageAmount * 0.5f;
+        ApplyKnockback(knockbackDirection, knockbackForce);
+
+        SoundFXManager.Instance.PlayRandomSoundFXClip(damageSoundClips, transform, 1f);
+
+        // Trigger screen shake effect.
+        if (screenShake != null)
+        {
+            screenShake.Shake(shakeDuration, shakeMagnitude);
         }
 
-        // Destroy the enemy if health is zero or below
         if (currentHealth <= 0)
         {
             Destroy(gameObject);
@@ -59,6 +102,26 @@ public class TestEnemy : MonoBehaviour, IDamageable, IHealable
 
     public void Heal(float healAmount)
     {
-        //placeholder, will need further implementation with any healing items, schedules for enemies. 
+        currentHealth += healAmount;
+        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+
+        if (healthBar != null)
+        {
+            healthBar.Heal(healAmount);
+        }
+    }
+
+    public void SetInvincible(bool invincible)
+    {
+        isInvincible = invincible;
+    }
+
+    public void ApplyKnockback(Vector3 direction, float force)
+    {
+        Rigidbody2D rb = GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.AddForce(direction.normalized * force, ForceMode2D.Impulse);
+        }
     }
 }

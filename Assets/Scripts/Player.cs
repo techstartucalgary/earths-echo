@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 using Unity.VisualScripting;
 using UnityEditor;
 
+
 [RequireComponent(typeof(Controller2D))]
 [RequireComponent(typeof(BoxCollider2D))]
 public class Player : MonoBehaviour
@@ -174,6 +175,14 @@ public class Player : MonoBehaviour
 				SideHitpoint.localPosition = new Vector3(-SideHitpointLocalX, SideHitpoint.localPosition.y, SideHitpoint.localPosition.z);
 			}
 		}
+		if (isSliding && animator != null)
+		{
+			if (!animator.GetCurrentAnimatorStateInfo(0).IsName("sliding"))
+			{
+				animator.Play("sliding");
+			}
+}
+
 
 	}
 	private void OnTriggerEnter2D(Collider2D collision)
@@ -489,22 +498,24 @@ public class Player : MonoBehaviour
 	{
 		if (attackDirection == null) return;
 
+		Vector3 attackPos = new Vector2(Mathf.Sign(animatorTransform.localScale.x),0f);
+
 		// Detect all enemies in the attack range
-		Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(new Vector2(attackDirection.position.x, attackDirection.position.y), attackRange, enemyLayer);
+		Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(new UnityEngine.Vector2(attackDirection.position.x, attackDirection.position.y), attackRange, enemyLayer);
 
 		foreach (var enemy in hitEnemies)
 		{
-			ApplyDamage(enemy, attackDamage);
+			ApplyDamage(enemy, attackDamage, attackPos);
 		}
 	}
 
-	private void ApplyDamage(Collider2D enemy, float attackDamage)
+	private void ApplyDamage(Collider2D enemy, float attackDamage, Vector3 impactPos)
 	{
 		// Apply damage if the enemy implements IDamageable
 		IDamageable iDamageable = enemy.GetComponent<IDamageable>();
 		if (iDamageable != null)
 		{
-			iDamageable.Damage(attackDamage);
+			iDamageable.Damage(attackDamage, impactPos);
 			Debug.Log($"Dealt {attackDamage} damage to {enemy.name}");
 		}
 		else

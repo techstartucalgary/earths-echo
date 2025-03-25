@@ -1,9 +1,16 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public interface IDamageable
 {
-    public void Damage(float damageAmount);
-    //apply this interface to the scripts of any objects that can be damaged, override the method to affect the healthbar
+    // Damages the object by a given amount.
+    void Damage(float damageAmount, Vector2 impactPos);
+    
+    // Heals the object by a given amount.
+    void Heal(float healAmount);
+    
+    // Sets whether the object is invincible (ignores damage when true).
+    void SetInvincible(bool isInvincible);
+    
+    // Applies knockback using a given direction and force.
+    void ApplyKnockback(Vector3 direction, float force);
 }
