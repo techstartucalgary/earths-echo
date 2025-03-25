@@ -118,7 +118,7 @@ public class ProjectileBehaviour : MonoBehaviour
             }
 
             Debug.Log($"Hit object with layer: {LayerMask.LayerToName(collision.gameObject.layer)}");
-            Destroy(gameObject);
+            Destroy(gameObject); // Replace with a call to create a new gameobject where the object respawns where the collision occurred
         }
     }
 
