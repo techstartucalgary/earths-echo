@@ -1,9 +1,12 @@
+
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
-[ExecuteInEditMode]
+// [ExecuteInEditMode]
 public class ParallaxLayer : MonoBehaviour
 {
-    public float parallaxFactor;
+    [SerializeField] public float parallaxFactor;
 
     public void Move(float delta)
     {
