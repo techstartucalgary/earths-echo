@@ -5,12 +5,13 @@ public class InventoryHandler : MonoBehaviour
 {
     public int inventoryLimit = 20;
     private List<GameObject> items = new List<GameObject>();
-    public InventoryMenu inventoryMenu;
+    [SerializeField] InventoryMenu inventoryMenu;
 
-    void Start()
+	private void Awake()
     {
-        inventoryMenu = FindObjectOfType<InventoryMenu>();
+        // inventoryMenu = FindObjectOfType<InventoryMenu>();
     }
+
 
     public void AddItem(GameObject item)
 	{

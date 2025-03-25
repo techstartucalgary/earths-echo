@@ -22,7 +22,8 @@ public class ParallaxBackground : MonoBehaviour
         SetLayers();
 
         // Shift every child in every layer individually by their x distance from the camera * their parallax factor
-        if (!Application.isPlaying && !initialized) {
+        if (!Application.isPlaying && !initialized)
+        {
 
             Console.WriteLine("ParallaxBackground Start");
 
@@ -50,7 +51,6 @@ public class ParallaxBackground : MonoBehaviour
 
             initialized = true;
         }
-
     }
 
     void SetLayers()

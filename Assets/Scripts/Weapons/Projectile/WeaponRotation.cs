@@ -35,11 +35,11 @@ public class WeaponRotation : MonoBehaviour
         // Adjust target angle based on player facing direction
         if (isFlipped)
         {
-            targetAngle = Mathf.Clamp(targetAngle, 180f - maxAngle, 180f + maxAngle);
+            // targetAngle = Mathf.Clamp(targetAngle, 180f - maxAngle, 180f + maxAngle);
         }
         else
         {
-            targetAngle = Mathf.Clamp(targetAngle, -maxAngle, maxAngle);
+            // targetAngle = Mathf.Clamp(targetAngle, -maxAngle, maxAngle);
         }
 
         // Get the current angle

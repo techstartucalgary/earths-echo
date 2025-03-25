@@ -11,12 +11,18 @@ public class MeleeWeapon : Weapon
     public float damage; // Amount of damage dealt
     public float range; // Range of the melee attack
 
+    private PlayerAnimationManager playerAnimationManager;
 
     public Transform attackPoint; // Point where the attack originates
     //private Animator animator; // Animator for melee animations
 
     private void Start()
     {
+        playerAnimationManager = FindObjectOfType<PlayerAnimationManager>();
+        if (playerAnimationManager == null) {
+            Debug.LogError("Player animation manager not found. Player attack animations can not be called.");
+        }
+
         weaponCollider = GetComponent<BoxCollider2D>();
         if (weaponCollider == null)
         {
@@ -29,12 +35,6 @@ public class MeleeWeapon : Weapon
         {
             Debug.LogError("CooldownText not found. Ensure a TextMeshPro UI element named 'CooldownText' exists.");
         }
-
-        /*animator = GetComponent<Animator>();
-        if (animator == null)
-        {
-            Debug.LogWarning("Animator not found. Animations will not be triggered.");
-        }*/
 
         attackPoint = transform.Find("AttackPoint");
         if (attackPoint == null)
@@ -106,7 +106,7 @@ public class MeleeWeapon : Weapon
             Vector2 attackDirection = transform.localScale.x > 0 ? Vector2.right : Vector2.left;
             Debug.Log("Melee side attack with " + weaponName);
 
-            //animator?.SetTrigger("SideAttack");
+            playerAnimationManager.PlayAnimation("player_attack");
 
             PerformCircularAttack(attackDirection);
         }
@@ -124,7 +124,7 @@ public class MeleeWeapon : Weapon
             lastSwingTime = Time.time;
             Debug.Log("Melee up attack with " + weaponName);
 
-            //animator?.SetTrigger("UpAttack");
+            playerAnimationManager.PlayAnimation("player_up_attack");
 
             PerformVerticalAttack(Vector2.up);
         }
@@ -142,7 +142,7 @@ public class MeleeWeapon : Weapon
             lastSwingTime = Time.time;
             Debug.Log("Melee down attack with " + weaponName);
 
-            //animator?.SetTrigger("DownAttack");
+            playerAnimationManager.PlayAnimation("player_down_attack");
 
             PerformVerticalAttack(Vector2.down);
         }

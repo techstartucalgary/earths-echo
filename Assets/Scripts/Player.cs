@@ -1,11 +1,19 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System;
+using UnityEngine.SceneManagement;
 
 [RequireComponent(typeof(Controller2D))]
 [RequireComponent(typeof(BoxCollider2D))]
 public class Player : MonoBehaviour
 {
 
+    [Header("Animation")]
+	[SerializeField] Animator animator;
+	[SerializeField] Transform animatorTransform;
+	float animatorXScale;
+
+    [Header("Physics")]
     // Jumping variables
     public float maxJumpHeight = 4;
     public float minJumpHeight = 1;
@@ -73,6 +81,8 @@ public class Player : MonoBehaviour
         minJumpVelocity = Mathf.Sqrt(2 * Mathf.Abs(gravity) * minJumpHeight);
 
         originalScale = transform.localScale; // Save original size for scaling during slide
+
+        animatorXScale = animatorTransform.localScale[0];
     }
 
     void Update()
@@ -116,6 +126,20 @@ public class Player : MonoBehaviour
         HandleSprinting();
         HandleSliding();
 
+        // Animation stuff
+        if (animator != null){
+			
+			animator.SetBool("isJumping", !controller.collisions.below);
+			animator.SetFloat("xVelocity", Math.Abs(velocity.x));
+			animator.SetFloat("yVelocity", velocity.y);
+		
+			if (velocity.x >= 0.01f) {
+				animatorTransform.localScale = new Vector3(animatorXScale, animatorTransform.localScale[1], animatorTransform.localScale[2]);
+			}
+			else if (velocity.x <= -0.01f) {
+				animatorTransform.localScale = new Vector3(-animatorXScale, animatorTransform.localScale[1], animatorTransform.localScale[2]);
+			}
+		}
     }
 	private void OnTriggerEnter2D(Collider2D collision)
     {
@@ -146,8 +170,12 @@ public class Player : MonoBehaviour
     {
         if (collision.tag == "spike")
         {
-            healthBar.Damage(0.002f);
+            healthBar.Damage(0.05f);
         }
+        if (collision.tag == "water"){
+			healthBar.Damage(0.05f);
+		}
+        
     }
 
     private void OnTriggerExit2D(Collider2D collision)
