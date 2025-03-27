@@ -9,6 +9,8 @@ public class TestEnemy : MonoBehaviour, IDamageable
     [SerializeField] private float maxHealth = 20f;
     [SerializeField] private AudioClip[] damageSoundClips;
     [SerializeField] private AudioClip[] idleSoundClips;
+    [SerializeField] private AudioClip[] deathSoundClips;
+
     [SerializeField] private float idleSoundInterval = 5f; // Seconds between idle sounds
 
     // Reference to the ScreenShake script (assign this in the Inspector)
@@ -96,7 +98,9 @@ public class TestEnemy : MonoBehaviour, IDamageable
 
         if (currentHealth <= 0)
         {
-            Destroy(gameObject);
+            SoundFXManager.Instance.PlayRandomSoundFXClip(deathSoundClips, transform, 1f);
+            Destroy(gameObject); // will need to change this call to an animator that makes the enemy get knocked out. Might be useful to remove colliders atp
+            //AudioManager.instance.SetGameplayMusic(GameplayContext._);
         }
     }
 
