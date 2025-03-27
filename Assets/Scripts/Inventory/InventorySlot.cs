@@ -3,228 +3,337 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 
+/// <summary>
+/// Represents a single slot in the inventory UI.
+/// Responsible for displaying an item's icon, count (if stackable), and handling selection/interaction.
+/// </summary>
 public class InventorySlot : MonoBehaviour, IPointerClickHandler
 {
-    public GameObject itemPrefab; // Store the weapon prefab instead of an instance
-    private InventoryMenu inventoryMenu;
-    private Image itemIcon;
-    private bool isSelected; // Track if the item has been selected once
+    // The item stored in this slot.
+    public ItemSO itemSO;
+    
+    // The count of this item in the inventory.
+    public int itemCount;
+    
+    // The name and description of the item.
     public string itemName;
     public string itemDescription;
-
-    [SerializeField] private GameObject selectedShader;
-    [SerializeField] private Image[] selectedIcons; // Array to hold selected icons (0 = melee, 1 = projectile)
+    
+    // Reference to the InventoryMenu that manages all slots.
+    private InventoryMenu inventoryMenu;
+    
+    // UI references.
+    private Image itemIcon;
     public TMP_Text slotIconName;
+    [SerializeField] private TMP_Text countText; // Displays the stack count.
+    
+    // Variables to track selection state.
+    private bool isSelected;
+    [SerializeField] private GameObject selectedShader;
+    // Selected icons: index 0 = melee, 1 = projectile, 2 = general item.
+    [SerializeField] private Image[] selectedIcons;
 
+    // UI elements for displaying item descriptions.
     public Image itemDescriptionImage;
     public TMP_Text itemDescriptionNameText;
     public TMP_Text itemDescriptionText;
 
+    // UI elements for ammo info (used by projectile weapons).
     [Header("Ammo Info UI")]
-    public Image ammo1Image; // Image for ammo 1
-    public TMP_Text ammo1NameText; // Name for ammo 1
-    public Image ammo2Image; // Image for ammo 2
-    public TMP_Text ammo2NameText; // Name for ammo 2
+    public Image ammo1Image;
+    public TMP_Text ammo1NameText;
+    public Image ammo2Image;
+    public TMP_Text ammo2NameText;
 
     void Start()
     {
         inventoryMenu = FindObjectOfType<InventoryMenu>();
         itemIcon = transform.Find("ItemImage").GetComponent<Image>();
 
+        // Initially hide the icon.
         if (itemIcon != null)
         {
             itemIcon.enabled = false;
-            
         }
-
     }
 
-	public void SetItem(GameObject newItemPrefab)
-	{
-		if (newItemPrefab == null)
-		{
-			// Suppress warnings for intentional clearing
-			if (itemPrefab != null)
-			{
-				Debug.LogWarning("Clearing item in InventorySlot.");
-			}
-			ClearItem();
-			return;
-		}
-
-		itemPrefab = newItemPrefab;
-		Weapon weapon = itemPrefab.GetComponent<Weapon>();
-
-		if (weapon != null)
-		{
-			itemName = weapon.weaponName;
-			itemDescription = weapon.description;
-			slotIconName.text = itemName;
-
-		}
-		else
-		{
-			Debug.LogWarning("No Weapon component found on the assigned itemPrefab.");
-			itemName = "Unknown Item";
-			itemDescription = "No description available.";
-		}
-
-		// Update UI
-		if (itemIcon != null)
-		{
-			Sprite itemSprite = itemPrefab.GetComponent<SpriteRenderer>()?.sprite;
-			if (itemSprite != null)
-			{
-				itemIcon.sprite = itemSprite;
-				itemIcon.enabled = true;
-			}
-			else
-			{
-				Debug.LogWarning("ItemPrefab does not have a SpriteRenderer or a valid sprite.");
-				itemIcon.sprite = null;
-				itemIcon.enabled = false;
-			}
-		}
-	}
-
-
-    private void ClearItem()
+    /// <summary>
+    /// Sets the slot with the given item and count.
+    /// If the slot already contains the same item (identified by itemName), updates only the count,
+    /// preserving the selection state and selected icons.
+    /// </summary>
+    /// <param name="newItem">The item to display.</param>
+    /// <param name="newCount">The count of that item.</param>
+    public void SetItem(ItemSO newItem, int newCount)
     {
-        itemPrefab = null;
+        // Check if the slot already holds an item and it is of the same type.
+        // We assume that each item type has a unique itemName.
+        if (itemSO != null && newItem != null && itemSO.itemName == newItem.itemName)
+        {
+            // Update only the count.
+            itemCount = newCount;
+            
+            // Update the count display if the item is stackable and count > 1.
+            if (itemSO.stackable && itemCount > 1 && countText != null)
+            {
+                countText.text = itemCount.ToString();
+                countText.enabled = true;
+            }
+            else if (countText != null)
+            {
+                countText.text = "";
+                countText.enabled = false;
+            }
+            
+            // Do not change selection state or reassign itemSO.
+            return;
+        }
+        
+        // If the new item is different (or newItem is null), perform a full update.
+        if (newItem == null)
+        {
+            ClearItem();
+            return;
+        }
+        
+        // For a completely new item, reset the selection state.
+        isSelected = false;
+        
+        // Assign the new item and count.
+        itemSO = newItem;
+        itemCount = newCount;
+        itemName = itemSO.itemName;
+        itemDescription = itemSO.description;
+        slotIconName.text = itemName;
+        
+        // Update the item icon.
+        if (itemIcon != null)
+        {
+            if (itemSO.itemIcon != null)
+            {
+                itemIcon.sprite = itemSO.itemIcon;
+                itemIcon.enabled = true;
+            }
+            else
+            {
+                Debug.LogWarning("ItemSO does not have a valid sprite.");
+                itemIcon.sprite = null;
+                itemIcon.enabled = false;
+            }
+        }
+        
+        // Update the count display.
+        if (itemSO.stackable && itemCount > 1 && countText != null)
+        {
+            countText.text = itemCount.ToString();
+            countText.enabled = true;
+        }
+        else if (countText != null)
+        {
+            countText.text = "";
+            countText.enabled = false;
+        }
+    }
+
+
+    /// <summary>
+    /// Clears the slot completely. Resets item data, UI elements, and selection state.
+    /// </summary>
+    public void ClearItem()
+    {
+        itemSO = null;
         itemName = string.Empty;
+        slotIconName.text = "";
         itemDescription = string.Empty;
+        itemDescriptionNameText.text = "";
+        itemDescriptionText.text = "";
+        // Clear the description image (set to null so it can be reset by external code if needed).
+        itemDescriptionImage.sprite = null;
 
         if (itemIcon != null)
         {
             itemIcon.sprite = null;
             itemIcon.enabled = false;
         }
+        if (countText != null)
+        {
+            countText.text = "";
+            countText.enabled = false;
+        }
+
+        // Clear selection visuals.
+        Deselect();
     }
 
+    /// <summary>
+    /// Clears only the selection visuals (shader and selected icons) without removing item data.
+    /// </summary>
+public void ClearSelectedIcon()
+{
+    // Only clear the selected icon corresponding to the item type.
+    if (itemSO != null)
+    {
+        WeaponSO weapon = itemSO as WeaponSO;
+        if (weapon != null)
+        {
+            // If it's a melee weapon, clear only the first icon.
+            if (weapon is MeleeWeaponSO && selectedIcons.Length > 0 && selectedIcons[0] != null)
+            {
+                selectedIcons[0].enabled = false;
+            }
+            // If it's a projectile weapon, clear only the second icon.
+            else if (weapon is ProjectileWeaponSO && selectedIcons.Length > 1 && selectedIcons[1] != null)
+            {
+                selectedIcons[1].enabled = false;
+            }
+        }
+        else
+        {
+            // For non-weapon items, clear only the third icon.
+            if (selectedIcons.Length > 2 && selectedIcons[2] != null)
+            {
+                selectedIcons[2].enabled = false;
+            }
+        }
+    }
+    isSelected = false;
+}
+
+
+    /// <summary>
+    /// Handles pointer click events on the slot.
+    /// On first click, shows item details. On second click, sends the item to the InventoryMenu for equipping/holding.
+    /// </summary>
     public void OnPointerClick(PointerEventData eventData)
     {
+        // Only respond to left-clicks.
         if (eventData.button == PointerEventData.InputButton.Left)
         {
-            if (itemPrefab != null)
+            if (itemSO != null)
             {
-				Weapon weapon = itemPrefab.GetComponent<Weapon>();
-				if(weapon is MeleeWeapon)
-					DeselectAmmoStats();
-                if (!isSelected)
+                // If the item is a weapon.
+                WeaponSO weapon = itemSO as WeaponSO;
+                if (weapon != null)
                 {
-                    // Show item description and ammo info on the first click
-                    ShowItemDescription();
-                    ShowAmmoInfo();
+                    // For melee weapons, clear any projectile ammo stats.
+                    if (weapon is MeleeWeaponSO)
+                        DeselectAmmoStats();
 
-                    isSelected = true;
+                    if (!isSelected)
+                    {
+                        ShowItemDescription();
+                        ShowAmmoInfo();
+                        isSelected = true;
+                    }
+                    else
+                    {
+                        inventoryMenu.DeselectAllSlots();
+                        Select();
+                        // Call the InventoryMenu method to process equipping/holding.
+                        inventoryMenu.OnItemClicked(itemSO);
+                        isSelected = false;
+                    }
                 }
                 else
                 {
-                    // Equip item on subsequent click
-                    inventoryMenu.DeselectAllSlots();
-                    Select();
-                    inventoryMenu.OnItemClicked(itemPrefab);
-                    isSelected = false; // Reset selection state
+                    // For non-weapon items.
+                    if (!isSelected)
+                    {
+                        ShowItemDescription();
+                        isSelected = true;
+                    }
+                    else
+                    {
+                        inventoryMenu.DeselectAllSlots();
+                        Select();
+                        inventoryMenu.OnItemClicked(itemSO);
+                        isSelected = false;
+                    }
                 }
             }
             else
             {
-                Debug.LogWarning("Attempted to select a destroyed or null item.");
+                Debug.LogWarning("Attempted to select a null item.");
             }
         }
     }
 
+    /// <summary>
+    /// Displays the item's description in the UI.
+    /// </summary>
     private void ShowItemDescription()
     {
-        // Display item details in the UI
         if (itemDescriptionImage != null)
         {
             itemDescriptionImage.sprite = itemIcon.sprite;
             itemDescriptionImage.enabled = true;
         }
         if (itemDescriptionNameText != null)
-        {
             itemDescriptionNameText.text = itemName;
-        }
         if (itemDescriptionText != null)
-        {
             itemDescriptionText.text = itemDescription;
-        }
     }
 
+    /// <summary>
+    /// Shows ammo info if the item is a projectile weapon.
+    /// </summary>
     private void ShowAmmoInfo()
     {
-        // Check if the itemPrefab is a projectile weapon
-        ProjectileWeapon projectileWeapon = itemPrefab.GetComponent<ProjectileWeapon>();
+        ProjectileWeaponSO projectileWeapon = itemSO as ProjectileWeaponSO;
         if (projectileWeapon == null)
         {
-            Debug.LogWarning("Item is not a projectile weapon, cannot display ammo info.");
+            Debug.LogWarning("Item is not a projectile weapon; no ammo info to display.");
             return;
         }
 
-        // Update Ammo1 Info
+        // Update Ammo1 info.
         if (projectileWeapon.projectilePrefab != null)
         {
-            ProjectileBehaviour ammo1 = projectileWeapon.projectilePrefab.GetComponent<ProjectileBehaviour>();
-            if (ammo1Image != null && ammo1 != null)
+            Sprite ammo1Sprite = projectileWeapon.projectilePrefab.GetComponent<SpriteRenderer>()?.sprite;
+            if (ammo1Image != null && ammo1Sprite != null)
             {
-                Sprite ammo1Sprite = projectileWeapon.projectilePrefab.GetComponent<SpriteRenderer>()?.sprite;
                 ammo1Image.sprite = ammo1Sprite;
                 ammo1Image.enabled = true;
-                ammo1NameText.text = ammo1.name;
+                ammo1NameText.text = projectileWeapon.projectilePrefab.name;
             }
         }
 
-        // Update Ammo2 Info
+        // Update Ammo2 info, if available.
         if (projectileWeapon.secondaryProjectilePrefab != null)
         {
-            ProjectileBehaviour ammo2 = projectileWeapon.secondaryProjectilePrefab.GetComponent<ProjectileBehaviour>();
-            if (ammo2Image != null && ammo2 != null)
+            Sprite ammo2Sprite = projectileWeapon.secondaryProjectilePrefab.GetComponent<SpriteRenderer>()?.sprite;
+            if (ammo2Image != null && ammo2Sprite != null)
             {
-                Sprite ammo2Sprite = projectileWeapon.secondaryProjectilePrefab.GetComponent<SpriteRenderer>()?.sprite;
                 ammo2Image.sprite = ammo2Sprite;
                 ammo2Image.enabled = true;
-                ammo2NameText.text = ammo2.name;
+                ammo2NameText.text = projectileWeapon.secondaryProjectilePrefab.name;
             }
         }
-        if (projectileWeapon.projectilePrefab != null && projectileWeapon.secondaryProjectilePrefab == null)
+        else
         {
-			DeselectAmmoStats();
-			ProjectileBehaviour ammo1 = projectileWeapon.projectilePrefab.GetComponent<ProjectileBehaviour>();
-            if (ammo1Image != null && ammo1 != null)
-            {
-                Sprite ammo1Sprite = projectileWeapon.projectilePrefab.GetComponent<SpriteRenderer>()?.sprite;
-                ammo1Image.sprite = ammo1Sprite;
-                ammo1Image.enabled = true;
-                ammo1NameText.text = ammo1.name;
-                
-			}
-		}
+            DeselectAmmoStats();
+        }
     }
 
+    /// <summary>
+    /// Activates the selected visual elements.
+    /// </summary>
     public void Select()
     {
         if (selectedShader != null)
-        {
             selectedShader.SetActive(true);
-        }
 
-        if (itemPrefab == null)
-        {
-            Debug.LogWarning("Select method called, but itemPrefab is null or destroyed.");
-            return;
-        }
-
-        Weapon weapon = itemPrefab.GetComponent<Weapon>();
+        // Optionally update specific selected icons based on the type.
+        WeaponSO weapon = itemSO as WeaponSO;
         if (weapon != null)
         {
-            if (weapon is MeleeWeapon && selectedIcons.Length > 0 && selectedIcons[0] != null)
+            if (weapon is MeleeWeaponSO && selectedIcons.Length > 0 && selectedIcons[0] != null)
             {
-				DeselectAmmoStats();
+                DeselectAmmoStats();
                 selectedIcons[0].sprite = itemIcon.sprite;
                 selectedIcons[0].enabled = true;
             }
-            else if (weapon is ProjectileWeapon && selectedIcons.Length > 1 && selectedIcons[1] != null)
+            else if (weapon is ProjectileWeaponSO && selectedIcons.Length > 1 && selectedIcons[1] != null)
             {
                 selectedIcons[1].sprite = itemIcon.sprite;
                 selectedIcons[1].enabled = true;
@@ -232,42 +341,42 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler
         }
         else
         {
-            Debug.LogWarning("No Weapon component found on the selected itemPrefab.");
+            if (selectedIcons.Length > 2 && selectedIcons[2] != null)
+            {
+                selectedIcons[2].sprite = itemIcon.sprite;
+                selectedIcons[2].enabled = true;
+            }
         }
     }
 
+    /// <summary>
+    /// Clears the selection.
+    /// </summary>
     public void Deselect()
     {
         if (selectedShader != null)
-        {
             selectedShader.SetActive(false);
-        }
-        isSelected = false; // Reset selection state when deselected
+        isSelected = false;
     }
-	public void DeselectAmmoStats()
-	{
-		// Clear Ammo1 Info
-		if (ammo1Image != null)
-		{
-			ammo1Image.sprite = null;
-			ammo1Image.enabled = false;
-		}
-		if (ammo1NameText != null)
-		{
-			ammo1NameText.text = string.Empty;
-		}
 
-		// Clear Ammo2 Info
-		if (ammo2Image != null)
-		{
-			ammo2Image.sprite = null;
-			ammo2Image.enabled = false;
-		}
-		if (ammo2NameText != null)
-		{
-			ammo2NameText.text = string.Empty;
-		}
-	}
-
+    /// <summary>
+    /// Clears ammo-related UI elements.
+    /// </summary>
+    public void DeselectAmmoStats()
+    {
+        if (ammo1Image != null)
+        {
+            ammo1Image.sprite = null;
+            ammo1Image.enabled = false;
+        }
+        if (ammo1NameText != null)
+            ammo1NameText.text = string.Empty;
+        if (ammo2Image != null)
+        {
+            ammo2Image.sprite = null;
+            ammo2Image.enabled = false;
+        }
+        if (ammo2NameText != null)
+            ammo2NameText.text = string.Empty;
+    }
 }
-

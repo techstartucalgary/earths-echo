@@ -25,7 +25,6 @@ public class EnemyHealthBar : MonoBehaviour
 
         // Deactivate the health bar parent by default
         healthBarParent.SetActive(false);
-
     }
 
     // Initialize the health bar with the maximum health and optionally an enemy name
@@ -34,13 +33,14 @@ public class EnemyHealthBar : MonoBehaviour
         this.maxHealth = maxHealth;
         this.currentHealth = maxHealth;
         this.lowHealthThreshold = 0.3f; // Set to 30% of max health
-        if (enemyName == null) 
+        
+        if (string.IsNullOrEmpty(enemyName))
             nameSpace.text = string.Empty;
         else
             nameSpace.text = enemyName;
+            
         UpdateBar();
     }
-
 
     // Apply damage and update the health bar
     public void Damage(float damageAmount)
@@ -52,8 +52,6 @@ public class EnemyHealthBar : MonoBehaviour
         }
 
         currentHealth -= damageAmount;
-
-        // Clamp health between 0 and maxHealth
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
         // Change bar color if health is below the low health threshold
@@ -69,15 +67,32 @@ public class EnemyHealthBar : MonoBehaviour
         UpdateBar();
     }
 
-    // Update the size of the health bar
+    // Heal the enemy and update the health bar accordingly.
+    public void Heal(float healAmount)
+    {
+        currentHealth += healAmount;
+        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+
+        // Update the bar color based on the new health percentage.
+        if (currentHealth / maxHealth <= lowHealthThreshold)
+        {
+            barImage.color = Color.red;
+        }
+        else
+        {
+            barImage.color = Color.green;
+        }
+
+        UpdateBar();
+    }
+
+    // Update the size of the health bar based on the current health.
     private void UpdateBar()
     {
         if (bar != null)
         {
-            // Calculate the new width as a percentage of the parent width
+            // Calculate the new width as a percentage of the maximum health.
             float sizePercentage = currentHealth / maxHealth;
-
-            // Update the width while keeping the height constant
             bar.localScale = new Vector3(sizePercentage, 1, 1);
         }
     }

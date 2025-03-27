@@ -1,90 +1,53 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(LineRenderer))]
 public class TrajectoryLine : MonoBehaviour
 {
-    [Header("References")]
-    [SerializeField] private ProjectileWeapon projectileWeapon;
-    [SerializeField] private Transform projectileSpawnPoint;
-
-    [Header("Trajectory Line Smoothness/Length")]
-    [SerializeField] private int segmentCount = 50;
-    [SerializeField] private float curveLength = 3.5f;
-
-    private Vector2[] segments;
+    [Tooltip("Number of points to sample in the trajectory line.")]
+    [SerializeField] private int resolution = 50;
+    
+    [Tooltip("Time interval between sampled points.")]
+    public float timeStep = 0.1f;
+    
     private LineRenderer lineRenderer;
 
-    private float projectileSpeed;
-    private float projectileGravityFromRB;
-
-    private const float TIME_CURVE_ADDITON = 0.5f;
-
-    private void Start()
+    private void Awake()
     {
-        segments = new Vector2[segmentCount];
         lineRenderer = GetComponent<LineRenderer>();
-
-        if (lineRenderer == null)
-        {
-            Debug.LogError("LineRenderer component is missing!");
-            return;
-        }
-
-        lineRenderer.positionCount = segmentCount;
-
-        if (projectileWeapon == null)
-        {
-            Debug.LogError("ProjectileWeapon reference is not assigned!");
-            return;
-        }
-
-        if (projectileWeapon.projectilePrefab == null)
-        {
-            Debug.LogError("Projectile prefab is not assigned in ProjectileWeapon!");
-            return;
-        }
-
-        ProjectileBehaviour projectileBehaviour = projectileWeapon.projectilePrefab.GetComponent<ProjectileBehaviour>();
-        if (projectileBehaviour == null)
-        {
-            Debug.LogError("Projectile prefab does not contain a ProjectileBehaviour script!");
-            return;
-        }
-
-        projectileSpeed = projectileBehaviour.physicsProjectileVelocity;
-        projectileGravityFromRB = projectileBehaviour.gravityScale;
     }
 
-	private void Update()
+    /// <summary>
+    /// Renders a predicted trajectory given the start position, initial velocity, and gravity scale.
+    /// </summary>
+    /// <param name="startPosition">Where the projectile starts.</param>
+    /// <param name="initialVelocity">Initial velocity vector.</param>
+    /// <param name="gravityScale">Effective gravity scale to use in the calculation.</param>
+	public void RenderTrajectory(Vector3 startPosition, Vector3 initialVelocity, float gravityScale)
 	{
-		// Get pullback progress to adjust speed and gravity dynamically
-		float powerPercentage = projectileWeapon.GetPullbackPower();
+		// Option: Use fixedDeltaTime for simulation
+		float dt = Time.fixedDeltaTime; // or use a custom timeStep if preferred
 
-		// Adjust projectile speed and gravity based on pullback progress
-		float adjustedSpeed = Mathf.Lerp(projectileSpeed * 0.5f, projectileSpeed, powerPercentage);
-		float adjustedGravity = Mathf.Lerp(projectileGravityFromRB * 2f, projectileGravityFromRB, powerPercentage);
+		lineRenderer.positionCount = resolution;
+		Vector3[] positions = new Vector3[resolution];
 
-		// Start position and velocity
-		Vector2 startPos = projectileSpawnPoint.position;
-		Vector2 startVelocity = projectileSpawnPoint.right * adjustedSpeed;
-
-		segments[0] = startPos;
-		lineRenderer.SetPosition(0, startPos);
-
-		// Iterate through trajectory points
-		for (int i = 1; i < segmentCount; i++)
+		// Gravity used in physics simulation
+		Vector3 gravity = Physics2D.gravity * gravityScale;
+		
+		for (int i = 0; i < resolution; i++)
 		{
-			// Time for this segment
-			float time = i * Time.fixedDeltaTime * curveLength;
-
-			// Position using the kinematic equation: x = x0 + vt + 0.5 * a * t^2
-			Vector2 position = startPos + startVelocity * time + 0.5f * Physics2D.gravity * adjustedGravity * time * time;
-
-			// Set segment position
-			segments[i] = position;
-			lineRenderer.SetPosition(i, position);
+			float t = i * dt;
+			positions[i] = startPosition + initialVelocity * t + 0.5f * gravity * t * t;
 		}
+		
+		lineRenderer.SetPositions(positions);
 	}
 
+
+    /// <summary>
+    /// Hides the trajectory line.
+    /// </summary>
+    public void HideTrajectory()
+    {
+        lineRenderer.positionCount = 0;
+    }
 }
