@@ -7,25 +7,21 @@ using System.Linq;
 
 public class MemoryMatchingGame : MonoBehaviour
 {
-    [Header("Game Settings")]
-    [SerializeField] private int gridWidth = 6;
-    [SerializeField] private int gridHeight = 6;
-    [SerializeField] private float cardFlipDuration = 0.3f;
-    [SerializeField] private float matchCheckDelay = 1f;
-    [SerializeField] private Sprite cardBackSprite;
+    // Game settings
+    private int gridWidth = 4;
+    private int gridHeight = 4;
+    private float cardFlipDuration = 0.3f;
+    private float matchCheckDelay = 1f;
 
-    [Header("UI References")]
-    [SerializeField] private GameObject gameCanvas;
-    [SerializeField] private GameObject cardPrefab;
-    [SerializeField] private Transform cardGrid;
-    [SerializeField] private TextMeshProUGUI matchesText;
-    [SerializeField] private Button closeButton;
-    [SerializeField] private GameObject completionPanel;
-    [SerializeField] private TextMeshProUGUI completionText;
+    // Runtime references
+    private GameObject gameCanvas;
+    private GameObject cardContainer;
+    private TextMeshProUGUI matchesText;
+    private Button closeButton;
+    private GameObject completionPanel;
+    private TextMeshProUGUI completionText;
 
-    [Header("Card Images")]
-    [SerializeField] private List<Sprite> cardImages = new List<Sprite>();
-
+    // State tracking
     private List<MemoryCard> cards = new List<MemoryCard>();
     private MemoryCard firstSelectedCard;
     private MemoryCard secondSelectedCard;
@@ -34,310 +30,326 @@ public class MemoryMatchingGame : MonoBehaviour
     private int totalPairs;
     private int moveCount = 0;
 
-    private void Awake()
-    {
-        // If references aren't set in the inspector, create them dynamically
-        if (gameCanvas == null)
-        {
-            gameCanvas = new GameObject("Memory Game Canvas");
-            Canvas canvas = gameCanvas.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 10; // Ensure it's on top of other UI
-
-            CanvasScaler scaler = gameCanvas.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920, 1080);
-
-            gameCanvas.AddComponent<GraphicRaycaster>();
-
-            // Create a dark panel as background
-            GameObject backgroundPanel = new GameObject("Background Panel");
-            backgroundPanel.transform.SetParent(gameCanvas.transform, false);
-            Image bgImage = backgroundPanel.AddComponent<Image>();
-            bgImage.color = new Color(0, 0, 0, 0.8f);
-            RectTransform bgRect = backgroundPanel.GetComponent<RectTransform>();
-            bgRect.anchorMin = Vector2.zero;
-            bgRect.anchorMax = Vector2.one;
-            bgRect.sizeDelta = Vector2.zero;
-
-            // Create the grid container
-            GameObject gridObject = new GameObject("Card Grid");
-            gridObject.transform.SetParent(gameCanvas.transform, false);
-            cardGrid = gridObject.transform;
-
-            RectTransform gridRect = gridObject.AddComponent<RectTransform>();
-            GridLayoutGroup gridLayout = gridObject.AddComponent<GridLayoutGroup>();
-            gridLayout.cellSize = new Vector2(100, 100);
-            gridLayout.spacing = new Vector2(10, 10);
-            gridLayout.padding = new RectOffset(20, 20, 20, 20);
-            gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            gridLayout.constraintCount = gridWidth;
-
-            gridRect.anchorMin = new Vector2(0.5f, 0.5f);
-            gridRect.anchorMax = new Vector2(0.5f, 0.5f);
-            gridRect.pivot = new Vector2(0.5f, 0.5f);
-            gridRect.sizeDelta = new Vector2((gridWidth * 110) + 40, (gridHeight * 110) + 40);
-
-            // Create UI for match counter
-            GameObject matchCounter = new GameObject("Match Counter");
-            matchCounter.transform.SetParent(gameCanvas.transform, false);
-            matchesText = matchCounter.AddComponent<TextMeshProUGUI>();
-            matchesText.fontSize = 24;
-            matchesText.color = Color.white;
-            matchesText.alignment = TextAlignmentOptions.Center;
-
-            RectTransform matchRect = matchCounter.GetComponent<RectTransform>();
-            matchRect.anchorMin = new Vector2(0.5f, 1);
-            matchRect.anchorMax = new Vector2(0.5f, 1);
-            matchRect.pivot = new Vector2(0.5f, 1);
-            matchRect.anchoredPosition = new Vector2(0, -20);
-            matchRect.sizeDelta = new Vector2(300, 50);
-
-            // Create close button
-            GameObject closeButtonObj = new GameObject("Close Button");
-            closeButtonObj.transform.SetParent(gameCanvas.transform, false);
-            closeButton = closeButtonObj.AddComponent<Button>();
-            Image closeButtonImage = closeButtonObj.AddComponent<Image>();
-            closeButtonImage.color = new Color(0.8f, 0.2f, 0.2f);
-
-            GameObject closeText = new GameObject("Close Text");
-            closeText.transform.SetParent(closeButtonObj.transform, false);
-            TextMeshProUGUI closeTextMesh = closeText.AddComponent<TextMeshProUGUI>();
-            closeTextMesh.text = "X";
-            closeTextMesh.fontSize = 24;
-            closeTextMesh.color = Color.white;
-            closeTextMesh.alignment = TextAlignmentOptions.Center;
-
-            RectTransform closeTextRect = closeText.GetComponent<RectTransform>();
-            closeTextRect.anchorMin = Vector2.zero;
-            closeTextRect.anchorMax = Vector2.one;
-            closeTextRect.sizeDelta = Vector2.zero;
-
-            RectTransform closeButtonRect = closeButtonObj.GetComponent<RectTransform>();
-            closeButtonRect.anchorMin = new Vector2(1, 1);
-            closeButtonRect.anchorMax = new Vector2(1, 1);
-            closeButtonRect.pivot = new Vector2(1, 1);
-            closeButtonRect.anchoredPosition = new Vector2(-20, -20);
-            closeButtonRect.sizeDelta = new Vector2(50, 50);
-
-            // Create completion panel
-            completionPanel = new GameObject("Completion Panel");
-            completionPanel.transform.SetParent(gameCanvas.transform, false);
-            Image completionBg = completionPanel.AddComponent<Image>();
-            completionBg.color = new Color(0.1f, 0.1f, 0.1f, 0.9f);
-
-            RectTransform completionRect = completionPanel.GetComponent<RectTransform>();
-            completionRect.anchorMin = new Vector2(0.5f, 0.5f);
-            completionRect.anchorMax = new Vector2(0.5f, 0.5f);
-            completionRect.pivot = new Vector2(0.5f, 0.5f);
-            completionRect.sizeDelta = new Vector2(400, 200);
-
-            GameObject completionTextObj = new GameObject("Completion Text");
-            completionTextObj.transform.SetParent(completionPanel.transform, false);
-            completionText = completionTextObj.AddComponent<TextMeshProUGUI>();
-            completionText.fontSize = 24;
-            completionText.color = Color.white;
-            completionText.alignment = TextAlignmentOptions.Center;
-
-            RectTransform complTextRect = completionTextObj.GetComponent<RectTransform>();
-            complTextRect.anchorMin = Vector2.zero;
-            complTextRect.anchorMax = Vector2.one;
-            complTextRect.offsetMin = new Vector2(20, 20);
-            complTextRect.offsetMax = new Vector2(-20, -20);
-
-            GameObject continueButton = new GameObject("Continue Button");
-            continueButton.transform.SetParent(completionPanel.transform, false);
-            Button continueButtonComp = continueButton.AddComponent<Button>();
-            Image continueButtonImage = continueButton.AddComponent<Image>();
-            continueButtonImage.color = new Color(0.2f, 0.7f, 0.3f);
-            continueButtonComp.onClick.AddListener(CloseGame);
-
-            GameObject continueText = new GameObject("Continue Text");
-            continueText.transform.SetParent(continueButton.transform, false);
-            TextMeshProUGUI continueTextMesh = continueText.AddComponent<TextMeshProUGUI>();
-            continueTextMesh.text = "Continue";
-            continueTextMesh.fontSize = 20;
-            continueTextMesh.color = Color.white;
-            continueTextMesh.alignment = TextAlignmentOptions.Center;
-
-            RectTransform continueTextRect = continueText.GetComponent<RectTransform>();
-            continueTextRect.anchorMin = Vector2.zero;
-            continueTextRect.anchorMax = Vector2.one;
-            continueTextRect.sizeDelta = Vector2.zero;
-
-            RectTransform continueButtonRect = continueButton.GetComponent<RectTransform>();
-            continueButtonRect.anchorMin = new Vector2(0.5f, 0);
-            continueButtonRect.anchorMax = new Vector2(0.5f, 0);
-            continueButtonRect.pivot = new Vector2(0.5f, 0);
-            continueButtonRect.anchoredPosition = new Vector2(0, 30);
-            continueButtonRect.sizeDelta = new Vector2(150, 50);
-        }
-
-        // Create card prefab if not assigned
-        if (cardPrefab == null)
-        {
-            cardPrefab = new GameObject("Card Prefab");
-            cardPrefab.SetActive(false); // Make it a prefab
-
-            // Add main card image component for the face
-            Image cardImage = cardPrefab.AddComponent<Image>();
-            cardImage.raycastTarget = true;
-            cardImage.color = Color.white;
-
-            RectTransform cardRect = cardPrefab.GetComponent<RectTransform>();
-            cardRect.sizeDelta = new Vector2(100, 100);
-
-            Button cardButton = cardPrefab.AddComponent<Button>();
-            ColorBlock colors = cardButton.colors;
-            colors.highlightedColor = new Color(0.9f, 0.9f, 0.9f);
-            cardButton.colors = colors;
-
-            // Add card back as a child object
-            GameObject cardBack = new GameObject("Card Back");
-            cardBack.transform.SetParent(cardPrefab.transform, false);
-            Image cardBackImage = cardBack.AddComponent<Image>();
-            cardBackImage.color = Color.gray; // Default back color
-
-            RectTransform cardBackRect = cardBack.GetComponent<RectTransform>();
-            cardBackRect.anchorMin = Vector2.zero;
-            cardBackRect.anchorMax = Vector2.one;
-            cardBackRect.sizeDelta = Vector2.zero;
-
-            cardPrefab.AddComponent<MemoryCard>();
-        }
-
-        // Set up close button
-        if (closeButton != null)
-        {
-            closeButton.onClick.RemoveAllListeners();
-            closeButton.onClick.AddListener(CloseGame);
-        }
-
-        if (completionPanel != null)
-        {
-            completionPanel.SetActive(false);
-        }
-    }
-
     public void StartGame()
     {
-        gameCanvas.SetActive(true);
-        completionPanel.SetActive(false);
-        matchesFound = 0;
-        moveCount = 0;
+        Debug.Log("MemoryMatchingGame: Starting game");
 
-        UpdateMatchesText();
-        ClearGrid();
+        // Create fresh UI every time
+        CleanupPreviousGame();
+        CreateGameUI();
         CreateCards();
-        ShuffleCards();
+
+        Debug.Log($"MemoryMatchingGame: Created {cards.Count} cards");
     }
 
-    private void ClearGrid()
+    private void CleanupPreviousGame()
     {
-        cards.Clear();
-
-        if (cardGrid != null)
+        // Destroy any existing canvas
+        if (gameCanvas != null)
         {
-            foreach (Transform child in cardGrid)
-            {
-                Destroy(child.gameObject);
-            }
+            Destroy(gameCanvas);
         }
+
+        // Reset state
+        cards.Clear();
+        firstSelectedCard = null;
+        secondSelectedCard = null;
+        matchesFound = 0;
+        moveCount = 0;
+        canSelect = true;
+    }
+
+    private void CreateGameUI()
+    {
+        // Create canvas
+        gameCanvas = new GameObject("Memory Game Canvas");
+        gameCanvas.transform.SetParent(transform);
+
+        Canvas canvas = gameCanvas.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 100;
+
+        gameCanvas.AddComponent<CanvasScaler>();
+        gameCanvas.AddComponent<GraphicRaycaster>();
+
+        // Create background panel
+        GameObject panel = new GameObject("Background Panel");
+        panel.transform.SetParent(gameCanvas.transform, false);
+
+        Image panelImage = panel.AddComponent<Image>();
+        panelImage.color = new Color(0, 0, 0, 0.9f);
+
+        RectTransform panelRect = panel.GetComponent<RectTransform>();
+        panelRect.anchorMin = new Vector2(0.2f, 0.1f);
+        panelRect.anchorMax = new Vector2(0.8f, 0.9f);
+        panelRect.offsetMin = Vector2.zero;
+        panelRect.offsetMax = Vector2.zero;
+
+        // Create title
+        GameObject titleObj = new GameObject("Title");
+        titleObj.transform.SetParent(panel.transform, false);
+
+        TextMeshProUGUI titleText = titleObj.AddComponent<TextMeshProUGUI>();
+        titleText.text = "Memory Matching Game";
+        titleText.fontSize = 30;
+        titleText.color = Color.white;
+        titleText.alignment = TextAlignmentOptions.Center;
+
+        RectTransform titleRect = titleObj.GetComponent<RectTransform>();
+        titleRect.anchorMin = new Vector2(0, 1);
+        titleRect.anchorMax = new Vector2(1, 1);
+        titleRect.sizeDelta = new Vector2(0, 50);
+        titleRect.anchoredPosition = new Vector2(0, -25);
+
+        // Create card container
+        cardContainer = new GameObject("Card Container");
+        cardContainer.transform.SetParent(panel.transform, false);
+
+        Image containerImage = cardContainer.AddComponent<Image>();
+        containerImage.color = new Color(0.3f, 0.3f, 0.3f, 1f);
+
+        RectTransform containerRect = cardContainer.GetComponent<RectTransform>();
+        containerRect.anchorMin = new Vector2(0.1f, 0.2f);
+        containerRect.anchorMax = new Vector2(0.9f, 0.8f);
+        containerRect.offsetMin = Vector2.zero;
+        containerRect.offsetMax = Vector2.zero;
+
+        // Add a visible grid layout
+        GridLayoutGroup grid = cardContainer.AddComponent<GridLayoutGroup>();
+        grid.cellSize = new Vector2(70, 70);
+        grid.spacing = new Vector2(10, 10);
+        grid.padding = new RectOffset(10, 10, 10, 10);
+        grid.constraintCount = gridWidth;
+        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+
+        // Create status text
+        GameObject statusObj = new GameObject("Status");
+        statusObj.transform.SetParent(panel.transform, false);
+
+        matchesText = statusObj.AddComponent<TextMeshProUGUI>();
+        matchesText.text = "Matches: 0/0 | Moves: 0";
+        matchesText.fontSize = 20;
+        matchesText.color = Color.white;
+        matchesText.alignment = TextAlignmentOptions.Center;
+
+        RectTransform statusRect = statusObj.GetComponent<RectTransform>();
+        statusRect.anchorMin = new Vector2(0, 0);
+        statusRect.anchorMax = new Vector2(1, 0);
+        statusRect.sizeDelta = new Vector2(0, 40);
+        statusRect.anchoredPosition = new Vector2(0, 20);
+
+        // Create close button
+        GameObject closeObj = new GameObject("Close Button");
+        closeObj.transform.SetParent(panel.transform, false);
+
+        closeButton = closeObj.AddComponent<Button>();
+        Image closeImage = closeObj.AddComponent<Image>();
+        closeImage.color = Color.red;
+
+        RectTransform closeRect = closeObj.GetComponent<RectTransform>();
+        closeRect.anchorMin = new Vector2(1, 1);
+        closeRect.anchorMax = new Vector2(1, 1);
+        closeRect.sizeDelta = new Vector2(40, 40);
+        closeRect.anchoredPosition = new Vector2(-20, -20);
+
+        // Add X text to close button
+        GameObject closeTextObj = new GameObject("X");
+        closeTextObj.transform.SetParent(closeObj.transform, false);
+
+        TextMeshProUGUI closeTextMesh = closeTextObj.AddComponent<TextMeshProUGUI>();
+        closeTextMesh.text = "X";
+        closeTextMesh.fontSize = 24;
+        closeTextMesh.color = Color.white;
+        closeTextMesh.alignment = TextAlignmentOptions.Center;
+
+        RectTransform closeTextRect = closeTextObj.GetComponent<RectTransform>();
+        closeTextRect.anchorMin = Vector2.zero;
+        closeTextRect.anchorMax = Vector2.one;
+        closeTextRect.offsetMin = Vector2.zero;
+        closeTextRect.offsetMax = Vector2.zero;
+
+        closeButton.onClick.AddListener(CloseGame);
+
+        // Create completion panel
+        CreateCompletionPanel();
+
+        // Calculate total pairs
+        totalPairs = (gridWidth * gridHeight) / 2;
+
+        // Update status text
+        UpdateStatusText();
+    }
+
+    private void CreateCompletionPanel()
+    {
+        completionPanel = new GameObject("Completion Panel");
+        completionPanel.transform.SetParent(gameCanvas.transform, false);
+
+        Image panelImage = completionPanel.AddComponent<Image>();
+        panelImage.color = new Color(0.1f, 0.1f, 0.1f, 0.95f);
+
+        RectTransform panelRect = completionPanel.GetComponent<RectTransform>();
+        panelRect.anchorMin = new Vector2(0.5f, 0.5f);
+        panelRect.anchorMax = new Vector2(0.5f, 0.5f);
+        panelRect.sizeDelta = new Vector2(400, 250);
+        panelRect.anchoredPosition = Vector2.zero;
+
+        // Create completion text
+        GameObject textObj = new GameObject("Completion Text");
+        textObj.transform.SetParent(completionPanel.transform, false);
+
+        completionText = textObj.AddComponent<TextMeshProUGUI>();
+        completionText.fontSize = 28;
+        completionText.color = Color.white;
+        completionText.alignment = TextAlignmentOptions.Center;
+
+        RectTransform textRect = textObj.GetComponent<RectTransform>();
+        textRect.anchorMin = new Vector2(0, 0.5f);
+        textRect.anchorMax = new Vector2(1, 0.8f);
+        textRect.offsetMin = new Vector2(20, 0);
+        textRect.offsetMax = new Vector2(-20, 0);
+
+        // Create continue button
+        GameObject btnObj = new GameObject("Continue Button");
+        btnObj.transform.SetParent(completionPanel.transform, false);
+
+        Button continueBtn = btnObj.AddComponent<Button>();
+        Image btnImage = btnObj.AddComponent<Image>();
+        btnImage.color = new Color(0.2f, 0.7f, 0.3f);
+        continueBtn.onClick.AddListener(CloseGame);
+
+        RectTransform btnRect = btnObj.GetComponent<RectTransform>();
+        btnRect.anchorMin = new Vector2(0.5f, 0.2f);
+        btnRect.anchorMax = new Vector2(0.5f, 0.2f);
+        btnRect.sizeDelta = new Vector2(150, 50);
+        btnRect.anchoredPosition = Vector2.zero;
+
+        GameObject btnTextObj = new GameObject("Button Text");
+        btnTextObj.transform.SetParent(btnObj.transform, false);
+
+        TextMeshProUGUI btnText = btnTextObj.AddComponent<TextMeshProUGUI>();
+        btnText.text = "Continue";
+        btnText.fontSize = 24;
+        btnText.color = Color.white;
+        btnText.alignment = TextAlignmentOptions.Center;
+
+        RectTransform btnTextRect = btnTextObj.GetComponent<RectTransform>();
+        btnTextRect.anchorMin = Vector2.zero;
+        btnTextRect.anchorMax = Vector2.one;
+        btnTextRect.offsetMin = Vector2.zero;
+        btnTextRect.offsetMax = Vector2.zero;
+
+        // Hide panel initially
+        completionPanel.SetActive(false);
     }
 
     private void CreateCards()
     {
-        int totalCards = gridWidth * gridHeight;
-        totalPairs = totalCards / 2;
-
-        // If we don't have enough card sprites, generate some simple colored cards
-        if (cardImages == null || cardImages.Count < totalPairs)
-        {
-            GenerateSimpleCardSprites(totalPairs);
-        }
-
-        // Create card pairs
         for (int i = 0; i < totalPairs; i++)
         {
-            for (int j = 0; j < 2; j++) // Create 2 cards for each pair
+            // Create two matching cards
+            for (int j = 0; j < 2; j++)
             {
-                GameObject cardObj = Instantiate(cardPrefab, cardGrid);
-                cardObj.SetActive(true);
+                // Create card game object
+                GameObject cardObj = new GameObject($"Card_{i}_{j}");
+                cardObj.transform.SetParent(cardContainer.transform, false);
 
-                MemoryCard card = cardObj.GetComponent<MemoryCard>();
-                card.Initialize(i, cardImages[i], cardBackSprite);
+                // Create card face (front)
+                GameObject cardFace = new GameObject("Card Face");
+                cardFace.transform.SetParent(cardObj.transform, false);
+
+                // Add face image with color based on card ID
+                Image faceImage = cardFace.AddComponent<Image>();
+                float hue = (float)i / totalPairs;
+                faceImage.color = Color.HSVToRGB(hue, 0.8f, 0.8f);
+
+                RectTransform faceRect = cardFace.GetComponent<RectTransform>();
+                faceRect.anchorMin = Vector2.zero;
+                faceRect.anchorMax = Vector2.one;
+                faceRect.offsetMin = Vector2.zero;
+                faceRect.offsetMax = Vector2.zero;
+
+                // Add card ID text
+                GameObject labelObj = new GameObject("Card ID");
+                labelObj.transform.SetParent(cardFace.transform, false);
+
+                TextMeshProUGUI label = labelObj.AddComponent<TextMeshProUGUI>();
+                label.text = i.ToString();
+                label.fontSize = 30;
+                label.color = Color.white;
+                label.alignment = TextAlignmentOptions.Center;
+
+                RectTransform labelRect = labelObj.GetComponent<RectTransform>();
+                labelRect.anchorMin = Vector2.zero;
+                labelRect.anchorMax = Vector2.one;
+                labelRect.offsetMin = Vector2.zero;
+                labelRect.offsetMax = Vector2.zero;
+
+                // Create card back
+                GameObject cardBack = new GameObject("Card Back");
+                cardBack.transform.SetParent(cardObj.transform, false);
+
+                Image backImage = cardBack.AddComponent<Image>();
+                backImage.color = new Color(0.3f, 0.3f, 0.3f);
+
+                RectTransform backRect = cardBack.GetComponent<RectTransform>();
+                backRect.anchorMin = Vector2.zero;
+                backRect.anchorMax = Vector2.one;
+                backRect.offsetMin = Vector2.zero;
+                backRect.offsetMax = Vector2.zero;
+
+                // Add a decorative pattern on the back
+                GameObject patternObj = new GameObject("Pattern");
+                patternObj.transform.SetParent(cardBack.transform, false);
+
+                Image patternImage = patternObj.AddComponent<Image>();
+                patternImage.color = new Color(0.5f, 0.5f, 0.5f);
+
+                RectTransform patternRect = patternObj.GetComponent<RectTransform>();
+                patternRect.anchorMin = new Vector2(0.2f, 0.2f);
+                patternRect.anchorMax = new Vector2(0.8f, 0.8f);
+                patternRect.offsetMin = Vector2.zero;
+                patternRect.offsetMax = Vector2.zero;
+
+                // Add button component
+                Button cardButton = cardObj.AddComponent<Button>();
+                cardButton.transition = Selectable.Transition.ColorTint;
+
+                // Add an image component to make the button work
+                Image cardImage = cardObj.AddComponent<Image>();
+                cardImage.color = new Color(1, 1, 1, 0.01f); // Almost transparent
+
+                // Add memory card component
+                MemoryCard card = cardObj.AddComponent<MemoryCard>();
+                card.Initialize(i, cardFace, cardBack);
+
+                // Register callback
                 card.OnCardSelected += OnCardSelected;
 
+                // Add card to list
                 cards.Add(card);
             }
         }
-    }
 
-    private void GenerateSimpleCardSprites(int count)
-    {
-        cardImages = new List<Sprite>();
-
-        // Create a back card sprite if it doesn't exist
-        if (cardBackSprite == null)
-        {
-            Texture2D backTexture = new Texture2D(100, 100);
-            Color backColor = new Color(0.3f, 0.3f, 0.3f);
-
-            for (int x = 0; x < backTexture.width; x++)
-            {
-                for (int y = 0; y < backTexture.height; y++)
-                {
-                    backTexture.SetPixel(x, y, backColor);
-                }
-            }
-
-            backTexture.Apply();
-
-            cardBackSprite = Sprite.Create(
-                backTexture,
-                new Rect(0, 0, backTexture.width, backTexture.height),
-                new Vector2(0.5f, 0.5f)
-            );
-        }
-
-        // Generate distinct colored card faces
-        for (int i = 0; i < count; i++)
-        {
-            // Create a simple colored sprite
-            Texture2D texture = new Texture2D(100, 100);
-
-            // Use HSV color space to get distinct colors
-            float hue = (float)i / count;
-            Color color = Color.HSVToRGB(hue, 0.8f, 0.8f);
-
-            for (int x = 0; x < texture.width; x++)
-            {
-                for (int y = 0; y < texture.height; y++)
-                {
-                    texture.SetPixel(x, y, color);
-                }
-            }
-
-            texture.Apply();
-
-            Sprite sprite = Sprite.Create(
-                texture,
-                new Rect(0, 0, texture.width, texture.height),
-                new Vector2(0.5f, 0.5f)
-            );
-
-            cardImages.Add(sprite);
-        }
+        // Shuffle the cards
+        ShuffleCards();
     }
 
     private void ShuffleCards()
     {
-        // Shuffle the cards in the grid
-        List<MemoryCard> shuffledCards = cards.OrderBy(x => Random.value).ToList();
+        // Shuffle card transforms
+        List<Transform> cardTransforms = new List<Transform>();
 
-        for (int i = 0; i < shuffledCards.Count; i++)
+        foreach (Transform child in cardContainer.transform)
         {
-            shuffledCards[i].transform.SetSiblingIndex(i);
+            cardTransforms.Add(child);
+        }
+
+        // Fisher-Yates shuffle
+        for (int i = cardTransforms.Count - 1; i > 0; i--)
+        {
+            int randomIndex = Random.Range(0, i + 1);
+            cardTransforms[i].SetSiblingIndex(randomIndex);
         }
     }
 
@@ -359,6 +371,8 @@ public class MemoryMatchingGame : MonoBehaviour
             canSelect = false;
             StartCoroutine(CheckForMatch());
         }
+
+        UpdateStatusText();
     }
 
     private IEnumerator FlipCard(MemoryCard card, bool faceUp)
@@ -372,18 +386,19 @@ public class MemoryMatchingGame : MonoBehaviour
 
             if (normalizedTime < 0.5f)
             {
-                // First half of the flip - shrink horizontally
+                // First half - shrink horizontally
                 float scale = 1 - normalizedTime * 2;
                 card.transform.localScale = new Vector3(scale, 1, 1);
             }
             else
             {
-                // Second half of the flip - expand horizontally and show the correct face
+                // Flip the card at the halfway point
                 if (normalizedTime >= 0.5f && normalizedTime <= 0.51f)
                 {
                     card.SetFaceUp(faceUp);
                 }
 
+                // Second half - expand horizontally
                 float scale = (normalizedTime - 0.5f) * 2;
                 card.transform.localScale = new Vector3(scale, 1, 1);
             }
@@ -391,25 +406,26 @@ public class MemoryMatchingGame : MonoBehaviour
             yield return null;
         }
 
-        // Ensure card is properly scaled and flipped
+        // Ensure final state is correct
         card.transform.localScale = Vector3.one;
         card.SetFaceUp(faceUp);
     }
 
     private IEnumerator CheckForMatch()
     {
-        bool isMatch = firstSelectedCard.CardId == secondSelectedCard.CardId;
-
-        // Wait for the second card to finish flipping
+        // Wait before checking
         yield return new WaitForSeconds(matchCheckDelay);
+
+        bool isMatch = firstSelectedCard.CardId == secondSelectedCard.CardId;
 
         if (isMatch)
         {
+            // Mark cards as matched
             firstSelectedCard.SetMatched(true);
             secondSelectedCard.SetMatched(true);
 
             matchesFound++;
-            UpdateMatchesText();
+            UpdateStatusText();
 
             // Check if game is complete
             if (matchesFound >= totalPairs)
@@ -419,20 +435,21 @@ public class MemoryMatchingGame : MonoBehaviour
         }
         else
         {
-            // Flip both cards back
+            // Flip cards back
             StartCoroutine(FlipCard(firstSelectedCard, false));
             StartCoroutine(FlipCard(secondSelectedCard, false));
         }
 
+        // Reset selection
         firstSelectedCard = null;
         secondSelectedCard = null;
 
-        // Small delay before allowing more card selections to prevent rapid clicking issues
+        // Allow selection again
         yield return new WaitForSeconds(0.1f);
         canSelect = true;
     }
 
-    private void UpdateMatchesText()
+    private void UpdateStatusText()
     {
         if (matchesText != null)
         {
@@ -446,24 +463,21 @@ public class MemoryMatchingGame : MonoBehaviour
         {
             completionPanel.SetActive(true);
             completionText.text = $"Congratulations!\n\nYou completed the memory match game in {moveCount} moves.";
-
-            // Find and set up the continue button event
-            Button continueButton = completionPanel.GetComponentInChildren<Button>();
-            if (continueButton != null)
-            {
-                continueButton.onClick.RemoveAllListeners();
-                continueButton.onClick.AddListener(CloseGame);
-            }
         }
     }
 
     public void CloseGame()
     {
-        gameCanvas.SetActive(false);
+        Debug.Log("MemoryMatchingGame: Closing game");
+
+        if (gameCanvas != null)
+        {
+            gameCanvas.SetActive(false);
+        }
     }
 }
 
-// Card script - completely revised
+// Enhanced card implementation
 public class MemoryCard : MonoBehaviour
 {
     public event System.Action<MemoryCard> OnCardSelected;
@@ -471,80 +485,62 @@ public class MemoryCard : MonoBehaviour
     public int CardId { get; private set; }
     public bool IsMatched { get; private set; }
 
-    private Image cardImage;
-    private GameObject cardBackObject;
-    private Image cardBackImage;
+    private GameObject cardFace;
+    private GameObject cardBack;
+    private Button cardButton;
 
-    private Sprite frontSprite;
-    private Sprite backSprite;
-    private bool isFaceUp;
-
-    private void Awake()
+    public void Initialize(int id, GameObject face, GameObject back)
     {
-        // Set up components if not already assigned
-        cardImage = GetComponent<Image>();
+        CardId = id;
+        IsMatched = false;
+        cardFace = face;
+        cardBack = back;
 
-        cardBackObject = transform.Find("Card Back")?.gameObject;
-        if (cardBackObject != null)
+        // Set up the button
+        cardButton = GetComponent<Button>();
+        if (cardButton != null)
         {
-            cardBackImage = cardBackObject.GetComponent<Image>();
+            cardButton.onClick.RemoveAllListeners();
+            cardButton.onClick.AddListener(OnButtonClick);
         }
 
-        Button button = GetComponent<Button>();
-        button.onClick.AddListener(() => {
-            if (OnCardSelected != null)
-                OnCardSelected(this);
-        });
+        // Start face down
+        SetFaceUp(false);
     }
 
-    public void Initialize(int id, Sprite frontSprite, Sprite backSprite)
+    private void OnButtonClick()
     {
-        this.CardId = id;
-        this.frontSprite = frontSprite;
-        this.backSprite = backSprite;
-        this.IsMatched = false;
-
-        // Set the card front color/sprite
-        if (cardImage != null)
+        if (OnCardSelected != null)
         {
-            cardImage.sprite = frontSprite;
+            OnCardSelected(this);
         }
-
-        // Set the card back sprite
-        if (cardBackImage != null)
-        {
-            cardBackImage.sprite = backSprite;
-        }
-
-        // Ensure the card starts face down
-        SetFaceUp(false);
     }
 
     public void SetFaceUp(bool faceUp)
     {
-        isFaceUp = faceUp;
+        if (cardFace != null)
+            cardFace.SetActive(faceUp);
 
-        if (cardBackObject != null)
-        {
-            cardBackObject.SetActive(!faceUp);
-        }
+        if (cardBack != null)
+            cardBack.SetActive(!faceUp);
     }
 
     public void SetMatched(bool matched)
     {
         IsMatched = matched;
 
-        if (matched)
+        if (matched && cardButton != null)
         {
-            // Visual indication that card is matched - make it slightly transparent
-            cardImage.color = new Color(1f, 1f, 1f, 0.7f);
-
-            // Disable button
-            Button button = GetComponent<Button>();
-            if (button != null)
+            // Visually indicate matched
+            Image faceImage = cardFace.GetComponent<Image>();
+            if (faceImage != null)
             {
-                button.interactable = false;
+                Color color = faceImage.color;
+                faceImage.color = new Color(color.r, color.g, color.b, 0.7f);
             }
+
+            // Disable interaction
+            cardButton.interactable = false;
         }
     }
 }
