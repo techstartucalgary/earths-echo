@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,9 +9,13 @@ public class WeaponRotation : MonoBehaviour
     public Transform playerTransform; // Reference to the player's transform
     public float rotationSpeed = 5f; // Rotation speed (adjustable in the Inspector)
     public float maxAngle = 90f; // Maximum angle up or down
+    private float animatorXScale;
+    public Animator playerAnim;
 
-    private bool isFlipped = false; // Track if the player is flipped
-
+    private void Start()
+    {
+        animatorXScale = transform.localScale[0];
+    }
     private void Update()
     {
         if (mainCamera == null || playerTransform == null)
@@ -26,21 +31,13 @@ public class WeaponRotation : MonoBehaviour
         Vector3 direction = mouseWorldPosition - transform.position;
         direction.z = 0; // Ensure the weapon remains in the 2D plane
 
-        // Determine if the player is flipped
-        isFlipped = playerTransform.localScale.x < 0;
-
         // Get the target angle in degrees
         float targetAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
 
         // Adjust target angle based on player facing direction
-        if (isFlipped)
-        {
-            // targetAngle = Mathf.Clamp(targetAngle, 180f - maxAngle, 180f + maxAngle);
-        }
-        else
-        {
-            // targetAngle = Mathf.Clamp(targetAngle, -maxAngle, maxAngle);
-        }
+        targetAngle = Mathf.Clamp(targetAngle, 180f - maxAngle, 180f + maxAngle);
+        float xFacing = playerAnim.transform.localScale.x / Math.Abs(playerAnim.transform.localScale.x);
+        transform.localScale = new Vector3(animatorXScale * xFacing, transform.localScale.y, transform.localScale.z);
 
         // Get the current angle
         float currentAngle = transform.rotation.eulerAngles.z;

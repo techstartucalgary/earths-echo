@@ -13,7 +13,7 @@ public class PlayerInput : MonoBehaviour {
     // Variables for projectile charge (only used for projectile weapons)
     private float projectileChargeTime = 0f;
     [SerializeField] private float maxChargeTime = 1.0f; // Maximum charge time equals 100%
-
+    
     void Start () {
         player = GetComponent<Player>();
     }
@@ -79,6 +79,7 @@ public class PlayerInput : MonoBehaviour {
                 // While the fire button is held, update the charge timer and blend tree parameter.
                 if (Input.GetMouseButton(0) || Input.GetMouseButton(1))
                 {
+                    player.isCharging = true;
                     projectileChargeTime += Time.deltaTime;
                     projectileChargeTime = Mathf.Min(projectileChargeTime, maxChargeTime);
                     
@@ -101,6 +102,9 @@ public class PlayerInput : MonoBehaviour {
                     projectileChargeTime = 0f;
                     player.ResetProjectileAnimation(inventoryHandler.CurrentProjectileWeaponSO.animPrefix);
                     
+                    player.isCharging = false;
+
+
                     if (trajectoryLine != null)
                         trajectoryLine.HideTrajectory();
                 }

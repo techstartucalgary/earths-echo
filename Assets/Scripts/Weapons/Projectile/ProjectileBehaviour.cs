@@ -14,6 +14,7 @@ public class ProjectileBehaviour : MonoBehaviour
     public float physicsProjectileVelocity;
     public float gravityScale;
 
+
     [Header("Components")]
     [SerializeField] private Rigidbody2D rb; // Make Rigidbody2D a serialized field
 
@@ -36,6 +37,8 @@ public class ProjectileBehaviour : MonoBehaviour
                 return;
             }
         }
+
+        
 
         SetDestroyTime();
         InitializeProjectile();
@@ -139,4 +142,6 @@ public class ProjectileBehaviour : MonoBehaviour
             position = nextPosition;
         }
     }
+
+
 }

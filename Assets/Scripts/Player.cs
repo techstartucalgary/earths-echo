@@ -48,6 +48,8 @@ public class Player : MonoBehaviour
 	[SerializeField] private float slideShrinkFactor = 0.5f;    // Factor to shrink player when sliding
 	public bool isSliding = false;
 	private bool isCrawling = false;
+	public bool isCharging = false; //bow
+
 	private Vector3 originalScale;                              // Store the original player scale
 
 	// Wall interaction variables
@@ -89,6 +91,8 @@ public class Player : MonoBehaviour
 
 	private float SideHitpointLocalX;
 	public LayerMask enemyLayer;
+
+	private Camera mainCamera;
 	FindGrandchildren finder;
 
 	void Start()
@@ -111,7 +115,11 @@ public class Player : MonoBehaviour
 		SideHitpoint = finder.FindDeepChild(transform, "SideHitpoint");
 		SideHitpointLocalX = SideHitpoint.localPosition.x;
 
-
+		mainCamera = Camera.main;
+			if(mainCamera == null){
+				Debug.LogError("Main camera not found");
+				return;
+			}
 
 	}
 
@@ -168,12 +176,15 @@ public class Player : MonoBehaviour
 			{
 				animatorTransform.localScale = new Vector3(animatorXScale, animatorTransform.localScale[1], animatorTransform.localScale[2]);
 				SideHitpoint.localPosition = new Vector3(SideHitpointLocalX, SideHitpoint.localPosition.y, SideHitpoint.localPosition.z);
+				
 			}
 			else if (velocity.x <= -0.01f)
 			{
 				animatorTransform.localScale = new Vector3(-animatorXScale, animatorTransform.localScale[1], animatorTransform.localScale[2]);
 				SideHitpoint.localPosition = new Vector3(-SideHitpointLocalX, SideHitpoint.localPosition.y, SideHitpoint.localPosition.z);
 			}
+			isChargingHelper();
+			
 		}
 		if (isSliding && animator != null)
 		{
@@ -184,6 +195,22 @@ public class Player : MonoBehaviour
 }
 
 
+	}
+
+	private void isChargingHelper(){
+		if(isCharging)
+		{
+			Vector3 mouseWorldPosition = mainCamera.ScreenToWorldPoint(Input.mousePosition);
+			Vector3 direction = (mouseWorldPosition - transform.position).normalized;
+			if(direction.x >=0f){
+				animatorTransform.localScale = new Vector3(animatorXScale, animatorTransform.localScale[1], animatorTransform.localScale[2]);
+				SideHitpoint.localPosition = new Vector3(SideHitpointLocalX, SideHitpoint.localPosition.y, SideHitpoint.localPosition.z);
+			}
+			else{
+				animatorTransform.localScale = new Vector3(-animatorXScale, animatorTransform.localScale[1], animatorTransform.localScale[2]);
+				SideHitpoint.localPosition = new Vector3(-SideHitpointLocalX, SideHitpoint.localPosition.y, SideHitpoint.localPosition.z);
+			}
+		}
 	}
 	private void OnTriggerEnter2D(Collider2D collision)
 	{

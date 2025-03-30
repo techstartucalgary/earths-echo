@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -60,6 +61,9 @@ public class InventoryHandler : MonoBehaviour
     private WeaponSO currentProjectileWeaponSO;
     public ItemInstSO currentItemSO;  // General holdable item (non-weapon)
 
+    private Camera mainCamera;
+
+    [SerializeField] Animator playerAnim;
     private void Awake()
     {
         // Optionally assign inventoryMenu if not set in the Inspector.
@@ -74,10 +78,22 @@ public class InventoryHandler : MonoBehaviour
         
     }
 
+    private void Start()
+    {
+        mainCamera = Camera.main;
+        if(mainCamera == null){
+            Debug.LogError("Main camera not found");
+            return;
+        }
+
+    }
+
     private void Update()
     {
+
         HandleEquippedSwitching();
         HandlePlayerAttackStats();
+        
     }
 
     #region Inventory Management
@@ -454,7 +470,17 @@ public class InventoryHandler : MonoBehaviour
         ItemGameObject itemGO = currentEquippedInstance.AddComponent<ItemGameObject>();
         itemGO.item = holdableItem;
     }
-    
+    private Quaternion MouseToDegrees(){
+        Vector3 mouseWorldPosition = mainCamera.ScreenToWorldPoint(Input.mousePosition);
+        mouseWorldPosition.z= 0f;
+        // Calculate direction from weapon to mouse
+        Vector3 direction = mouseWorldPosition - transform.position;
+        direction = direction.normalized;
+        // Get the target angle in degrees
+        float angle = Mathf.Atan2(direction.y,direction.x) * Mathf.Rad2Deg;
+        //angle -=45f;
+        return Quaternion.Euler(0f,0f,angle);
+    }
 	public void ShootProjectile(float pullbackPercentage)
 	{
 		// Ensure that the equipped state is either Projectile or ThrowableItem.
@@ -507,7 +533,7 @@ public class InventoryHandler : MonoBehaviour
 
 		// Use the current equipped instance's transform as the spawn point.
 		Vector3 spawnPosition = currentEquippedInstance.transform.position;
-		Quaternion spawnRotation = currentEquippedInstance.transform.rotation;
+		Quaternion spawnRotation = MouseToDegrees();
 
 		// Instantiate the projectile prefab.
 		GameObject projectile = Instantiate(projectilePrefab, spawnPosition, spawnRotation);
@@ -521,7 +547,7 @@ public class InventoryHandler : MonoBehaviour
 			{
 				// Scale projectile speed by the pullback percentage.
 				float finalSpeed = projectileSpeed * pullbackPercentage;
-				rb.velocity = spawnRotation * Vector2.right * finalSpeed;
+				rb.velocity = spawnRotation * Vector2.left * finalSpeed;
 			}
 
 			// For physics projectiles, adjust gravity and damage based on pullback.
