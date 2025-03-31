@@ -17,7 +17,7 @@ public class TestEnemy : MonoBehaviour, IDamageable
     [SerializeField] private ScreenShake screenShake;
     // Screen shake parameters
     [SerializeField] private float shakeDuration = 0.2f;
-    [SerializeField] private float shakeMagnitude = 0.05f;
+    private float shakeMagnitude = 0.05f;
 
     // Enemy healing settings:
     [SerializeField] private bool canHealEnemy = false;  // If true, the enemy heals over time.
@@ -93,6 +93,7 @@ public class TestEnemy : MonoBehaviour, IDamageable
         // Trigger screen shake effect.
         if (screenShake != null)
         {
+            shakeDuration = damageAmount / 10;
             screenShake.Shake(shakeDuration, shakeMagnitude);
         }
 
