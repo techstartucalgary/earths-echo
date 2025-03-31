@@ -275,9 +275,6 @@ public class GameManager : MonoBehaviour
             // Move the player to the respawn point
             playerInstance.transform.position = currentRespawnPoint.position;
 
-            // Reset health
-            Health.totalHealth = 1.0f;
-
             // Reset health bar
             HealthBar healthBar = FindObjectOfType<HealthBar>();
             if (healthBar != null)
