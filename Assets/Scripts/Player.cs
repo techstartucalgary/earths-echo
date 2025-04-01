@@ -206,7 +206,10 @@ public class Player : MonoBehaviour, IDamageable
                 animator.Play("sliding");
             }
         }
-        currentHealth = healthBar.GetCurrentHealth();
+        if(healthBar!=null){
+            currentHealth = healthBar.GetCurrentHealth();
+        }
+        
     }
 
     private void isChargingHelper()
