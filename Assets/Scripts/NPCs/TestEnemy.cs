@@ -129,4 +129,8 @@ public class TestEnemy : MonoBehaviour, IDamageable
             rb.AddForce(direction.normalized * force, ForceMode2D.Impulse);
         }
     }
+
+    public float getMaxHealth(){
+        return maxHealth;
+    }
 }
