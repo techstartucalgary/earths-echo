@@ -73,3 +73,5 @@ crashlytics-build.properties
 
 # Personal Assets
 /Assets/BayatGames*
+
+/Assets/Sounds/Music*
