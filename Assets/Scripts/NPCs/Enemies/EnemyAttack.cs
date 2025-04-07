@@ -4,9 +4,9 @@ using UnityEngine;
 public class EnemyAttack : MonoBehaviour
 {
     [Header("Attack Points")]
-    [SerializeField] private Transform sideHitPoint;
-    [SerializeField] private Transform upwardHitPoint;
-    [SerializeField] private Transform downwardHitPoint;
+    [SerializeField] protected Transform sideHitPoint;
+    [SerializeField] protected Transform upwardHitPoint;
+    [SerializeField] protected Transform downwardHitPoint;
 
     [Header("Attack Triggers")]
     // These booleans trigger an attack from the corresponding attack point.
@@ -15,20 +15,20 @@ public class EnemyAttack : MonoBehaviour
     public bool triggerDownwardAttack = false;
 
     [Header("Attack Settings")]
-    [SerializeField] private float attackDamage = 5f;        // Damage inflicted per attack
-    [SerializeField] private float attackRange = 1f;         // Radius of each attack point
-    [SerializeField] private float attackCooldown = 1.5f;    // Time between consecutive attacks
+    [SerializeField] protected float attackDamage = 5f;        // Damage inflicted per attack
+    [SerializeField] protected float attackRange = 1f;         // Radius of each attack point
+    [SerializeField] protected float attackCooldown = 1.5f;    // Time between consecutive attacks
 
     [Header("Target Information")]
-    [SerializeField] private LayerMask targetLayer;          // Layer of valid targets (e.g., the player)
+    [SerializeField] protected LayerMask targetLayer;          // Layer of valid targets (e.g., the player)
 
     [Header("Attack Effects")]
-    [SerializeField] private AudioClip attackSound;          // Sound effect to play when attacking
-    [SerializeField] private float knockbackForce = 2f;        // Knockback force applied to targets
+    [SerializeField] protected AudioClip attackSound;          // Sound effect to play when attacking
+    [SerializeField] protected float knockbackForce = 2f;        // Knockback force applied to targets
 
     private float nextAttackTime = 0f;
 
-    private void Update()
+    protected virtual void Update()
     {
         // Only allow attacks if the cooldown period has passed.
         if (Time.time < nextAttackTime)
@@ -90,7 +90,7 @@ public class EnemyAttack : MonoBehaviour
     }
 
     // Visualize the attack ranges for each attack point in the Unity Editor.
-    private void OnDrawGizmosSelected()
+    protected virtual void OnDrawGizmosSelected()
     {
         if (sideHitPoint != null)
         {
