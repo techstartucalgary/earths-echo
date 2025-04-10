@@ -24,23 +24,66 @@ public class TestEnemy : MonoBehaviour, IDamageable
     [SerializeField] private float enemyHealAmount = 5f;   // Amount healed each interval.
     [SerializeField] private float healInterval = 5f;      // Time in seconds between heals.
 
+    FindGrandchildren finder;
     public float currentHealth;
     public bool isInvincible = false;
 
+    private Transform UpwardHitpoint;
+
+    private Transform DownwardHitpoint;
+    private Transform SideHitpoint;
+    private float SideHitpointLocalX;
+    private Vector3 previousScale;
+
+    [SerializeField] private Animator animator;
+    [SerializeField] private Transform animatorTransform;
+    private float animatorXScale;
+
+
     private void Start()
     {
+        finder = new FindGrandchildren();
         currentHealth = maxHealth;
 
-        // Initialize the health bar if assigned.
         if (healthBar != null)
-        {
             healthBar.Initialize(maxHealth, enemyName);
-        }
 
         StartCoroutine(PlayIdleSounds());
-        // Start the healing coroutine once. It will handle the healing logic internally.
         StartCoroutine(HealOverTime());
+
+        UpwardHitpoint = finder.FindDeepChild(transform, "UpwardHitpoint");
+        DownwardHitpoint = finder.FindDeepChild(transform, "DownwardHitpoint");
+        SideHitpoint = finder.FindDeepChild(transform, "SideHitpoint");
+
+        if (SideHitpoint != null)
+            SideHitpointLocalX = SideHitpoint.localPosition.x;
+
+        previousScale = transform.localScale; // Initialize previous scale
+        animatorXScale = animatorTransform.localScale.x;
+    
     }
+
+    private void Update()
+    {
+        HandleHitpointFlip();
+    }
+
+    private void HandleHitpointFlip()
+    {
+        // Assuming the enemy flips the same way as the player via animatorTransform.localScale.x
+        if (animatorTransform.localScale.x >= 0.01f)
+        {
+            // Facing right
+            SideHitpoint.localPosition = new Vector3(SideHitpointLocalX, SideHitpoint.localPosition.y, SideHitpoint.localPosition.z);
+        }
+        else if (animatorTransform.localScale.x <= -0.01f)
+        {
+            // Facing left
+            SideHitpoint.localPosition = new Vector3(-SideHitpointLocalX, SideHitpoint.localPosition.y, SideHitpoint.localPosition.z);
+        }
+    }
+
+
 
     private IEnumerator PlayIdleSounds()
     {
