@@ -104,6 +104,13 @@ public class Player : MonoBehaviour, IDamageable
     [SerializeField] private AudioClip[] damageSoundClips;
     [SerializeField] private AudioClip[] deathSoundClips;
 
+    [Header("Healing Settings")]
+    [SerializeField] private float healDelay = 10f;        // Time (in seconds) to wait after taking damage
+    [SerializeField] private float healingDuration = 5f;     // Seconds required to heal fully
+    private float lastDamageTime = 0f;                       // Time when the player last took damage
+    private Coroutine healingCoroutine = null;
+
+
     FindGrandchildren finder;
 
     void Start()
@@ -205,6 +212,11 @@ public class Player : MonoBehaviour, IDamageable
             {
                 animator.Play("sliding");
             }
+        }
+
+        if (currentHealth < maxHealth && Time.time - lastDamageTime >= healDelay && healingCoroutine == null)
+        {
+            healingCoroutine = StartCoroutine(HealToFull());
         }
         if(healthBar!=null){
             currentHealth = healthBar.GetCurrentHealth();
@@ -678,28 +690,40 @@ public class Player : MonoBehaviour, IDamageable
 
     public void Damage(float damageAmount, Vector2 impactPos)
     {
-        // If invincible, ignore damage (if you have that logic)
-        // isInvincible check here if needed
+        // (Optional) If invincible, you can exit early.
+        // if (isInvincible) return;
 
         currentHealth -= damageAmount;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
+        // Update the health bar and play damage sounds/effects.
         if (healthBar != null)
         {
             healthBar.Damage(damageAmount);
             SoundFXManager.Instance.PlayRandomSoundFXClip(damageSoundClips, transform, 0.6f);
             ApplyKnockback(impactPos, damageAmount * 0.5f);
-            screenShake.Shake(0.2f,0.5f);
+            screenShake.Shake(0.2f, 0.5f);
         }
+        
+        // Record the time of damage so healing will wait.
+        lastDamageTime = Time.time;
+        
+        // If already healing, stop the healing coroutine.
+        if (healingCoroutine != null)
+        {
+            StopCoroutine(healingCoroutine);
+            healingCoroutine = null;
+        }
+
         if (currentHealth <= 0)
         {
             SoundFXManager.Instance.PlayRandomSoundFXClip(deathSoundClips, transform, 0.6f);
-            // will need to change this call to an animator that makes the player get knocked out. Might be useful to remove colliders atp
-            screenShake.Shake(0.5f,0.75f);
+            // Handle death (play death animation, remove colliders, etc.)
+            screenShake.Shake(0.5f, 0.75f);
         }
         Debug.Log("Player took " + damageAmount + " damage.");
-        // Apply knockback, play sounds, etc.
     }
+
 
     public void Heal(float healAmount)
     {
@@ -736,5 +760,20 @@ public class Player : MonoBehaviour, IDamageable
         yield return new WaitForSeconds(delay);
         rb.velocity = Vector2.zero;
     }
+
+        private IEnumerator HealToFull()
+    {
+        // While the player's health is not full, apply incremental healing.
+        while (currentHealth < maxHealth)
+        {
+            // The healing rate per second (so full recovery happens over healingDuration)
+            float healAmount = (maxHealth / healingDuration) * Time.deltaTime;
+            Heal(healAmount);  // Call your existing Heal method
+            yield return null;
+        }
+        // Once healing is complete, clear the coroutine reference.
+        healingCoroutine = null;
+    }
+
 
 }
