@@ -5,15 +5,15 @@ public class DashStateSO : BossStateSO
 {
     public override void EnterState(TigerBossAttack boss)
     {
-        boss.PerformDashAttack();
+        //boss.PerformDashAttack();
     }
 
     public override void UpdateState(TigerBossAttack boss)
     {
-        if (boss.DashFinished())
-        {
-            boss.TransitionToState(boss.clawState);
-        }
+        // if (boss.DashFinished())
+        // {
+        //     boss.TransitionToState(boss.clawState);
+        // }
     }
 
     public override void ExitState(TigerBossAttack boss)

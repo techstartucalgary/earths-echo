@@ -1,92 +1,101 @@
 using UnityEngine;
+using UnityEngine.UI;
+using System.Collections;
 
 public class TigerBossAttack : EnemyAttack
 {
     [Header("ScriptableObject States")]
     public BossStateSO idleState;
-    public BossStateSO dashState;
+    public BossStateSO rageState;      // Rage state (with sin-wave movement) lasts for a fixed duration.
     public BossStateSO clawState;
-    public BossStateSO groundSmashState; // New ground smash state
+    public BossStateSO groundSmashState;
 
     [Header("Rage Settings")]
     [Tooltip("Current rage level.")]
     public float currentRage = 0f;
     [Tooltip("Rage meter maximum value.")]
     public float maxRage = 100f;
-    [Tooltip("Amount of rage increase per second or per event.")]
+    [Tooltip("Rage increase per second.")]
     public float rageIncreaseRate = 10f;
 
-    [Header("Attack Triggers (Booleans)")]
-    public bool triggerSideAttack;
-    public bool triggerUpwardAttack;
-    public bool triggerGroundSmashAttack; // Flag for ground smash trigger.
-    public bool triggerClawAttack;
+    [Header("Rage State Settings")]
+    [Tooltip("Duration (seconds) of the rage state.")]
+    public float rageDuration = 20f;
+    private float rageTimer = 0f;
+    public bool isRaging = false;
 
-    [Header("Ground Smash Settings")]
-    [Tooltip("The radius of the splash damage area for ground smash.")]
-    public float splashDamageRadius = 5f;
-    [Tooltip("Damage applied to each target in the splash area.")]
-    public float groundSmashDamage = 20f;
+    [Header("Physical Rage Bar")]
+    [Tooltip("UI Slider representing the boss's rage bar.")]
+    public Slider rageBar;
 
-    [Header("Dash Settings")]
-    [Tooltip("Multiplier to the enemy speed during a dash.")]
-    public float dashSpeedMultiplier = 2f; // Multiplies the tiger’s speed during dash
+    [Header("References and Movement")]
+    public Animator animator;     // Assign in Inspector.
+    public EnemyAI enemyAI;       // Fallback via GetComponent.
+    public float dashSpeedMultiplier = 2f; // Multiplier during rage state.
 
-    // Reference to the Animator is needed by states (assign it in the inspector).
-    public Animator animator;
+    // Existing hit points and other properties.
+    public Transform clawHitPoint;
+    public LayerMask TargetLayer => targetLayer;  // From base (assumed defined).
+    public float KnockbackForce => knockbackForce;  // From base (assumed defined).
 
-    // Existing hit points and other properties...
-    public Transform clawHitPoint;  // Used as the reference position for claw/hit detection and splash damage.
-    public Transform downHitPoint;
-    public LayerMask TargetLayer => targetLayer; // Assuming targetLayer is defined in a parent class.
-    public float KnockbackForce => knockbackForce; // Assuming knockbackForce is defined in a parent class.
+    // Store the starting x-position for sin wave movement.
+    [HideInInspector] public float initialX;
+    // Flag to pause movement and attack logic during healing.
+    [HideInInspector] public bool isHealing = false;
+    // Flag to indicate Phase2 (set externally by BossFightManager).
+    [HideInInspector] public bool isPhaseTwo = false;
 
     private BossStateSO currentState;
-    
-    public EnemyAI enemyAI;
 
     protected void Start()
     {
-        // Start the state machine in the idle state.
+        if (enemyAI == null)
+        {
+            enemyAI = GetComponent<EnemyAI>();
+        }
+        initialX = transform.position.x;
         TransitionToState(idleState);
+        UpdateRageUI();
     }
 
     protected override void Update()
     {
+        // Skip attack/movement logic when healing.
+        if (isHealing)
+        {
+            UpdateRageUI();
+            return;
+        }
+
         base.Update();
 
-        // Increase rage over time.
-        IncreaseRage(rageIncreaseRate * Time.deltaTime);
-
-        // If rage meter is full, trigger dash.
-        if (currentRage >= maxRage)
+        // Accumulate rage only when not already raging.
+        if (!isRaging)
         {
-            currentRage = 0f; // Reset rage meter.
-            TransitionToState(dashState); // Enter dash state.
-            PerformDashAttack();
+            IncreaseRage(rageIncreaseRate * Time.deltaTime);
+        }
+        else
+        {
+            rageTimer += Time.deltaTime;
+            if (rageTimer >= rageDuration)
+            {
+                EndRageState();
+            }
         }
 
-        // Let the current state update its logic.
+        UpdateRageUI();
+
+        if (currentRage >= maxRage && !isRaging)
+        {
+            ActivateRageState();
+        }
+
         currentState?.UpdateState(this);
-
-        // After dashing, check if the dash is finished. You can refine this check as needed.
-        if (currentState == dashState && DashFinished())
-        {
-            // After the dash, transition into a claw attack.
-            TransitionToState(clawState);
-            PerformClawAttack();
-        }
-
-        // Check for ground smash trigger (e.g., from a BossFightManager).
-        if (triggerGroundSmashAttack)
-        {
-            triggerGroundSmashAttack = false;
-            TransitionToState(groundSmashState);
-            PerformGroundSmashAttack();
-        }
     }
 
-    // Transition from one state to another.
+    /// <summary>
+    /// Transitions to a new state.
+    /// </summary>
     public void TransitionToState(BossStateSO newState)
     {
         currentState?.ExitState(this);
@@ -94,68 +103,55 @@ public class TigerBossAttack : EnemyAttack
         currentState?.EnterState(this);
     }
 
-    // Increase the rage meter, clamping it between 0 and maxRage.
     public void IncreaseRage(float amount)
     {
         currentRage = Mathf.Clamp(currentRage + amount, 0, maxRage);
     }
 
-    // Dash Attack: Increase speed and move aggressively toward the player.
-    public void PerformDashAttack()
+    public void ActivateRageState()
     {
-        // Increase speed.
+        isRaging = true;
+        rageTimer = 0f;
+        currentRage = maxRage;
         enemyAI.speed *= dashSpeedMultiplier;
-
-        // Determine the direction toward the player's position.
-        Vector2 direction = ((Vector2)enemyAI.target.position - (Vector2)transform.position).normalized;
-
-        // Set the velocity directly (assuming a Rigidbody2D is attached to enemyAI).
-        Rigidbody2D rb = enemyAI.GetComponent<Rigidbody2D>();
-        if (rb != null)
-        {
-            rb.velocity = direction * enemyAI.speed;
-        }
-
-        Debug.Log("Dashing with rage!");
+        TransitionToState(rageState);
+        Debug.Log("Rage state activated!");
     }
 
-    // Check if the dash action is complete.
-    public bool DashFinished()
+    public void EndRageState()
     {
-        // Here we use a simple check: if the enemy's velocity is very low.
-        Rigidbody2D rb = enemyAI.GetComponent<Rigidbody2D>();
-        if (rb != null && rb.velocity.magnitude < 0.1f)
-        {
-            return true;
-        }
-        return false;
+        isRaging = false;
+        rageTimer = 0f;
+        enemyAI.speed /= dashSpeedMultiplier;
+        currentRage = 0f;
+        TransitionToState(idleState);
+        Debug.Log("Rage state ended.");
     }
 
-    // Claw Attack: Execute the claw hit logic.
+    private void UpdateRageUI()
+    {
+        if (rageBar != null)
+        {
+            rageBar.value = currentRage / maxRage;
+        }
+    }
+
+    /// <summary>
+    /// Chooses the next attack state when the boss is idle.
+    /// For example, randomly choose between a Claw Attack and a Ground Smash.
+    /// </summary>
+    public BossStateSO ChooseNextAttackState()
+    {
+        // You can add more complex logic based on conditions.
+        return (Random.Range(0, 2) == 0) ? clawState : groundSmashState;
+    }
+
+    /// <summary>
+    /// Trigger the claw attack logic.
+    /// </summary>
     public void PerformClawAttack()
     {
-        Debug.Log("Claw Attack!");
-        // Insert your claw attack logic here.
-        // For example, detect collisions at clawHitPoint and apply damage.
-    }
-
-    // Ground Smash Attack: Execute ground smash logic and apply splash damage.
-    public void PerformGroundSmashAttack()
-    {
-        Debug.Log("Ground Smash Attack!");
-
-        // Optionally, play a ground smash animation or visual effect here.
-
-        // Use Physics2D.OverlapCircleAll to get all colliders in the splash damage area.
-        Collider2D[] hitColliders = Physics2D.OverlapCircleAll(downHitPoint.position, splashDamageRadius, TargetLayer);
-        foreach (Collider2D hit in hitColliders)
-        {
-            // If your targets have a Damageable component, call its TakeDamage method.
-            IDamageable damageable = hit.GetComponent<Damageable>();
-            if (damageable != null)
-            {
-                damageable.TakeDamage(groundSmashDamage);
-            }
-        }
+        Debug.Log("Performing Claw Attack!");
+        // Additional in-state logic for claw attack can go here.
     }
 }
