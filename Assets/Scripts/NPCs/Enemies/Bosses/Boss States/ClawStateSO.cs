@@ -3,8 +3,8 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "Boss States/Claw Attack State")]
 public class ClawAttackStateSO : BossStateSO
 {
-    public float attackRange = 1f;
-    public float clawDamage = 10f;
+    public float baseAttackRange = 1f;
+    public float baseClawDamage = 10f;
     public float cooldownDuration = 2f;
     public float knockbackMultiplier = 1.5f;
     
@@ -16,17 +16,22 @@ public class ClawAttackStateSO : BossStateSO
         Debug.Log("Entered Claw Attack State");
         hasAttacked = false;
         timer = 0f;
-
-        PerformClawAttack(boss);
+        // Check if the boss is in Phase2 and increase damage.
+        float finalClawDamage = baseClawDamage;
+        if (boss.GetComponent<BossFightManager>() != null && 
+            ((BossFightManager)boss.GetComponent<BossFightManager>()).currentPhase == BossFightManager.BossPhase.Phase2)
+        {
+            finalClawDamage *= 1.5f; // Increase damage by 50% in phase two.
+        }
+        PerformClawAttack(boss, finalClawDamage);
     }
 
     public override void UpdateState(TigerBossAttack boss)
     {
         timer += Time.deltaTime;
-
         if (timer >= cooldownDuration)
         {
-            boss.TransitionToState(boss.idleState); // Go back to idle or next phase
+            boss.TransitionToState(boss.idleState);
         }
     }
 
@@ -35,13 +40,12 @@ public class ClawAttackStateSO : BossStateSO
         Debug.Log("Exited Claw Attack State");
     }
 
-    private void PerformClawAttack(TigerBossAttack boss)
+    private void PerformClawAttack(TigerBossAttack boss, float clawDamage)
     {
         if (boss.clawHitPoint == null || hasAttacked)
             return;
 
-        Collider2D[] hitTargets = Physics2D.OverlapCircleAll(boss.clawHitPoint.position, attackRange, boss.TargetLayer);
-
+        Collider2D[] hitTargets = Physics2D.OverlapCircleAll(boss.clawHitPoint.position, baseAttackRange, boss.TargetLayer);
         foreach (Collider2D target in hitTargets)
         {
             IDamageable damageable = target.GetComponent<IDamageable>();
