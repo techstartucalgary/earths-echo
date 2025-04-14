@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.Rendering.Universal; // Required for URP
 
 public class CameraSizeTrigger : MonoBehaviour
 {
@@ -10,20 +11,36 @@ public class CameraSizeTrigger : MonoBehaviour
     private float originalSize; // Stores the original camera size
     private Coroutine transitionCoroutine;
 
+    // Optional: Reference to URP's additional camera data.
+    private UniversalAdditionalCameraData urpCameraData;
+
     private void Start()
     {
+        // Auto-assign main camera if not set.
         if (targetCamera == null)
         {
-            targetCamera = Camera.main; // Auto-assign main camera if not set
+            targetCamera = Camera.main;
         }
+        
         originalSize = targetCamera.orthographicSize; // Save default size
+
+        // Attempt to get URP-specific additional camera data.
+        urpCameraData = targetCamera.GetComponent<UniversalAdditionalCameraData>();
+        if (urpCameraData != null)
+        {
+            // (Optional) Configure URP settings here if needed.
+            // For example, you might adjust render scale or other URP-specific properties.
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Player"))
         {
-            if (transitionCoroutine != null) StopCoroutine(transitionCoroutine);
+            if (transitionCoroutine != null)
+            {
+                StopCoroutine(transitionCoroutine);
+            }
             transitionCoroutine = StartCoroutine(ChangeCameraSize(targetSize));
         }
     }
@@ -32,7 +49,10 @@ public class CameraSizeTrigger : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            if (transitionCoroutine != null) StopCoroutine(transitionCoroutine);
+            if (transitionCoroutine != null)
+            {
+                StopCoroutine(transitionCoroutine);
+            }
             transitionCoroutine = StartCoroutine(ChangeCameraSize(originalSize));
         }
     }
@@ -40,9 +60,9 @@ public class CameraSizeTrigger : MonoBehaviour
     private IEnumerator ChangeCameraSize(float newSize)
     {
         float startSize = targetCamera.orthographicSize;
-        float time = 0;
+        float time = 0f;
 
-        while (time < 1)
+        while (time < 1f)
         {
             time += Time.deltaTime * transitionSpeed;
             targetCamera.orthographicSize = Mathf.Lerp(startSize, newSize, time);
