@@ -3,31 +3,28 @@ using System.Collections;
 
 public class BossFightManager : MonoBehaviour
 {
-    // Define boss phases.
-    public enum BossPhase { Phase1, Phase2, Phase3 }
+    // Define boss phases: now only Phase1 and Phase2.
+    public enum BossPhase { Phase1, Phase2 }
     public BossPhase currentPhase = BossPhase.Phase1;
 
     [Header("Boss Components")]
     public TestEnemy bossHealth;        // Reference to the boss's health script.
-    public EnemyAttack enemyAttack;     // Reference to the EnemyAttack component.
+    public TigerBossAttack enemyAttack;     // Reference to the EnemyAttack component.
     public Animator bossAnimator;       // Reference to the boss Animator.
 
-    [Header("Phase Thresholds")]
-    [Tooltip("Boss will transition to Phase2 when health is below this percentage.")]
-    [Range(0f, 1f)]
-    public float phase2Threshold = 0.7f;  // 70% health.
-    [Tooltip("Boss will transition to Phase3 when health is below this percentage.")]
-    [Range(0f, 1f)]
-    public float phase3Threshold = 0.4f;  // 40% health.
-
     [Header("Phase Transition Settings")]
-    [Tooltip("Duration in seconds for the phase transition during which the boss is invincible and heals.")]
+    [Tooltip("Duration in seconds for the revival/heal phase when transitioning from Phase1 to Phase2.")]
     public float phaseTransitionDuration = 5f;
-    [Tooltip("Percentage of max health to heal at the start of a new phase (e.g., 0.1 for 10%).")]
-    public float phaseHealPercentage = 0.1f;
+    
+    // Optional: Increase speed and damage in phase two.
+    [Header("Phase Two Settings")]
+    [Tooltip("Attack interval in Phase2 (faster than Phase1).")]
+    public float phase2AttackInterval = 1.5f;
+    [Tooltip("Damage multiplier in Phase2.")]
+    public float phase2DamageMultiplier = 1.5f;
 
     [Header("Attack Settings")]
-    public float attackInterval = 3f;   // Time between attacks.
+    public float attackInterval = 3f;   // Time between attacks (for Phase1).
     private float attackTimer = 0f;
 
     private void Start()
@@ -37,107 +34,72 @@ public class BossFightManager : MonoBehaviour
 
     private void Update()
     {
+        // Check for phase transition based on defeat in Phase1.
         UpdatePhase();
-        // Countdown for the next attack.
+
+        // Use the appropriate attack interval based on phase.
+        float currentInterval = (currentPhase == BossPhase.Phase1) ? attackInterval : phase2AttackInterval;
         attackTimer -= Time.deltaTime;
         if (attackTimer <= 0f)
         {
             PerformAttackPattern();
-            attackTimer = attackInterval;
+            attackTimer = currentInterval;
         }
     }
 
     // Update the boss phase based on current health.
     void UpdatePhase()
     {
-        // Calculate the percentage of health remaining.
-        float healthPercent = bossHealth.currentHealth / bossHealth.getMaxHealth();
-
-        // Transition to Phase3 if health is below phase3Threshold.
-        if (healthPercent <= phase3Threshold && currentPhase != BossPhase.Phase3)
-        {
-            currentPhase = BossPhase.Phase3;
-            bossAnimator.SetTrigger("Phase3");
-            // Play a phase transition sound effect if desired.
-            SoundFXManager.Instance.PlayRandomSoundFXClip(new AudioClip[] { /* add Phase3 audio clips */ }, transform, 1f);
-            StartCoroutine(PhaseTransition());
-        }
-        // Transition to Phase2 if health is below phase2Threshold and still in Phase1.
-        else if (healthPercent <= phase2Threshold && currentPhase == BossPhase.Phase1)
+        // When the boss is defeated in Phase1, trigger revival.
+        if (bossHealth.currentHealth <= 0 && currentPhase == BossPhase.Phase1)
         {
             currentPhase = BossPhase.Phase2;
             bossAnimator.SetTrigger("Phase2");
-            SoundFXManager.Instance.PlayRandomSoundFXClip(new AudioClip[] { /* add Phase2 audio clips */ }, transform, 1f);
-            StartCoroutine(PhaseTransition());
+            StartCoroutine(RevivalPhase());
         }
     }
 
-    // Coroutine to manage phase transition invincibility and gradual healing.
-    IEnumerator PhaseTransition()
+    // Coroutine to handle the revival (healing) phase.
+    IEnumerator RevivalPhase()
     {
-        // Make the boss invincible.
+        // Set boss invincible while healing.
         bossHealth.SetInvincible(true);
 
-        // Calculate the total healing amount (10% of max health).
-        float totalHealAmount = bossHealth.getMaxHealth() * phaseHealPercentage;
-        float healedSoFar = 0f;
+        // Calculate amount to heal (to full).
+        float missingHealth = bossHealth.getMaxHealth() - bossHealth.currentHealth;
         float timer = 0f;
 
-        // Gradually heal over the duration.
         while (timer < phaseTransitionDuration)
         {
-            float healThisFrame = (totalHealAmount / phaseTransitionDuration) * Time.deltaTime;
+            float healThisFrame = (missingHealth / phaseTransitionDuration) * Time.deltaTime;
             bossHealth.Heal(healThisFrame);
-            healedSoFar += healThisFrame;
             timer += Time.deltaTime;
             yield return null;
         }
 
-        // End the phase transition period: remove invincibility.
         bossHealth.SetInvincible(false);
     }
 
-    // Execute different attack patterns based on the current boss phase.
+    // Execute different attack patterns based on the current phase.
     void PerformAttackPattern()
     {
-        switch (currentPhase)
+        // Example: switch between different attack patterns.
+        // You can integrate the new ground smash attack and other moves here.
+        // For instance, randomly trigger ground smash, side attack, or upward attack.
+        int attackChoice = Random.Range(0, 3);
+        switch (attackChoice)
         {
-            case BossPhase.Phase1:
-                // Phase1: perform a side attack.
+            case 0:
                 bossAnimator.SetTrigger("SideAttack");
                 enemyAttack.triggerSideAttack = true;
                 break;
-            case BossPhase.Phase2:
-                // Phase2: alternate between side and upward attack.
-                if (Random.Range(0, 2) == 0)
-                {
-                    bossAnimator.SetTrigger("SideAttack");
-                    enemyAttack.triggerSideAttack = true;
-                }
-                else
-                {
-                    bossAnimator.SetTrigger("UpwardAttack");
-                    enemyAttack.triggerUpwardAttack = true;
-                }
+            case 1:
+                bossAnimator.SetTrigger("UpwardAttack");
+                enemyAttack.triggerUpwardAttack = true;
                 break;
-            case BossPhase.Phase3:
-                // Phase3: use a random mix of all three attack types.
-                int attackChoice = Random.Range(0, 3);
-                if (attackChoice == 0)
-                {
-                    bossAnimator.SetTrigger("SideAttack");
-                    enemyAttack.triggerSideAttack = true;
-                }
-                else if (attackChoice == 1)
-                {
-                    bossAnimator.SetTrigger("UpwardAttack");
-                    enemyAttack.triggerUpwardAttack = true;
-                }
-                else
-                {
-                    bossAnimator.SetTrigger("DownwardAttack");
-                    enemyAttack.triggerDownwardAttack = true;
-                }
+            case 2:
+                bossAnimator.SetTrigger("GroundSmash");
+                enemyAttack.triggerGroundSmashAttack = true; // see note below
                 break;
         }
 

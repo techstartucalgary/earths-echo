@@ -12,5 +12,7 @@ public class EnemyAI : EE_NPC
 	
 	protected override void Update() {
 		base.Update();
+		
+		
 	}
 }
