@@ -17,7 +17,10 @@ public class RageStateSO : BossStateSO
     public override void EnterState(TigerBossAttack boss)
     {
         boss.animator.SetTrigger("Rage");
+<<<<<<< HEAD
         boss.animator.Play("tigerAnimation");
+=======
+>>>>>>> 1f7daaef3e4cdd4bc1bcfbfa80104434ecbe6c5b
         Debug.Log("Entered Rage State (Force-based movement).");
     }
 
@@ -54,8 +57,11 @@ public class RageStateSO : BossStateSO
             {
                 // Stop horizontal motion before transitioning.
                 rb.velocity = new Vector2(0, rb.velocity.y);
+<<<<<<< HEAD
                 SoundFXManager.Instance.PlaySoundFXClip(boss.dashSound, boss.transform, 1f);
 
+=======
+>>>>>>> 1f7daaef3e4cdd4bc1bcfbfa80104434ecbe6c5b
                 boss.TransitionToState(boss.clawState);
             }
         }
