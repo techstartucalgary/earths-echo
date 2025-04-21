@@ -18,10 +18,7 @@ public class ClawStateSO : BossStateSO
     public override void EnterState(TigerBossAttack boss)
     {
         boss.animator.SetTrigger("ClawAttack");
-<<<<<<< HEAD
         boss.animator.Play("tigerAttacking");
-=======
->>>>>>> 1f7daaef3e4cdd4bc1bcfbfa80104434ecbe6c5b
         Debug.Log("Entered Claw Attack State (Dash via force).");
 
         timer = 0f;
@@ -78,10 +75,7 @@ public class ClawStateSO : BossStateSO
             {
                 Vector2 direction = (target.transform.position - boss.clawHitPoint.position).normalized;
                 damageable.Damage(clawDamage, direction * boss.KnockbackForce * knockbackMultiplier);
-<<<<<<< HEAD
                 SoundFXManager.Instance.PlaySoundFXClip(boss.clawSound, boss.transform, 1f);
-=======
->>>>>>> 1f7daaef3e4cdd4bc1bcfbfa80104434ecbe6c5b
             }
         }
     }
