@@ -6,6 +6,7 @@ public class DashStateSO : BossStateSO
     public override void EnterState(TigerBossAttack boss)
     {
         //boss.PerformDashAttack();
+        boss.animator.Play("tigerRunning");
     }
 
     public override void UpdateState(TigerBossAttack boss)

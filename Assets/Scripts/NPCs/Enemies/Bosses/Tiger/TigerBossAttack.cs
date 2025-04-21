@@ -47,6 +47,16 @@ public class TigerBossAttack : EnemyAttack
 
     private BossStateSO currentState;
 
+    public AudioClip dashSound;
+
+    public AudioClip roarSound;
+
+    public AudioClip idleSound;
+
+    public AudioClip clawSound;
+
+    public AudioClip groundPoundSound;
+
     protected void Start()
     {
         if (enemyAI == null)

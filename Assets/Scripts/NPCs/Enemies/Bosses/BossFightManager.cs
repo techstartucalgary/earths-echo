@@ -7,28 +7,29 @@ public class BossFightManager : MonoBehaviour
     public BossPhase currentPhase = BossPhase.Phase1;
 
     [Header("Boss Components")]
-    public TestEnemy bossHealth;          // Boss health script.
-    public TigerBossAttack enemyAttack;   // Boss attack/state machine.
-    public Animator bossAnimator;         // Boss Animator.
+    public TestEnemy bossHealth;
+    public TigerBossAttack enemyAttack;
+    public Animator bossAnimator;
 
     [Header("Phase Transition Settings")]
-    [Tooltip("Duration (in seconds) for the revival/heal phase when transitioning from Phase1 to Phase2.")]
     public float phaseTransitionDuration = 5f;
     public AudioClip phaseTransitionSound;
-    
+
     [Header("Phase Two Settings")]
-    [Tooltip("Damage multiplier in Phase2.")]
     public float phase2DamageMultiplier = 1.5f;
 
+    [Header("Healing Settings")]
+    [Tooltip("Position the boss jumps to during healing.")]
+    public Transform healingSpot;
+
     private EnemyAI enemyAI;
+    private Rigidbody2D rb;
 
     private void Start()
     {
-        // Trigger the intro animation.
         bossAnimator.SetTrigger("Intro");
-
-        // Get the EnemyAI component reference.
         enemyAI = GetComponent<EnemyAI>();
+        rb = GetComponent<Rigidbody2D>();
         AudioManager.instance.SetGameplayMusic(GameplayContext.TigerBossFight);
     }
 
@@ -37,56 +38,61 @@ public class BossFightManager : MonoBehaviour
         UpdatePhase();
     }
 
-    /// <summary>
-    /// Checks if the boss's health has dropped below 25% during Phase1.
-    /// </summary>
     void UpdatePhase()
     {
         if (currentPhase == BossPhase.Phase1 && bossHealth.currentHealth <= bossHealth.getMaxHealth() * 0.25f)
         {
             currentPhase = BossPhase.Phase2;
-            bossAnimator.SetTrigger("PhaseTransition"); // Phase transition animation.
-            // Optionally, play a sound cue here.
+            bossAnimator.SetTrigger("PhaseTransition");
             SoundFXManager.Instance.PlaySoundFXClip(phaseTransitionSound, transform, 1f);
-            enemyAttack.isPhaseTwo = true;  // Inform the attack state machine that we are now in Phase2.
+            enemyAttack.isPhaseTwo = true;
             StartCoroutine(RevivalPhase());
         }
     }
 
-    /// <summary>
-    /// Heals the boss over the transition duration while making it invincible and disabling its attacks.
-    /// </summary>
     IEnumerator RevivalPhase()
     {
-        // Set boss invincible and disable attack logic.
         bossHealth.SetInvincible(true);
         enemyAttack.isHealing = true;
 
-        // Disable the EnemyAI component so the boss stops moving.
         if (enemyAI != null)
-        {
             enemyAI.enabled = false;
+
+        // Move to healing spot
+        if (healingSpot != null)
+        {
+            // Optional: leap with Rigidbody2D force
+            if (rb != null)
+            {
+                Vector2 jumpForce = (healingSpot.position - transform.position) * 2f;
+                rb.velocity = Vector2.zero; // reset current velocity
+                rb.AddForce(jumpForce, ForceMode2D.Impulse);
+                enemyAttack.animator.Play("tigerJump");
+            }
+            else
+            {
+                transform.position = healingSpot.position;
+            }
+
+            // Optional: wait a short moment for animation or travel
+            yield return new WaitForSeconds(0.5f);
         }
 
         float missingHealth = bossHealth.getMaxHealth() - bossHealth.currentHealth;
         float timer = 0f;
         while (timer < phaseTransitionDuration)
         {
+            enemyAttack.animator.Play("tigerAnimation");
             float healThisFrame = (missingHealth / phaseTransitionDuration) * Time.deltaTime;
             bossHealth.Heal(healThisFrame);
             timer += Time.deltaTime;
             yield return null;
         }
 
-        // Re-enable attacks and EnemyAI once healing is complete.
         enemyAttack.isHealing = false;
         bossHealth.SetInvincible(false);
 
         if (enemyAI != null)
-        {
             enemyAI.enabled = true;
-        }
     }
 }
-
-

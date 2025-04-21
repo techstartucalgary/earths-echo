@@ -11,6 +11,7 @@ public class IdleStateSO : BossStateSO
     {
         timer = 0f;
         Debug.Log("Entered Idle State");
+        boss.animator.Play("tigerRunning");
     }
 
     public override void UpdateState(TigerBossAttack boss)

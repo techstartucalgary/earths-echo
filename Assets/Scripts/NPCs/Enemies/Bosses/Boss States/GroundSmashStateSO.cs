@@ -22,10 +22,13 @@ public class GroundSmashStateSO : BossStateSO
     {
         hasSmashed = false;
         boss.animator.SetTrigger("GroundSmash");
+        boss.animator.Play("tigerJump");
         Rigidbody2D rb = boss.GetComponent<Rigidbody2D>();
         if (rb != null)
         {
             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+            SoundFXManager.Instance.PlaySoundFXClip(boss.groundPoundSound, boss.transform, 1f);
+
         }
     }
 
@@ -54,6 +57,8 @@ public class GroundSmashStateSO : BossStateSO
             if (damageable != null)
             {
                 damageable.Damage(smashDamage, Vector2.zero);
+                SoundFXManager.Instance.PlaySoundFXClip(boss.clawSound, boss.transform, 1f);
+
             }
         }
         boss.TransitionToState(boss.idleState);
