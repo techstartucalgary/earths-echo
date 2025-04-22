@@ -19,7 +19,7 @@ public class EE_NPC : MonoBehaviour
     public Transform npcGFX;
 
     [SerializeField]
-    protected Animator animator;
+	public Animator animator;
     protected float animatorXScale;
 
     protected Path path;

@@ -29,6 +29,7 @@ public class BossController : MonoBehaviour
 			shouldZoomOut = true;
 			shouldZoomIn = false;
 			hunter.isActive = true;
+			hunter.animator.Play("hunter_laugh");
 		}
 	}
 
