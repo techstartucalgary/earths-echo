@@ -8,7 +8,7 @@ public class EE_NPC : MonoBehaviour
 
     [Header("Sensors")]
     [SerializeField]
-    Sensor targetSensor;
+    protected Sensor targetSensor;
 
     [Header("Movement")]
     public float speed = 200f;

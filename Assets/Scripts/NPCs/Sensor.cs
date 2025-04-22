@@ -6,8 +6,10 @@ using UnityEngine;
 [RequireComponent(typeof(CircleCollider2D))]
 public class Sensor : MonoBehaviour
 {
-    [SerializeField] float detectionRadius = 5f;
-    [SerializeField] float timerInterval = 1f;
+    [SerializeField] 
+	public float detectionRadius = 5f;
+    [SerializeField] 
+	public float timerInterval = 1f;
 
     CircleCollider2D detectionRange;
 
@@ -40,6 +42,7 @@ public class Sensor : MonoBehaviour
 
     void Update() {
         timer.Tick(Time.deltaTime);
+		UpdateRadiusIfChanged();
     }
 
     void UpdateTargetPosition(GameObject target = null) {
@@ -49,6 +52,13 @@ public class Sensor : MonoBehaviour
             OnTargetChanged.Invoke();
         }
     }
+
+	void UpdateRadiusIfChanged() {
+
+		if(detectionRadius != detectionRange.radius) {
+			detectionRange.radius = detectionRadius;
+		}
+	}
 
     void OnTriggerEnter2D(Collider2D other) {
 		if(targetTag == "") return;

@@ -7,21 +7,43 @@ public class EE_HunterBoss : EE_NPC
 	public Transform towerPointB;
 	public Transform groundPoint;
 
-	public float teleportCooldown = 3f;
+	[Header("Teleporting")]
+	public float teleportCooldown = 5f;
+	public float rangedAttackCooldown = 1.5f;
+	public float meleeAttackCooldown = 0.7f;
 
-	private float cooldownTimer;
+	private float teleportTimer;
+	private float rangedAttackTimer;
+	private float meleeAttackTimer;
 
+	[Header("Fight State")]
 	public bool shouldFallToGround = false;
 	public bool shouldJumpToTower = false;
 
 	private bool onGround = false;
 	private bool togglePosition = false;
 
+	[Header("Additional Sensors")]
+	[SerializeField]
+	Sensor actionSensor;
+	float targetSensorRadius;
+	float actionSensorRadius;
+
     // Start is called before the first frame update
     protected override void Start()
     {
     	base.Start(); 
-		cooldownTimer = teleportCooldown;
+
+		// set timers
+		teleportTimer = teleportCooldown;
+		rangedAttackTimer = rangedAttackCooldown;
+		meleeAttackTimer = meleeAttackCooldown;
+
+		// sensor info
+		targetSensorRadius = base.targetSensor.detectionRadius;
+		actionSensor.setTargetTag(base.target.tag);
+		actionSensorRadius = actionSensor.detectionRadius;
+
     }
 
     // Update is called once per frame
@@ -29,24 +51,41 @@ public class EE_HunterBoss : EE_NPC
     {
         base.Update();
 
-		cooldownTimer -= Time.deltaTime;
+		TickTimers();
 
-		if (cooldownTimer <= 0f) {
+		HandleTeleporting();
+		HandleSensorRadiuses();
+		HandleAttacking();
+			
+    }
+
+	void TickTimers() {
+		float tick = Time.deltaTime;
+
+		teleportTimer -= tick;
+		rangedAttackTimer -= tick;
+		meleeAttackTimer -= tick;
+	}
+
+	void TeleportTo(Transform target) {
+		if(target != null) {
+			transform.position = target.position;
+		}else {
+			Debug.LogWarning("Teleport target is not assigned!");
+		}
+	}
+
+	void HandleTeleporting() {
+		if (teleportTimer <= 0f) {
 			if(shouldFallToGround) {
-				TeleportTo(groundPoint);
-
 				shouldFallToGround = false;
 				onGround = true;
-
-				base.useSensorForPath = true;
 			}
 			else if (shouldJumpToTower){
-				TeleportTo(towerPointB);
-
 				shouldJumpToTower = false;
 				onGround = false;
 
-				base.useSensorForPath = false;
+				TeleportTo(towerPointB);
 			}
 			else if (onGround) {
 
@@ -56,18 +95,27 @@ public class EE_HunterBoss : EE_NPC
 				togglePosition = !togglePosition;
 
 				base.path = null;
+
 			}
 
-			cooldownTimer = teleportCooldown;
-		}
-
-    }
-
-	void TeleportTo(Transform target) {
-		if(target != null) {
-			transform.position = target.position;
-		}else {
-			Debug.LogWarning("Teleport target is not assigned!");
+			teleportTimer = teleportCooldown;
 		}
 	}
+
+	void HandleAttacking() {
+
+	}
+
+	void HandleSensorRadiuses() {
+		if (onGround) {
+			base.targetSensor.detectionRadius = targetSensorRadius;
+			actionSensor.detectionRadius = actionSensorRadius;
+		}
+		else {
+			base.targetSensor.detectionRadius = 1f;
+			actionSensor.detectionRadius = 1f;
+		}
+	}
+
+
 }
