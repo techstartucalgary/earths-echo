@@ -7,7 +7,7 @@ public class EE_HunterBoss : EE_NPC
 	public Transform towerPointB;
 	public Transform groundPoint;
 
-	[Header("Teleporting")]
+	[Header("Cooldowns")]
 	public float teleportCooldown = 5f;
 	public float rangedAttackCooldown = 1.5f;
 	public float meleeAttackCooldown = 0.7f;
@@ -95,7 +95,6 @@ public class EE_HunterBoss : EE_NPC
 				togglePosition = !togglePosition;
 
 				base.path = null;
-
 			}
 
 			teleportTimer = teleportCooldown;
@@ -103,7 +102,17 @@ public class EE_HunterBoss : EE_NPC
 	}
 
 	void HandleAttacking() {
+		if(meleeAttackTimer <= 0f && actionSensor.IsTargetInRange) {
+			// Melee attack logic here
 
+			meleeAttackTimer = meleeAttackCooldown;
+		}
+
+		if(rangedAttackTimer <= 0f && !actionSensor.IsTargetInRange) {
+			// Ranged attack logic here
+
+			rangedAttackTimer = rangedAttackCooldown;
+		}
 	}
 
 	void HandleSensorRadiuses() {
@@ -116,6 +125,5 @@ public class EE_HunterBoss : EE_NPC
 			actionSensor.detectionRadius = 1f;
 		}
 	}
-
 
 }
