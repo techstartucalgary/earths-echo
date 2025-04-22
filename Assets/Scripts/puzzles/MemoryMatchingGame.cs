@@ -13,14 +13,24 @@ public class MemoryMatchingGame : MonoBehaviour
     private float cardFlipDuration = 0.3f;
     private float matchCheckDelay = 1f;
 
+    // Custom assets
+    [Header("Custom Assets")]
+    public Sprite gameBackground;                     // Optional game panel background
+    public List<Sprite> cardSprites = new();          // Card face sprites (1 per pair)
+
     // Runtime references
-    private GameObject gameCanvas;
-    private GameObject cardContainer;
+    public GameObject gameCanvas;
+    public GameObject cardContainer;
     private TextMeshProUGUI matchesText;
     private Button closeButton;
     private GameObject completionPanel;
     private TextMeshProUGUI completionText;
+    public Sprite customContainerSprite;
 
+    [Tooltip("Sprite to use as the card back.")]
+    public Sprite cardBackSprite;
+
+    public Sprite defaultRoundedSprite;
     // State tracking
     private List<MemoryCard> cards = new List<MemoryCard>();
     private MemoryCard firstSelectedCard;
@@ -33,8 +43,7 @@ public class MemoryMatchingGame : MonoBehaviour
     public void StartGame()
     {
         Debug.Log("MemoryMatchingGame: Starting game");
-
-        // Create fresh UI every time
+        UnityEngine.Cursor.visible=true;
         CleanupPreviousGame();
         CreateGameUI();
         CreateCards();
@@ -44,13 +53,11 @@ public class MemoryMatchingGame : MonoBehaviour
 
     private void CleanupPreviousGame()
     {
-        // Destroy any existing canvas
         if (gameCanvas != null)
         {
             Destroy(gameCanvas);
         }
 
-        // Reset state
         cards.Clear();
         firstSelectedCard = null;
         secondSelectedCard = null;
@@ -61,7 +68,6 @@ public class MemoryMatchingGame : MonoBehaviour
 
     private void CreateGameUI()
     {
-        // Create canvas
         gameCanvas = new GameObject("Memory Game Canvas");
         gameCanvas.transform.SetParent(transform);
 
@@ -72,12 +78,20 @@ public class MemoryMatchingGame : MonoBehaviour
         gameCanvas.AddComponent<CanvasScaler>();
         gameCanvas.AddComponent<GraphicRaycaster>();
 
-        // Create background panel
         GameObject panel = new GameObject("Background Panel");
         panel.transform.SetParent(gameCanvas.transform, false);
 
         Image panelImage = panel.AddComponent<Image>();
-        panelImage.color = new Color(0, 0, 0, 0.9f);
+        if (gameBackground != null)
+        {
+            panelImage.sprite = gameBackground;
+            panelImage.type = Image.Type.Sliced;
+            panelImage.color = Color.gray;
+        }
+        else
+        {
+            panelImage.color = new Color(0, 0, 0, 0.9f);
+        }
 
         RectTransform panelRect = panel.GetComponent<RectTransform>();
         panelRect.anchorMin = new Vector2(0.2f, 0.1f);
@@ -85,13 +99,12 @@ public class MemoryMatchingGame : MonoBehaviour
         panelRect.offsetMin = Vector2.zero;
         panelRect.offsetMax = Vector2.zero;
 
-        // Create title
         GameObject titleObj = new GameObject("Title");
         titleObj.transform.SetParent(panel.transform, false);
 
         TextMeshProUGUI titleText = titleObj.AddComponent<TextMeshProUGUI>();
-        titleText.text = "Memory Matching Game";
-        titleText.fontSize = 30;
+        titleText.text = "ALCHEMY MATCHING GAME";
+        titleText.fontSize = 50;
         titleText.color = Color.white;
         titleText.alignment = TextAlignmentOptions.Center;
 
@@ -99,9 +112,8 @@ public class MemoryMatchingGame : MonoBehaviour
         titleRect.anchorMin = new Vector2(0, 1);
         titleRect.anchorMax = new Vector2(1, 1);
         titleRect.sizeDelta = new Vector2(0, 50);
-        titleRect.anchoredPosition = new Vector2(0, -25);
+        titleRect.anchoredPosition = new Vector2(0, -100);
 
-        // Create card container
         cardContainer = new GameObject("Card Container");
         cardContainer.transform.SetParent(panel.transform, false);
 
@@ -109,26 +121,37 @@ public class MemoryMatchingGame : MonoBehaviour
         containerImage.color = new Color(0.3f, 0.3f, 0.3f, 1f);
 
         RectTransform containerRect = cardContainer.GetComponent<RectTransform>();
-        containerRect.anchorMin = new Vector2(0.1f, 0.2f);
-        containerRect.anchorMax = new Vector2(0.9f, 0.8f);
+        containerRect.anchorMin = new Vector2(0.05f, 0.15f);
+        containerRect.anchorMax = new Vector2(0.95f, 0.75f);
         containerRect.offsetMin = Vector2.zero;
         containerRect.offsetMax = Vector2.zero;
 
-        // Add a visible grid layout
+        // Optional: make container background transparent
+        if (customContainerSprite != null)
+        {
+            containerImage.sprite = customContainerSprite;
+            containerImage.type = Image.Type.Sliced;
+            containerImage.color = Color.white;
+        }
+
         GridLayoutGroup grid = cardContainer.AddComponent<GridLayoutGroup>();
-        grid.cellSize = new Vector2(70, 70);
-        grid.spacing = new Vector2(10, 10);
-        grid.padding = new RectOffset(10, 10, 10, 10);
+        float availableWidth = containerRect.rect.width - (grid.padding.left + grid.padding.right + (grid.spacing.x * (gridWidth - 1)));
+        float cellWidth = availableWidth / gridWidth;
+        grid.cellSize = new Vector2(cellWidth, cellWidth); // Square cards
+        grid.childAlignment = TextAnchor.MiddleCenter;
+
+        grid.spacing = new Vector2(8, 8);    // tighter spacing
+        grid.padding = new RectOffset(5, 5, 5, 5);
         grid.constraintCount = gridWidth;
         grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
 
-        // Create status text
+
         GameObject statusObj = new GameObject("Status");
         statusObj.transform.SetParent(panel.transform, false);
 
         matchesText = statusObj.AddComponent<TextMeshProUGUI>();
         matchesText.text = "Matches: 0/0 | Moves: 0";
-        matchesText.fontSize = 20;
+        matchesText.fontSize = 30;
         matchesText.color = Color.white;
         matchesText.alignment = TextAlignmentOptions.Center;
 
@@ -138,7 +161,6 @@ public class MemoryMatchingGame : MonoBehaviour
         statusRect.sizeDelta = new Vector2(0, 40);
         statusRect.anchoredPosition = new Vector2(0, 20);
 
-        // Create close button
         GameObject closeObj = new GameObject("Close Button");
         closeObj.transform.SetParent(panel.transform, false);
 
@@ -152,7 +174,6 @@ public class MemoryMatchingGame : MonoBehaviour
         closeRect.sizeDelta = new Vector2(40, 40);
         closeRect.anchoredPosition = new Vector2(-20, -20);
 
-        // Add X text to close button
         GameObject closeTextObj = new GameObject("X");
         closeTextObj.transform.SetParent(closeObj.transform, false);
 
@@ -170,13 +191,9 @@ public class MemoryMatchingGame : MonoBehaviour
 
         closeButton.onClick.AddListener(CloseGame);
 
-        // Create completion panel
         CreateCompletionPanel();
 
-        // Calculate total pairs
         totalPairs = (gridWidth * gridHeight) / 2;
-
-        // Update status text
         UpdateStatusText();
     }
 
@@ -194,7 +211,6 @@ public class MemoryMatchingGame : MonoBehaviour
         panelRect.sizeDelta = new Vector2(400, 250);
         panelRect.anchoredPosition = Vector2.zero;
 
-        // Create completion text
         GameObject textObj = new GameObject("Completion Text");
         textObj.transform.SetParent(completionPanel.transform, false);
 
@@ -209,7 +225,6 @@ public class MemoryMatchingGame : MonoBehaviour
         textRect.offsetMin = new Vector2(20, 0);
         textRect.offsetMax = new Vector2(-20, 0);
 
-        // Create continue button
         GameObject btnObj = new GameObject("Continue Button");
         btnObj.transform.SetParent(completionPanel.transform, false);
 
@@ -239,29 +254,76 @@ public class MemoryMatchingGame : MonoBehaviour
         btnTextRect.offsetMin = Vector2.zero;
         btnTextRect.offsetMax = Vector2.zero;
 
-        // Hide panel initially
         completionPanel.SetActive(false);
+        StartCoroutine(AdjustCellSizeAfterFrame());
+
     }
+
+    private IEnumerator AdjustCellSizeAfterFrame()
+    {
+        yield return null; // Wait one frame for layout to initialize
+
+        GridLayoutGroup grid = cardContainer.GetComponent<GridLayoutGroup>();
+        RectTransform containerRect = cardContainer.GetComponent<RectTransform>();
+
+        float width = containerRect.rect.width - (grid.padding.left + grid.padding.right + (grid.spacing.x * (gridWidth - 1)));
+        float height = containerRect.rect.height - (grid.padding.top + grid.padding.bottom + (grid.spacing.y * (gridHeight - 1)));
+
+        float cellWidth = width / gridWidth;
+        float cellHeight = height / gridHeight;
+        float cellSize = Mathf.Min(cellWidth, cellHeight); // Keep square
+
+        grid.cellSize = new Vector2(cellSize, cellSize);
+    }
+
 
     private void CreateCards()
     {
         for (int i = 0; i < totalPairs; i++)
         {
-            // Create two matching cards
             for (int j = 0; j < 2; j++)
             {
-                // Create card game object
                 GameObject cardObj = new GameObject($"Card_{i}_{j}");
                 cardObj.transform.SetParent(cardContainer.transform, false);
 
-                // Create card face (front)
                 GameObject cardFace = new GameObject("Card Face");
                 cardFace.transform.SetParent(cardObj.transform, false);
 
-                // Add face image with color based on card ID
                 Image faceImage = cardFace.AddComponent<Image>();
-                float hue = (float)i / totalPairs;
-                faceImage.color = Color.HSVToRGB(hue, 0.8f, 0.8f);
+                faceImage.raycastTarget = false;
+
+                if (i < cardSprites.Count && cardSprites[i] != null)
+                {
+                    faceImage.sprite = cardSprites[i];
+                    faceImage.color = Color.white;
+                    faceImage.preserveAspect = true;
+                    faceImage.type = Image.Type.Sliced; // for rounded corners
+                }
+                else
+                {
+                    float hue = (float)i / totalPairs;
+                    faceImage.color = Color.HSVToRGB(hue, 0.8f, 0.8f);
+                    faceImage.sprite = defaultRoundedSprite; // <- assign a 9-sliced rounded white sprite
+                    faceImage.type = Image.Type.Sliced;
+                }
+
+                // Add rounded corners with Mask
+                cardFace.AddComponent<Mask>().showMaskGraphic = false;
+
+                // Add Image for visible content (card image or color)
+                GameObject faceContent = new GameObject("Card Face Content");
+                faceContent.transform.SetParent(cardFace.transform, false);
+                Image contentImage = faceContent.AddComponent<Image>();
+                contentImage.sprite = faceImage.sprite;
+                contentImage.color = faceImage.color;
+                contentImage.type = faceImage.type;
+                contentImage.preserveAspect = true;
+
+                // Optional: add shadow
+                Shadow shadow = contentImage.gameObject.AddComponent<Shadow>();
+                shadow.effectColor = new Color(0, 0, 0, 0.4f);
+                shadow.effectDistance = new Vector2(2, -2);
+
 
                 RectTransform faceRect = cardFace.GetComponent<RectTransform>();
                 faceRect.anchorMin = Vector2.zero;
@@ -269,7 +331,6 @@ public class MemoryMatchingGame : MonoBehaviour
                 faceRect.offsetMin = Vector2.zero;
                 faceRect.offsetMax = Vector2.zero;
 
-                // Add card ID text
                 GameObject labelObj = new GameObject("Card ID");
                 labelObj.transform.SetParent(cardFace.transform, false);
 
@@ -285,12 +346,23 @@ public class MemoryMatchingGame : MonoBehaviour
                 labelRect.offsetMin = Vector2.zero;
                 labelRect.offsetMax = Vector2.zero;
 
-                // Create card back
                 GameObject cardBack = new GameObject("Card Back");
                 cardBack.transform.SetParent(cardObj.transform, false);
 
                 Image backImage = cardBack.AddComponent<Image>();
-                backImage.color = new Color(0.3f, 0.3f, 0.3f);
+
+                if (cardBackSprite != null)
+                {
+                    backImage.sprite = cardBackSprite;
+                    backImage.type = Image.Type.Sliced;
+                    backImage.color = new Color(1f, 1f, 1f, 1f); // full opacity (no gray tint)
+                    backImage.preserveAspect = true;
+                }
+                else
+                {
+                    backImage.sprite = defaultRoundedSprite; // optional fallback if desired
+                    backImage.color = new Color(1f, 1f, 1f, 0f); // fully transparent fallback
+                }
 
                 RectTransform backRect = cardBack.GetComponent<RectTransform>();
                 backRect.anchorMin = Vector2.zero;
@@ -298,54 +370,42 @@ public class MemoryMatchingGame : MonoBehaviour
                 backRect.offsetMin = Vector2.zero;
                 backRect.offsetMax = Vector2.zero;
 
-                // Add a decorative pattern on the back
-                GameObject patternObj = new GameObject("Pattern");
-                patternObj.transform.SetParent(cardBack.transform, false);
+                // GameObject patternObj = new GameObject("Pattern");
+                // patternObj.transform.SetParent(cardBack.transform, false);
 
-                Image patternImage = patternObj.AddComponent<Image>();
-                patternImage.color = new Color(0.5f, 0.5f, 0.5f);
+                // Image patternImage = patternObj.AddComponent<Image>();
+                // patternImage.color = new Color(0.5f, 0.5f, 0.5f);
 
-                RectTransform patternRect = patternObj.GetComponent<RectTransform>();
-                patternRect.anchorMin = new Vector2(0.2f, 0.2f);
-                patternRect.anchorMax = new Vector2(0.8f, 0.8f);
-                patternRect.offsetMin = Vector2.zero;
-                patternRect.offsetMax = Vector2.zero;
+                // RectTransform patternRect = patternObj.GetComponent<RectTransform>();
+                // patternRect.anchorMin = new Vector2(0.2f, 0.2f);
+                // patternRect.anchorMax = new Vector2(0.8f, 0.8f);
+                // patternRect.offsetMin = Vector2.zero;
+                // patternRect.offsetMax = Vector2.zero;
 
-                // Add button component
                 Button cardButton = cardObj.AddComponent<Button>();
                 cardButton.transition = Selectable.Transition.ColorTint;
 
-                // Add an image component to make the button work
                 Image cardImage = cardObj.AddComponent<Image>();
-                cardImage.color = new Color(1, 1, 1, 0.01f); // Almost transparent
+                cardImage.color = new Color(1, 1, 1, 0f); // fully invisible
 
-                // Add memory card component
                 MemoryCard card = cardObj.AddComponent<MemoryCard>();
                 card.Initialize(i, cardFace, cardBack);
-
-                // Register callback
                 card.OnCardSelected += OnCardSelected;
-
-                // Add card to list
                 cards.Add(card);
             }
         }
 
-        // Shuffle the cards
         ShuffleCards();
     }
 
     private void ShuffleCards()
     {
-        // Shuffle card transforms
         List<Transform> cardTransforms = new List<Transform>();
-
         foreach (Transform child in cardContainer.transform)
         {
             cardTransforms.Add(child);
         }
 
-        // Fisher-Yates shuffle
         for (int i = cardTransforms.Count - 1; i > 0; i--)
         {
             int randomIndex = Random.Range(0, i + 1);
@@ -384,50 +444,32 @@ public class MemoryMatchingGame : MonoBehaviour
             time += Time.deltaTime;
             float normalizedTime = time / cardFlipDuration;
 
-            if (normalizedTime < 0.5f)
-            {
-                // First half - shrink horizontally
-                float scale = 1 - normalizedTime * 2;
-                card.transform.localScale = new Vector3(scale, 1, 1);
-            }
-            else
-            {
-                // Flip the card at the halfway point
-                if (normalizedTime >= 0.5f && normalizedTime <= 0.51f)
-                {
-                    card.SetFaceUp(faceUp);
-                }
+            float scale = (normalizedTime < 0.5f) ? 1 - normalizedTime * 2 : (normalizedTime - 0.5f) * 2;
+            card.transform.localScale = new Vector3(scale, 1, 1);
 
-                // Second half - expand horizontally
-                float scale = (normalizedTime - 0.5f) * 2;
-                card.transform.localScale = new Vector3(scale, 1, 1);
-            }
+            if (normalizedTime >= 0.5f && normalizedTime <= 0.51f)
+                card.SetFaceUp(faceUp);
 
             yield return null;
         }
 
-        // Ensure final state is correct
         card.transform.localScale = Vector3.one;
         card.SetFaceUp(faceUp);
     }
 
     private IEnumerator CheckForMatch()
     {
-        // Wait before checking
         yield return new WaitForSeconds(matchCheckDelay);
 
         bool isMatch = firstSelectedCard.CardId == secondSelectedCard.CardId;
 
         if (isMatch)
         {
-            // Mark cards as matched
             firstSelectedCard.SetMatched(true);
             secondSelectedCard.SetMatched(true);
-
             matchesFound++;
             UpdateStatusText();
 
-            // Check if game is complete
             if (matchesFound >= totalPairs)
             {
                 ShowCompletionPanel();
@@ -435,16 +477,12 @@ public class MemoryMatchingGame : MonoBehaviour
         }
         else
         {
-            // Flip cards back
             StartCoroutine(FlipCard(firstSelectedCard, false));
             StartCoroutine(FlipCard(secondSelectedCard, false));
         }
 
-        // Reset selection
         firstSelectedCard = null;
         secondSelectedCard = null;
-
-        // Allow selection again
         yield return new WaitForSeconds(0.1f);
         canSelect = true;
     }
@@ -469,13 +507,13 @@ public class MemoryMatchingGame : MonoBehaviour
     public void CloseGame()
     {
         Debug.Log("MemoryMatchingGame: Closing game");
-
         if (gameCanvas != null)
         {
             gameCanvas.SetActive(false);
         }
     }
 }
+
 
 // Enhanced card implementation
 public class MemoryCard : MonoBehaviour
