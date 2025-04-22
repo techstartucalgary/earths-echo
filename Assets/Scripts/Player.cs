@@ -112,7 +112,7 @@ public class Player : MonoBehaviour, IDamageable
 
     [Header("Impact Effects")]
     [SerializeField] private GameObject[] impactParticlePrefabs;   // One‑shot VFX to spawn on hit
-
+    [SerializeField] private GameObject healingParticlePrefab;
 
 
     FindGrandchildren finder;
@@ -258,8 +258,24 @@ public class Player : MonoBehaviour, IDamageable
         if (impactParticlePrefabs == null || impactParticlePrefabs.Length == 0) return;
 
         GameObject prefab = impactParticlePrefabs[UnityEngine.Random.Range(0, impactParticlePrefabs.Length)];
-        Instantiate(prefab, position, Quaternion.identity);
+
+        // Instantiate at the hit position
+        GameObject instance = Instantiate(prefab, position, Quaternion.identity);
+
+        // Optionally parent to the player if you want it to follow
+        instance.transform.SetParent(transform);
+
+        // Auto-destroy after particle lifetime (fallback = 2 seconds if unknown)
+        float lifetime = 2f;
+        var ps = instance.GetComponent<ParticleSystem>();
+        if (ps != null)
+        {
+            lifetime = ps.main.duration + ps.main.startLifetime.constantMax;
+        }
+
+        Destroy(instance, lifetime);
     }
+
 
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -808,17 +824,31 @@ public class Player : MonoBehaviour, IDamageable
 
     private IEnumerator HealToFull()
     {
-        // While the player's health is not full, apply incremental healing.
+        GameObject healingEffectInstance = null;
+
+        if (healingParticlePrefab != null)
+        {
+            // Instantiate and parent to the player
+            healingEffectInstance = Instantiate(healingParticlePrefab, DownwardHitpoint.position, Quaternion.identity);
+            healingEffectInstance.transform.SetParent(transform); // Now it follows the player
+        }
+
         while (currentHealth < maxHealth)
         {
-            // The healing rate per second (so full recovery happens over healingDuration)
             float healAmount = (maxHealth / healingDuration) * Time.deltaTime;
-            Heal(healAmount);  // Call your existing Heal method
+            Heal(healAmount);
             yield return null;
         }
-        // Once healing is complete, clear the coroutine reference.
+
+        // Cleanup after healing is done
         healingCoroutine = null;
+
+        if (healingEffectInstance != null)
+        {
+            Destroy(healingEffectInstance);
+        }
     }
+
 
 
 }
