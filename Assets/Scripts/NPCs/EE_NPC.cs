@@ -8,7 +8,7 @@ public class EE_NPC : MonoBehaviour
 
     [Header("Sensors")]
     [SerializeField]
-    Sensor targetSensor;
+    protected Sensor targetSensor;
 
     [Header("Movement")]
     public float speed = 200f;
@@ -19,15 +19,15 @@ public class EE_NPC : MonoBehaviour
     public Transform npcGFX;
 
     [SerializeField]
-    Animator animator;
-    float animatorXScale;
+	public Animator animator;
+    protected float animatorXScale;
 
-    Path path;
+    protected Path path;
     int currentWaypoint = 0;
     bool reachedEndOfPath = false;
 
     Seeker seeker;
-    Rigidbody2D rb;
+    protected Rigidbody2D rb;
 
     protected virtual void Start()
     {
