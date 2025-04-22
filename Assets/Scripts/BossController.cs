@@ -4,8 +4,13 @@ using UnityEngine;
 
 public class BossController : MonoBehaviour
 {
+	[Header("Camera")]
 	public float zoomOutSize = 12f;
 	public float zoomSpeed = 2f;
+
+	[Header("Boss")]
+	[SerializeField]
+	EE_HunterBoss hunter;
 
 	private Camera mainCam;
 	private float originalSize;
@@ -23,6 +28,7 @@ public class BossController : MonoBehaviour
 		if(other.CompareTag("Player")) {
 			shouldZoomOut = true;
 			shouldZoomIn = false;
+			hunter.isActive = true;
 		}
 	}
 
@@ -30,6 +36,7 @@ public class BossController : MonoBehaviour
 		if(other.CompareTag("Player")) {
 			shouldZoomOut = false;
 			shouldZoomIn = true;
+			hunter.isActive = false;
 		}
 	}
 

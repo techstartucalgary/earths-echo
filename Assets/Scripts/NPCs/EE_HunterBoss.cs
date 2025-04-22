@@ -20,8 +20,10 @@ public class EE_HunterBoss : EE_NPC
 	public bool shouldFallToGround = false;
 	public bool shouldJumpToTower = false;
 
-	private bool onGround = false;
+	public bool onGround = false;
+	public bool isActive = false;
 	private bool togglePosition = false;
+	bool isGrounded = false;
 
 	[Header("Additional Sensors")]
 	[SerializeField]
@@ -54,6 +56,11 @@ public class EE_HunterBoss : EE_NPC
     // Update is called once per frame
     protected override void Update()
     {
+		if(!isActive) {
+			base.animator.Play("hunter_idle");
+			return;
+		}
+
         base.Update();
 
 		TickTimers();
@@ -61,8 +68,18 @@ public class EE_HunterBoss : EE_NPC
 		HandleTeleporting();
 		HandleSensorRadiuses();
 		HandleAttacking();
-			
+
+		base.animator.SetFloat("yVelocity", base.rb.velocity.y);
+		if(base.rb.velocity.y != 0f) {
+			isGrounded = false;
+			base.animator.SetBool("isJumping", !isGrounded);
+		}
     }
+
+	void OnTriggerEnter2D(Collider2D collision) {
+		isGrounded = true;
+		base.animator.SetBool("isJumping", !isGrounded);
+	}
 
 	void TickTimers() {
 		float tick = Time.deltaTime;
@@ -90,7 +107,7 @@ public class EE_HunterBoss : EE_NPC
 				shouldJumpToTower = false;
 				onGround = false;
 
-				TeleportTo(towerPointB);
+				TeleportTo(towerPointA);
 			}
 			else if (onGround) {
 
@@ -111,6 +128,7 @@ public class EE_HunterBoss : EE_NPC
 			// Melee attack logic here
 			
 			// Melee attack animation
+			base.animator.Play("hunter_melee_attack");
 			
 			meleeAttackTimer = meleeAttackCooldown;
 		}
@@ -119,6 +137,7 @@ public class EE_HunterBoss : EE_NPC
 			// Ranged attack logic here
 			
 			// Ranged attack animation
+			base.animator.Play("hunter_shoot");
 
 			if(rangedProjectilePrefab != null && projectileSpawnPoint != null) {
 				Vector2 direction = (base.target.position - projectileSpawnPoint.position).normalized;

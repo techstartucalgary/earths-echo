@@ -19,15 +19,15 @@ public class EE_NPC : MonoBehaviour
     public Transform npcGFX;
 
     [SerializeField]
-    Animator animator;
-    float animatorXScale;
+    protected Animator animator;
+    protected float animatorXScale;
 
     protected Path path;
     int currentWaypoint = 0;
     bool reachedEndOfPath = false;
 
     Seeker seeker;
-    Rigidbody2D rb;
+    protected Rigidbody2D rb;
 
     protected virtual void Start()
     {
