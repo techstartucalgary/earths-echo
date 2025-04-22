@@ -192,7 +192,7 @@ public class Player : MonoBehaviour
 			{
 				animator.Play("sliding");
 			}
-}
+		}
 
 
 	}
@@ -234,6 +234,16 @@ public class Player : MonoBehaviour
 		{
 			touchingLadder = collision.gameObject; // Save the ladder object
 			canClimb = true;                      // Set climbing state to true
+		}
+		else if (collision.CompareTag("JumpPad"))
+		{
+			// set vertical velocity to -velocity.y + 5 but have a max speed of 20
+			velocity.y = -velocity.y;
+
+			if (velocity.y < 20)
+			{
+				velocity.y = 20;
+			}
 		}
 	}
 
@@ -482,26 +492,30 @@ public class Player : MonoBehaviour
 		if (Time.time < lastMeleeAttackTime + attackCooldown) return;
 		lastMeleeAttackTime = Time.time;
 		ApplyHitbox(SideHitpoint, attackDamage, attackRange);
-		if (!controller.collisions.below) {
+		if (!controller.collisions.below)
+		{
 			animator.Play(attackAnimPrefix + "player_forward_air");
 			SoundFXManager.Instance.PlayRandomSoundFXClip(attackSounds, transform, 1f);
 		}
-		else{
+		else
+		{
 			animator.Play(attackAnimPrefix + "player_attack");
 			SoundFXManager.Instance.PlayRandomSoundFXClip(attackSounds, transform, 1f);
 		}
-		
+
 	}
 	public void PerformUpAttack(float attackDamage, float attackRange)
 	{
 		if (Time.time < lastMeleeAttackTime + attackCooldown) return;
 		lastMeleeAttackTime = Time.time;
 		ApplyHitbox(UpwardsHitpoint, attackDamage, attackRange);
-		if (!controller.collisions.below) {
+		if (!controller.collisions.below)
+		{
 			animator.Play(attackAnimPrefix + "player_up_air");
 			SoundFXManager.Instance.PlayRandomSoundFXClip(attackSounds, transform, 1f);
 		}
-		else{
+		else
+		{
 			animator.Play(attackAnimPrefix + "player_up_attack");
 			SoundFXManager.Instance.PlayRandomSoundFXClip(attackSounds, transform, 1f);
 		}
@@ -511,21 +525,23 @@ public class Player : MonoBehaviour
 		if (Time.time < lastMeleeAttackTime + attackCooldown) return;
 		lastMeleeAttackTime = Time.time;
 		ApplyHitbox(DownwardHitpoint, attackDamage, attackRange);
-		if (!controller.collisions.below) {
+		if (!controller.collisions.below)
+		{
 			animator.Play(attackAnimPrefix + "player_down_air");
 			SoundFXManager.Instance.PlayRandomSoundFXClip(attackSounds, transform, 1f);
 
 		}
-		else{
+		else
+		{
 			animator.Play(attackAnimPrefix + "player_down_attack");
-			SoundFXManager.Instance.PlayRandomSoundFXClip(attackSounds, transform, 1f);	
+			SoundFXManager.Instance.PlayRandomSoundFXClip(attackSounds, transform, 1f);
 		}
 	}
 	private void ApplyHitbox(Transform attackDirection, float attackDamage, float attackRange)
 	{
 		if (attackDirection == null) return;
 
-		Vector3 attackPos = new Vector2(Mathf.Sign(animatorTransform.localScale.x),0f);
+		Vector3 attackPos = new Vector2(Mathf.Sign(animatorTransform.localScale.x), 0f);
 
 		// Detect all enemies in the attack range
 		Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(new UnityEngine.Vector2(attackDirection.position.x, attackDirection.position.y), attackRange, enemyLayer);
@@ -550,59 +566,59 @@ public class Player : MonoBehaviour
 			Debug.Log($"{enemy.name} does not implement IDamageable.");
 		}
 	}
-	
+
 	/// <summary>
-    /// Plays the pullback animation for a projectile weapon using the given prefix.
-    /// For example, if animPrefix is "bow_", it will play "bow_pullback".
-    /// </summary>
-    public void PlayProjectilePullbackAnimation(string animPrefix)
-    {
-        if (animator != null)
-        {
-            // Play the pullback animation; ensure the animation exists in your Animator.
-            animator.Play(animPrefix + "pullback");
-            Debug.Log("Playing projectile pullback animation with prefix: " + animPrefix);
-        }
-        else
-        {
-            Debug.LogWarning("Animator reference is missing in Player script!");
-        }
-    }
+	/// Plays the pullback animation for a projectile weapon using the given prefix.
+	/// For example, if animPrefix is "bow_", it will play "bow_pullback".
+	/// </summary>
+	public void PlayProjectilePullbackAnimation(string animPrefix)
+	{
+		if (animator != null)
+		{
+			// Play the pullback animation; ensure the animation exists in your Animator.
+			animator.Play(animPrefix + "pullback");
+			Debug.Log("Playing projectile pullback animation with prefix: " + animPrefix);
+		}
+		else
+		{
+			Debug.LogWarning("Animator reference is missing in Player script!");
+		}
+	}
 
-    /// <summary>
-    /// Optionally update a blend tree parameter if you use one for a smoother transition.
-    /// </summary>
-    public void UpdateProjectilePullback(float pullbackCharge)
-    {
-        if (animator != null)
-        {
-            animator.SetFloat("PullbackCharge", pullbackCharge);
-            Debug.Log("Updating projectile pullback to: " + pullbackCharge);
-        }
-    }
+	/// <summary>
+	/// Optionally update a blend tree parameter if you use one for a smoother transition.
+	/// </summary>
+	public void UpdateProjectilePullback(float pullbackCharge)
+	{
+		if (animator != null)
+		{
+			animator.SetFloat("PullbackCharge", pullbackCharge);
+			Debug.Log("Updating projectile pullback to: " + pullbackCharge);
+		}
+	}
 
-    /// <summary>
-    /// Resets the projectile weapon animation back to idle using the provided prefix.
-    /// For example, if animPrefix is "bow_", it will play "bow_idle".
-    /// </summary>
-    public void ResetProjectileAnimation(string animPrefix)
-    {
-        if (animator != null)
-        {
-            animator.Play(animPrefix + "idle");
-            Debug.Log("Resetting projectile animation to idle with prefix: " + animPrefix);
-        }
-    }
-    
-    public void PlayThrowableAnimation(string animPrefix)
-    {
-        if (animator != null)
-        {
-            animator.Play(animPrefix + "throw");
-            Debug.Log("Playing throwable animation with prefix: " + animPrefix);
-        }
-    }
-	
+	/// <summary>
+	/// Resets the projectile weapon animation back to idle using the provided prefix.
+	/// For example, if animPrefix is "bow_", it will play "bow_idle".
+	/// </summary>
+	public void ResetProjectileAnimation(string animPrefix)
+	{
+		if (animator != null)
+		{
+			animator.Play(animPrefix + "idle");
+			Debug.Log("Resetting projectile animation to idle with prefix: " + animPrefix);
+		}
+	}
+
+	public void PlayThrowableAnimation(string animPrefix)
+	{
+		if (animator != null)
+		{
+			animator.Play(animPrefix + "throw");
+			Debug.Log("Playing throwable animation with prefix: " + animPrefix);
+		}
+	}
+
 	void HandleSliding()
 	{
 		if (isSliding)
