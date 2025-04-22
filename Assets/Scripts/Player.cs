@@ -188,6 +188,7 @@ public class Player : MonoBehaviour, IDamageable
             }
         }
 
+
         HandleSprinting();
         HandleSliding();
 
@@ -227,6 +228,7 @@ public class Player : MonoBehaviour, IDamageable
         }
         
     }
+
 
     private void isChargingHelper()
     {
@@ -563,6 +565,7 @@ public class Player : MonoBehaviour, IDamageable
     {
         if (attackDirection == null) return;
 
+
         Vector3 attackPos = new Vector2(Mathf.Sign(animatorTransform.localScale.x), 0f);
         Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(new Vector2(attackDirection.position.x, attackDirection.position.y), attackRange, enemyLayer);
 
@@ -576,64 +579,78 @@ public class Player : MonoBehaviour, IDamageable
 			SpawnImpactParticles(impactPoint);
 		}
 
-    }
+		else
+		{
+			Debug.Log($"{enemy.name} does not implement IDamageable.");
+		}
+	}
 
-    private void ApplyDamage(Collider2D enemy, float attackDamage, Vector3 impactPos)
-    {
-        IDamageable iDamageable = enemy.GetComponent<IDamageable>();
-        if (iDamageable != null)
-        {
-            iDamageable.Damage(attackDamage, impactPos);
-            Debug.Log($"Dealt {attackDamage} damage to {enemy.name}");
-        }
-        else
-        {
-            Debug.Log($"{enemy.name} does not implement IDamageable.");
-        }
-    }
+	/// <summary>
+	/// Plays the pullback animation for a projectile weapon using the given prefix.
+	/// For example, if animPrefix is "bow_", it will play "bow_pullback".
+	/// </summary>
+	public void PlayProjectilePullbackAnimation(string animPrefix)
+	{
+		if (animator != null)
+		{
+			// Play the pullback animation; ensure the animation exists in your Animator.
+			animator.Play(animPrefix + "pullback");
+			Debug.Log("Playing projectile pullback animation with prefix: " + animPrefix);
+		}
+		else
+		{
+			Debug.LogWarning("Animator reference is missing in Player script!");
+		}
+	}
 
-    /// <summary>
-    /// Plays the pullback animation for a projectile weapon.
-    /// </summary>
-    public void PlayProjectilePullbackAnimation(string animPrefix)
-    {
-        if (animator != null)
-        {
-            animator.Play(animPrefix + "pullback");
-            Debug.Log("Playing projectile pullback animation with prefix: " + animPrefix);
-        }
-        else
-        {
-            Debug.LogWarning("Animator reference is missing in Player script!");
-        }
-    }
+	/// <summary>
+	/// Optionally update a blend tree parameter if you use one for a smoother transition.
+	/// </summary>
+	public void UpdateProjectilePullback(float pullbackCharge)
+	{
+		if (animator != null)
+		{
+			animator.SetFloat("PullbackCharge", pullbackCharge);
+			Debug.Log("Updating projectile pullback to: " + pullbackCharge);
+		}
+	}
 
-    public void UpdateProjectilePullback(float pullbackCharge)
-    {
-        if (animator != null)
-        {
-            animator.SetFloat("PullbackCharge", pullbackCharge);
-            Debug.Log("Updating projectile pullback to: " + pullbackCharge);
-        }
-    }
+	/// <summary>
+	/// Resets the projectile weapon animation back to idle using the provided prefix.
+	/// For example, if animPrefix is "bow_", it will play "bow_idle".
+	/// </summary>
+	public void ResetProjectileAnimation(string animPrefix)
+	{
+		if (animator != null)
+		{
+			animator.Play(animPrefix + "idle");
+			Debug.Log("Resetting projectile animation to idle with prefix: " + animPrefix);
+		}
+	}
 
-    public void ResetProjectileAnimation(string animPrefix)
-    {
-        if (animator != null)
-        {
-            animator.Play(animPrefix + "idle");
-            Debug.Log("Resetting projectile animation to idle with prefix: " + animPrefix);
-        }
-    }
+	public void PlayThrowableAnimation(string animPrefix)
+	{
+		if (animator != null)
+		{
+			animator.Play(animPrefix + "throw");
+			Debug.Log("Playing throwable animation with prefix: " + animPrefix);
+		}
+	}
 
-    public void PlayThrowableAnimation(string animPrefix)
-    {
-        if (animator != null)
-        {
-            animator.Play(animPrefix + "throw");
-            Debug.Log("Playing throwable animation with prefix: " + animPrefix);
-        }
-    }
+	void HandleSliding()
+	{
+		if (isSliding)
+		{
+			if (currentSlideTime < slideRampDownTime)
+			{
+				currentSlideTime += Time.deltaTime;
+			}
+		}
+		if (!isSliding)
+		{
+			currentSlideTime = 0f;
+			return;
+		}
 
     void HandleSliding()
     {
