@@ -37,6 +37,11 @@ public class TigerBossAttack : EnemyAttack
     public Transform clawHitPoint;
     public LayerMask TargetLayer => targetLayer;  // From base (assumed defined).
     public float KnockbackForce => knockbackForce;  // From base (assumed defined).
+    
+    [Header("Rage‑Trail VFX")]
+	public GameObject rageTrailPrefab;    // assign a looping ParticleSystem prefab
+	private GameObject rageTrailInstance; // runtime copy
+
 
     // Store the starting x-position for sin wave movement.
     [HideInInspector] public float initialX;
@@ -118,25 +123,34 @@ public class TigerBossAttack : EnemyAttack
         currentRage = Mathf.Clamp(currentRage + amount, 0, maxRage);
     }
 
-    public void ActivateRageState()
-    {
-        isRaging = true;
-        rageTimer = 0f;
-        currentRage = maxRage;
-        enemyAI.speed *= dashSpeedMultiplier;
-        TransitionToState(rageState);
-        Debug.Log("Rage state activated!");
-    }
+	public void ActivateRageState()
+	{
+		isRaging = true;
+		rageTimer = 0f;
+		currentRage = maxRage;
 
-    public void EndRageState()
-    {
-        isRaging = false;
-        rageTimer = 0f;
-        enemyAI.speed /= dashSpeedMultiplier;
-        currentRage = 0f;
-        TransitionToState(idleState);
-        Debug.Log("Rage state ended.");
-    }
+		// 🔸 Spawn & parent the trail
+		if (rageTrailPrefab != null && rageTrailInstance == null)
+			rageTrailInstance = Instantiate(rageTrailPrefab, transform);
+
+		enemyAI.speed *= dashSpeedMultiplier;
+		TransitionToState(rageState);
+	}
+
+
+	public void EndRageState()
+	{
+		isRaging = false;
+		rageTimer = 0f;
+		enemyAI.speed /= dashSpeedMultiplier;
+		currentRage = 0f;
+		TransitionToState(idleState);
+
+		// 🔸 Clean up the trail
+		if (rageTrailInstance != null)
+			Destroy(rageTrailInstance);
+	}
+
 
     private void UpdateRageUI()
     {

@@ -109,6 +109,10 @@ public class Player : MonoBehaviour, IDamageable
     [SerializeField] private float healingDuration = 5f;     // Seconds required to heal fully
     private float lastDamageTime = 0f;                       // Time when the player last took damage
     private Coroutine healingCoroutine = null;
+    
+    [Header("Impact Effects")]
+	[SerializeField] private GameObject[] impactParticlePrefabs;   // One‑shot VFX to spawn on hit
+
 
 
     FindGrandchildren finder;
@@ -242,6 +246,16 @@ public class Player : MonoBehaviour, IDamageable
             }
         }
     }
+    
+    /// <summary>Spawns one random particle prefab at <paramref name="position"/>.</summary>
+	private void SpawnImpactParticles(Vector2 position)
+	{
+		if (impactParticlePrefabs == null || impactParticlePrefabs.Length == 0) return;
+
+		GameObject prefab = impactParticlePrefabs[UnityEngine.Random.Range(0, impactParticlePrefabs.Length)];
+		Instantiate(prefab, position, Quaternion.identity);
+	}
+
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
@@ -552,10 +566,16 @@ public class Player : MonoBehaviour, IDamageable
         Vector3 attackPos = new Vector2(Mathf.Sign(animatorTransform.localScale.x), 0f);
         Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(new Vector2(attackDirection.position.x, attackDirection.position.y), attackRange, enemyLayer);
 
-        foreach (var enemy in hitEnemies)
-        {
-            ApplyDamage(enemy, attackDamage, attackPos);
-        }
+		foreach (var enemy in hitEnemies)
+		{
+			// ❶  Deal damage through the interface
+			ApplyDamage(enemy, attackDamage, attackPos);
+
+			// ❷  Spawn particles at the *closest* point we actually hit
+			Vector2 impactPoint = enemy.ClosestPoint(attackPos);
+			SpawnImpactParticles(impactPoint);
+		}
+
     }
 
     private void ApplyDamage(Collider2D enemy, float attackDamage, Vector3 impactPos)

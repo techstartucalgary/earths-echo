@@ -15,22 +15,31 @@ public class GroundSmashStateSO : BossStateSO
     public float smashDamage = 20f;
     [Tooltip("Layers that can be damaged.")]
     public LayerMask damageLayers;
+    
+    [Header("Ground‑Smash VFX")]
+	public GameObject jumpParticlePrefab;     // spawn when the boss takes off
+	public GameObject smashParticlePrefab;    // spawn when the boss lands
+
 
     private bool hasSmashed;
 
-    public override void EnterState(TigerBossAttack boss)
-    {
-        hasSmashed = false;
-        boss.animator.SetTrigger("GroundSmash");
-        boss.animator.Play("tigerJump");
-        Rigidbody2D rb = boss.GetComponent<Rigidbody2D>();
-        if (rb != null)
-        {
-            rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-            SoundFXManager.Instance.PlaySoundFXClip(boss.groundPoundSound, boss.transform, 1f);
+	public override void EnterState(TigerBossAttack boss)
+	{
+		hasSmashed = false;
+		boss.animator.SetTrigger("GroundSmash");
+		boss.animator.Play("tigerJump");
 
-        }
-    }
+		// 🔸 Jump‑blast
+		if (jumpParticlePrefab != null)
+			Object.Instantiate(jumpParticlePrefab, boss.transform.position, Quaternion.identity);
+
+		var rb = boss.GetComponent<Rigidbody2D>();
+		if (rb != null)
+		{
+			rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+			SoundFXManager.Instance.PlaySoundFXClip(boss.groundPoundSound, boss.transform, 1f);
+		}
+	}
 
     public override void UpdateState(TigerBossAttack boss)
     {
@@ -50,6 +59,8 @@ public class GroundSmashStateSO : BossStateSO
     {
         yield return new WaitForSeconds(landingDelay);
         Vector2 smashPosition = boss.transform.position;
+        if (smashParticlePrefab != null)
+			Object.Instantiate(smashParticlePrefab, boss.transform.position, Quaternion.identity);
         Collider2D[] hitTargets = Physics2D.OverlapCircleAll(smashPosition, smashRadius, damageLayers);
         foreach (Collider2D target in hitTargets)
         {

@@ -24,6 +24,16 @@ public class BossFightManager : MonoBehaviour
 
     private EnemyAI enemyAI;
     private Rigidbody2D rb;
+    
+	[Header("Healing VFX")]
+	[Tooltip("One‑shot burst when the boss begins healing.")]
+	public GameObject healingStartPrefab;
+
+	[Tooltip("Looping aura that stays on the boss while it heals.")]
+	public GameObject healingLoopPrefab;
+
+	private GameObject healingLoopInstance;   // runtime handle
+
 
     private void Start()
     {

@@ -11,6 +11,10 @@ public class ClawStateSO : BossStateSO
     public float cooldownDuration = 1.0f;
     [Tooltip("Knockback multiplier applied to targets on attack.")]
     public float knockbackMultiplier = 1.5f;
+    
+    [Tooltip("One‑shot VFX spawned at the claw hit‑point.")]
+	public GameObject clawParticlePrefab;
+
 
     private float timer;
     private bool dashInitiated;
@@ -62,21 +66,25 @@ public class ClawStateSO : BossStateSO
         Debug.Log("Exited Claw Attack State.");
     }
 
-    private void PerformClawAttack(TigerBossAttack boss, float clawDamage)
-    {
-        if (boss.clawHitPoint == null)
-            return;
-            
-        Collider2D[] hitTargets = Physics2D.OverlapCircleAll(boss.clawHitPoint.position, 1f, boss.TargetLayer);
-        foreach (Collider2D target in hitTargets)
-        {
-            IDamageable damageable = target.GetComponent<IDamageable>();
-            if (damageable != null)
-            {
-                Vector2 direction = (target.transform.position - boss.clawHitPoint.position).normalized;
-                damageable.Damage(clawDamage, direction * boss.KnockbackForce * knockbackMultiplier);
-                SoundFXManager.Instance.PlaySoundFXClip(boss.clawSound, boss.transform, 1f);
-            }
-        }
-    }
+	private void PerformClawAttack(TigerBossAttack boss, float clawDamage)
+	{
+		if (boss.clawHitPoint == null) return;
+
+		// 🔸 Spawn the slash VFX once per attack
+		if (clawParticlePrefab != null)
+			Object.Instantiate(clawParticlePrefab, boss.clawHitPoint.position, Quaternion.identity);
+
+		Collider2D[] hitTargets = Physics2D.OverlapCircleAll(boss.clawHitPoint.position, 1f, boss.TargetLayer);
+		foreach (Collider2D target in hitTargets)
+		{
+			IDamageable damageable = target.GetComponent<IDamageable>();
+			if (damageable != null)
+			{
+				Vector2 dir = (target.transform.position - boss.clawHitPoint.position).normalized;
+				damageable.Damage(clawDamage, dir * boss.KnockbackForce * knockbackMultiplier);
+				SoundFXManager.Instance.PlaySoundFXClip(boss.clawSound, boss.transform, 1f);
+			}
+		}
+	}
+
 }
