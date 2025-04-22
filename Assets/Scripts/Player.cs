@@ -69,7 +69,7 @@ public class Player : MonoBehaviour, IDamageable
     Controller2D controller;
     BoxCollider2D boxCollider;
 
-	[Header("Health Settings")]
+    [Header("Health Settings")]
     public float maxHealth = 100f;
     public float currentHealth = 100f;
     public HealthBar healthBar;
@@ -109,9 +109,9 @@ public class Player : MonoBehaviour, IDamageable
     [SerializeField] private float healingDuration = 5f;     // Seconds required to heal fully
     private float lastDamageTime = 0f;                       // Time when the player last took damage
     private Coroutine healingCoroutine = null;
-    
+
     [Header("Impact Effects")]
-	[SerializeField] private GameObject[] impactParticlePrefabs;   // One‑shot VFX to spawn on hit
+    [SerializeField] private GameObject[] impactParticlePrefabs;   // One‑shot VFX to spawn on hit
 
 
 
@@ -144,7 +144,7 @@ public class Player : MonoBehaviour, IDamageable
             Debug.LogError("Main camera not found");
             return;
         }
-		currentHealth = maxHealth;
+        currentHealth = maxHealth;
         if (healthBar != null)
         {
             healthBar.Initialize(maxHealth);
@@ -226,10 +226,11 @@ public class Player : MonoBehaviour, IDamageable
         {
             healingCoroutine = StartCoroutine(HealToFull());
         }
-        if(healthBar!=null){
+        if (healthBar != null)
+        {
             currentHealth = healthBar.GetCurrentHealth();
         }
-        
+
     }
 
     private void isChargingHelper()
@@ -250,15 +251,15 @@ public class Player : MonoBehaviour, IDamageable
             }
         }
     }
-    
-    /// <summary>Spawns one random particle prefab at <paramref name="position"/>.</summary>
-	private void SpawnImpactParticles(Vector2 position)
-	{
-		if (impactParticlePrefabs == null || impactParticlePrefabs.Length == 0) return;
 
-		GameObject prefab = impactParticlePrefabs[UnityEngine.Random.Range(0, impactParticlePrefabs.Length)];
-		Instantiate(prefab, position, Quaternion.identity);
-	}
+    /// <summary>Spawns one random particle prefab at <paramref name="position"/>.</summary>
+    private void SpawnImpactParticles(Vector2 position)
+    {
+        if (impactParticlePrefabs == null || impactParticlePrefabs.Length == 0) return;
+
+        GameObject prefab = impactParticlePrefabs[UnityEngine.Random.Range(0, impactParticlePrefabs.Length)];
+        Instantiate(prefab, position, Quaternion.identity);
+    }
 
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -282,6 +283,26 @@ public class Player : MonoBehaviour, IDamageable
         {
             touchingLadder = collision.gameObject; // Save the ladder object
             canClimb = true;                      // Set climbing state to true
+        }
+        else if (collision.CompareTag("JumpPad"))
+        {
+            // Reverse vertical velocity and add 10
+            velocity.y = -velocity.y + 5f;
+
+            if (velocity.y > 20f)
+            {
+                velocity.y = 20f;
+            }
+        }
+        else if (collision.CompareTag("JumpPadBig"))
+        {
+            // Reverse vertical velocity and add 10
+            velocity.y = -velocity.y + 5f;
+
+            if (velocity.y > 40f)
+            {
+                velocity.y = 40f;
+            }
         }
     }
 
@@ -570,15 +591,15 @@ public class Player : MonoBehaviour, IDamageable
         Vector3 attackPos = new Vector2(Mathf.Sign(animatorTransform.localScale.x), 0f);
         Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(new Vector2(attackDirection.position.x, attackDirection.position.y), attackRange, enemyLayer);
 
-		foreach (var enemy in hitEnemies)
-		{
-			// ❶  Deal damage through the interface
-			ApplyDamage(enemy, attackDamage, attackPos);
+        foreach (var enemy in hitEnemies)
+        {
+            // ❶  Deal damage through the interface
+            ApplyDamage(enemy, attackDamage, attackPos);
 
-			// ❷  Spawn particles at the *closest* point we actually hit
-			Vector2 impactPoint = enemy.ClosestPoint(attackPos);
-			SpawnImpactParticles(impactPoint);
-		}
+            // ❷  Spawn particles at the *closest* point we actually hit
+            Vector2 impactPoint = enemy.ClosestPoint(attackPos);
+            SpawnImpactParticles(impactPoint);
+        }
 
     }
 
@@ -728,10 +749,10 @@ public class Player : MonoBehaviour, IDamageable
             ApplyKnockback(impactPos, damageAmount * 0.5f);
             screenShake.Shake(0.2f, 0.5f);
         }
-        
+
         // Record the time of damage so healing will wait.
         lastDamageTime = Time.time;
-        
+
         // If already healing, stop the healing coroutine.
         if (healingCoroutine != null)
         {
@@ -785,7 +806,7 @@ public class Player : MonoBehaviour, IDamageable
         rb.velocity = Vector2.zero;
     }
 
-        private IEnumerator HealToFull()
+    private IEnumerator HealToFull()
     {
         // While the player's health is not full, apply incremental healing.
         while (currentHealth < maxHealth)
