@@ -109,13 +109,17 @@ public class EE_HunterBoss : EE_NPC
 	void HandleAttacking() {
 		if(meleeAttackTimer <= 0f && actionSensor.IsTargetInRange) {
 			// Melee attack logic here
-
+			
+			// Melee attack animation
+			
 			meleeAttackTimer = meleeAttackCooldown;
 		}
 
 		if(rangedAttackTimer <= 0f && !actionSensor.IsTargetInRange) {
-			Debug.Log("firing");
 			// Ranged attack logic here
+			
+			// Ranged attack animation
+
 			if(rangedProjectilePrefab != null && projectileSpawnPoint != null) {
 				Vector2 direction = (base.target.position - projectileSpawnPoint.position).normalized;
 				float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;

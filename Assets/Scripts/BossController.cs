@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BossCameraController : MonoBehaviour
+public class BossController : MonoBehaviour
 {
 	public float zoomOutSize = 12f;
 	public float zoomSpeed = 2f;
