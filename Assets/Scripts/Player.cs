@@ -149,6 +149,10 @@ public class Player : MonoBehaviour, IDamageable
         {
             healthBar.Initialize(maxHealth);
         }
+        if (DownwardHitpoint == null)
+        {
+            Debug.LogWarning("DownwardHitpoint not found in player hierarchy.");
+        }
     }
 
     void Update()

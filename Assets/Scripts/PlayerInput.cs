@@ -144,9 +144,10 @@ public class PlayerInput : MonoBehaviour {
         else
         {
             // Process melee attacks if no projectile or throwable weapon is equipped.
-            if ((Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1)) && 
-                !inventoryHandler.IsProjectileWeaponEquipped && 
-                !inventoryHandler.isThrowableObjectEquipped && 
+            if (inventoryHandler != null &&
+                (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1)) &&
+                !inventoryHandler.IsProjectileWeaponEquipped &&
+                !inventoryHandler.isThrowableObjectEquipped &&
                 !inventoryHandler.IsItemEquipped)
             {
                 if (Input.GetKey(KeyCode.W))

@@ -74,7 +74,8 @@ public class TestEnemy : MonoBehaviour, IDamageable
         if (animatorTransform.localScale.x >= 0.01f)
         {
             // Facing right
-            SideHitpoint.localPosition = new Vector3(SideHitpointLocalX, SideHitpoint.localPosition.y, SideHitpoint.localPosition.z);
+            if(SideHitpoint)
+                SideHitpoint.localPosition = new Vector3(SideHitpointLocalX, SideHitpoint.localPosition.y, SideHitpoint.localPosition.z);
         }
         else if (animatorTransform.localScale.x <= -0.01f)
         {
