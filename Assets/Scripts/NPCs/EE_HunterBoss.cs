@@ -29,6 +29,11 @@ public class EE_HunterBoss : EE_NPC
 	float targetSensorRadius;
 	float actionSensorRadius;
 
+	[Header("Ranged Attack")]
+	public GameObject rangedProjectilePrefab;
+	public Transform projectileSpawnPoint;
+	public float projectileSpeed = 8f;
+
     // Start is called before the first frame update
     protected override void Start()
     {
@@ -109,7 +114,19 @@ public class EE_HunterBoss : EE_NPC
 		}
 
 		if(rangedAttackTimer <= 0f && !actionSensor.IsTargetInRange) {
+			Debug.Log("firing");
 			// Ranged attack logic here
+			if(rangedProjectilePrefab != null && projectileSpawnPoint != null) {
+				Vector2 direction = (base.target.position - projectileSpawnPoint.position).normalized;
+				float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+				Quaternion rotation = Quaternion.Euler(0, 0, angle);
+
+				GameObject proj = Instantiate(rangedProjectilePrefab, projectileSpawnPoint.position, rotation);
+				Rigidbody2D rb = proj.GetComponent<Rigidbody2D>();
+				if(rb != null) {
+					rb.velocity = direction * projectileSpeed;
+				}
+			}
 
 			rangedAttackTimer = rangedAttackCooldown;
 		}
