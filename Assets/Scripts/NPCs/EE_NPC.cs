@@ -22,7 +22,7 @@ public class EE_NPC : MonoBehaviour
     Animator animator;
     float animatorXScale;
 
-    Path path;
+    protected Path path;
     int currentWaypoint = 0;
     bool reachedEndOfPath = false;
 

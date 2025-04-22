@@ -2,17 +2,19 @@ using UnityEngine;
 
 public class EE_HunterBoss : EE_NPC 
 {
-	bool shouldJump = false;
-
-	public Transform phase1PointA;
-	public Transform phase1PointB;
-	public Transform phase2Point;
+	[Header("Boss Logic")]
+	public Transform towerPointA;
+	public Transform towerPointB;
+	public Transform groundPoint;
 
 	public float teleportCooldown = 3f;
 
 	private float cooldownTimer;
 
-	public bool isInPhase2 = false;
+	public bool shouldFallToGround = false;
+	public bool shouldJumpToTower = false;
+
+	private bool onGround = false;
 	private bool togglePosition = false;
 
     // Start is called before the first frame update
@@ -30,11 +32,30 @@ public class EE_HunterBoss : EE_NPC
 		cooldownTimer -= Time.deltaTime;
 
 		if (cooldownTimer <= 0f) {
-			if(isInPhase2) {
-				TeleportTo(phase2Point);
-			}else {
-				TeleportTo(togglePosition ? phase1PointA : phase1PointB);
+			if(shouldFallToGround) {
+				TeleportTo(groundPoint);
+
+				shouldFallToGround = false;
+				onGround = true;
+
+				base.useSensorForPath = true;
+			}
+			else if (shouldJumpToTower){
+				TeleportTo(towerPointB);
+
+				shouldJumpToTower = false;
+				onGround = false;
+
+				base.useSensorForPath = false;
+			}
+			else if (onGround) {
+
+			}
+			else if (!onGround) {
+				TeleportTo(togglePosition ? towerPointA : towerPointB);
 				togglePosition = !togglePosition;
+
+				base.path = null;
 			}
 
 			cooldownTimer = teleportCooldown;
