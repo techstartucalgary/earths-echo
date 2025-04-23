@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using Unity.VisualScripting;
 
 public class TigerBossAttack : EnemyAttack
 {
@@ -31,6 +32,8 @@ public class TigerBossAttack : EnemyAttack
     [Header("References and Movement")]
     public Animator animator;     // Assign in Inspector.
     public EnemyAI enemyAI;       // Fallback via GetComponent.
+
+    public TestEnemy enemy;
     public float dashSpeedMultiplier = 2f; // Multiplier during rage state.
 
     // Existing hit points and other properties.
@@ -61,6 +64,8 @@ public class TigerBossAttack : EnemyAttack
     public AudioClip clawSound;
 
     public AudioClip groundPoundSound;
+
+    public AudioClip groundPoundHit;
 
     protected void Start()
     {
@@ -102,12 +107,21 @@ public class TigerBossAttack : EnemyAttack
 
         if (currentRage >= maxRage && !isRaging)
         {
+            animator.Play("tigerStandRoar");
+            StartCoroutine(InvincibilityBeforeRage());
+            SoundFXManager.Instance.PlaySoundFXClip(dashSound, transform, 1f);
             ActivateRageState();
         }
 
         currentState?.UpdateState(this);
     }
 
+    public IEnumerator InvincibilityBeforeRage(){
+        float waitTime = 0.5f;
+        enemy.SetInvincible(true);
+        yield return new WaitForSeconds(waitTime);
+        enemy.SetInvincible(true);
+    }
     /// <summary>
     /// Transitions to a new state.
     /// </summary>
