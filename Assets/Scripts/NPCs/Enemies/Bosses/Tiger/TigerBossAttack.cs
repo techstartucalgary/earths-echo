@@ -67,6 +67,9 @@ public class TigerBossAttack : EnemyAttack
 
     public AudioClip groundPoundHit;
 
+   private Camera mainCamera;
+    public ScreenShake screenShake;
+
     protected void Start()
     {
         if (enemyAI == null)
@@ -76,6 +79,8 @@ public class TigerBossAttack : EnemyAttack
         initialX = transform.position.x;
         TransitionToState(idleState);
         UpdateRageUI();
+        mainCamera = Camera.main;
+        screenShake = mainCamera.GetComponent<ScreenShake>();
     }
 
     protected override void Update()

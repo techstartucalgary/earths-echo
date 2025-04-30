@@ -763,7 +763,7 @@ public class Player : MonoBehaviour, IDamageable
             healthBar.Damage(damageAmount);
             SoundFXManager.Instance.PlayRandomSoundFXClip(damageSoundClips, transform, 0.6f);
             ApplyKnockback(impactPos, damageAmount * 0.5f);
-            screenShake.Shake(0.2f, 0.5f);
+            screenShake.Shake(damageAmount/20, 0.5f);
         }
 
         // Record the time of damage so healing will wait.

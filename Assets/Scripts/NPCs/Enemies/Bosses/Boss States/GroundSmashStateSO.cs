@@ -69,6 +69,7 @@ public class GroundSmashStateSO : BossStateSO
             {
                 damageable.Damage(smashDamage, Vector2.zero);
                 SoundFXManager.Instance.PlaySoundFXClip(boss.clawSound, boss.transform, 1f);
+                boss.screenShake.Shake(0.5f, smashDamage/10);
 
             }
         }
