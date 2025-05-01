@@ -171,14 +171,14 @@ public class PlayerInput : MonoBehaviour {
                 trajectoryLine.HideTrajectory();
         }
         
-        if (Input.GetKeyDown(KeyCode.T))
-        {
-            if (inventoryHandler != null && inventoryHandler.IsItemEquipped)
-            {
-                Debug.Log("T key pressed.");
-                inventoryHandler.UseItem(inventoryHandler.currentItemSO);
-            }
-        }
+        // if (Input.GetKeyDown(KeyCode.T))
+        // {
+        //     if (inventoryHandler != null && inventoryHandler.IsItemEquipped)
+        //     {
+        //         Debug.Log("T key pressed.");
+        //         inventoryHandler.UseItem(inventoryHandler.currentItemSO);
+        //     }
+        // }
         
         // For debugging: display player's current speed.
         player.playerSpeed = player.velocity.x;
