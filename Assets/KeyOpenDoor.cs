@@ -5,38 +5,47 @@ using UnityEngine;
 
 public class KeyOpenDoor : MonoBehaviour
 {
-    [SerializeField] private ScriptableObject acceptedKey;
-    private Player player;
+    [SerializeField] private ItemInstSO acceptedKey;
+    [SerializeField] private Player player;
     private InventoryHandler inventoryHandler;
-    private Animator anim;
+    [SerializeField] private Animator doorAnimator;
 
     private bool playerInRange = false;
 
     void Start()
     {
-        player = FindAnyObjectByType<Player>();
-        if (player == null)
-        {
-            Debug.LogError("Player not found in the scene.");
-            return;
-        }
+        // if (player == null)
+        // {
+        //     player = FindAnyObjectByType<Player>();
+
+        // }
+        // else{
+        //     Debug.LogError("Player not found.");
+        //     return;
+        // }
 
         inventoryHandler = player.GetComponent<InventoryHandler>();
-        if (inventoryHandler == null)
-        {
-            Debug.LogError("InventoryHandler not found on Player.");
-        }
 
-        anim = GetComponent<Animator>();
-        if (anim == null)
+
+        if (doorAnimator == null)
         {
-            Debug.LogError("Animator not found on Door.");
+            doorAnimator = GetComponent<Animator>();
+            if (doorAnimator == null)
+            {
+                Debug.LogError("Animator not assigned or found on GameObject.");
+            }
         }
     }
 
 
     void Update()
     {
+        if (inventoryHandler == null)
+        {
+            Debug.LogError("InventoryHandler not found on Player.");
+            return;
+        }
+
         if (playerInRange && Input.GetKeyDown(KeyCode.T))
         {
             openDoor();
@@ -45,16 +54,25 @@ public class KeyOpenDoor : MonoBehaviour
 
     void openDoor()
     {
-        if (inventoryHandler == null || acceptedKey == null || anim == null){
-            Debug.Log("Error with setup");
+        if (inventoryHandler == null || acceptedKey == null || doorAnimator == null)
+        {
+            Debug.LogError("Error with setup");
+            return;
         }
 
-        if (inventoryHandler.currentItemSO == acceptedKey)
+        if (inventoryHandler.currentItemSO != null &&
+            (inventoryHandler.currentItemSO == acceptedKey ||
+            inventoryHandler.currentItemSO.itemName == acceptedKey.itemName))
         {
             inventoryHandler.UseItem(inventoryHandler.currentItemSO);
-            anim.Play("door movement");
+            doorAnimator.Play("door movement");
+        }
+        else
+        {
+            Debug.Log("Player does not have the correct item equipped.");
         }
     }
+
 
 
     private void OnTriggerEnter2D(Collider2D other)

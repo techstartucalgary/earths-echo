@@ -57,7 +57,7 @@ public class EE_HunterBoss : EE_NPC
     protected override void Update()
     {
 		if(!isActive) {
-			base.animator.Play("hunter_idle");
+			//base.animator.Play("hunter_idle");
 			return;
 		}
 

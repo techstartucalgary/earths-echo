@@ -8,17 +8,15 @@ public class CountItemDoor : MonoBehaviour
     [SerializeField] private Animator doorAnimator;
 
     private InventoryHandler inventoryHandler;
-    private Player player;
+    [SerializeField] private Player player;
     private bool playerInRange = false;
     private bool doorOpened = false;
 
     void Start()
     {
-        player = FindAnyObjectByType<Player>();
         if (player == null)
         {
-            Debug.LogError("Player not found.");
-            return;
+            player = FindAnyObjectByType<Player>();
         }
 
         inventoryHandler = player.GetComponent<InventoryHandler>();
