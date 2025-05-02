@@ -114,7 +114,8 @@ public class Player : MonoBehaviour, IDamageable
     [SerializeField] private GameObject[] impactParticlePrefabs;   // One‑shot VFX to spawn on hit
     [SerializeField] private GameObject healingParticlePrefab;
 
-
+    // Garbage collection
+    [SerializeField] public int collectedGarbage = 0; // Number of collected garbage objects
     FindGrandchildren finder;
 
     void Start()
@@ -720,6 +721,7 @@ public class Player : MonoBehaviour, IDamageable
     {
         float range = attackRange;
 
+        // Draw and check the Side attack hitbox
         if (SideHitpoint != null)
         {
             Gizmos.color = Color.green;
@@ -774,7 +776,7 @@ public class Player : MonoBehaviour, IDamageable
             healthBar.Damage(damageAmount);
             SoundFXManager.Instance.PlayRandomSoundFXClip(damageSoundClips, transform, 0.6f);
             ApplyKnockback(impactPos, damageAmount * 0.5f);
-            screenShake.Shake(damageAmount/20, 0.5f);
+            screenShake.Shake(damageAmount / 20, 0.5f);
         }
 
         // Record the time of damage so healing will wait.

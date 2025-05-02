@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: eeb1db566dea0ad438c65aea7ed9ede7
+guid: 3170498d9f119574a9bb8f21f1a5bf94
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -37,15 +37,15 @@ TextureImporter:
     filterMode: 1
     aniso: 1
     mipBias: 0
-    wrapU: 2
-    wrapV: 2
-    wrapW: 2
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
-  spriteMeshType: 0
+  spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
   spritePixelsToUnits: 100
@@ -108,7 +108,112 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
-    sprites: []
+    sprites:
+    - serializedVersion: 2
+      name: VineAssets_0
+      rect:
+        serializedVersion: 2
+        x: 138
+        y: 117
+        width: 157
+        height: 797
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6b7d644873bb3c24d9416c464ff8ccc8
+      internalID: -1021144132
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VineAssets_1
+      rect:
+        serializedVersion: 2
+        x: 466
+        y: 119
+        width: 131
+        height: 793
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 051b1953272217c4eb73f888481b30c6
+      internalID: -2108602384
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VineAssets_2
+      rect:
+        serializedVersion: 2
+        x: 748
+        y: 121
+        width: 141
+        height: 791
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 45ea8269169d4a64f978c172da597107
+      internalID: -189447349
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VineAssets_3
+      rect:
+        serializedVersion: 2
+        x: 1007
+        y: 264
+        width: 193
+        height: 647
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 32f4b3109d585494cb12905d719a3815
+      internalID: 1891264869
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VineAssets_4
+      rect:
+        serializedVersion: 2
+        x: 1246
+        y: 121
+        width: 202
+        height: 789
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d867f95a25a2ac24c9ebe3e184bb2c59
+      internalID: 461144719
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     physicsShape: []
     bones: []
@@ -119,7 +224,12 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      VineAssets_0: -1021144132
+      VineAssets_1: -2108602384
+      VineAssets_2: -189447349
+      VineAssets_3: 1891264869
+      VineAssets_4: 461144719
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
