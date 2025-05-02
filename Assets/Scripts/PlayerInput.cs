@@ -38,10 +38,10 @@ public class PlayerInput : MonoBehaviour {
         player.SetSprinting(Input.GetKey(KeyCode.LeftShift));
 
         // Sliding
-        if (Input.GetKeyDown(KeyCode.C) && player.isSprinting)
-            player.StartSlide();
-        if (Input.GetKeyUp(KeyCode.C))
-            player.StopSlide();
+        // if (Input.GetKeyDown(KeyCode.C) && player.isSprinting)
+        //     player.StartSlide();
+        // if (Input.GetKeyUp(KeyCode.C))
+        //     player.StopSlide();
 
         // Item pickup
         if (currentItemInRange != null && Input.GetKeyDown(KeyCode.E))

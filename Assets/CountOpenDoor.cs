@@ -38,7 +38,7 @@ public class CountItemDoor : MonoBehaviour
 
     void Update()
     {
-        if (!doorOpened && playerInRange && requiredItem == inventoryHandler.currentItemSO && Input.GetKeyDown(KeyCode.T))
+        if (!doorOpened && playerInRange)
         {
             TryOpenDoor();
         }
