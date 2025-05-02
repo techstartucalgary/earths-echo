@@ -39,6 +39,11 @@ public class TestEnemy : MonoBehaviour, IDamageable
     [SerializeField] private Transform animatorTransform;
     private float animatorXScale;
 
+    [SerializeField] private Sensor idleSoundSensor; // Assign in Inspector
+    private Coroutine idleSoundCoroutine;
+    private bool isPlayerNearby = false;
+
+
 
     private void Start()
     {
@@ -48,7 +53,8 @@ public class TestEnemy : MonoBehaviour, IDamageable
         if (healthBar != null)
             healthBar.Initialize(maxHealth, enemyName);
 
-        StartCoroutine(PlayIdleSounds());
+        idleSoundSensor.setTargetTag("Player"); // or whatever your player tag is
+
         StartCoroutine(HealOverTime());
 
         UpwardHitpoint = finder.FindDeepChild(transform, "UpwardHitpoint");
@@ -66,6 +72,8 @@ public class TestEnemy : MonoBehaviour, IDamageable
     private void Update()
     {
         HandleHitpointFlip();
+        HandleIdleSoundProximity();
+
     }
 
     private void HandleHitpointFlip()
@@ -177,4 +185,23 @@ public class TestEnemy : MonoBehaviour, IDamageable
     public float getMaxHealth(){
         return maxHealth;
     }
+
+    private void HandleIdleSoundProximity()
+    {
+        if (idleSoundSensor.IsTargetInRange && !isPlayerNearby)
+        {
+            isPlayerNearby = true;
+            idleSoundCoroutine = StartCoroutine(PlayIdleSounds());
+        }
+        else if (!idleSoundSensor.IsTargetInRange && isPlayerNearby)
+        {
+            isPlayerNearby = false;
+            if (idleSoundCoroutine != null)
+            {
+                StopCoroutine(idleSoundCoroutine);
+                idleSoundCoroutine = null;
+            }
+        }
+    }
+
 }

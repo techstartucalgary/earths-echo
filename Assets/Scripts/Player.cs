@@ -320,6 +320,11 @@ public class Player : MonoBehaviour, IDamageable
                 velocity.y = 40f;
             }
         }
+        if (collision.CompareTag("MovingPlatform"))
+        {
+            // Parent to platform so we move with it
+            transform.SetParent(collision.transform);
+        }
     }
 
     private void OnTriggerStay2D(Collider2D collision)
@@ -341,6 +346,12 @@ public class Player : MonoBehaviour, IDamageable
             touchingLadder = null;
             canClimb = false;
         }
+        if (collision.CompareTag("MovingPlatform"))
+        {
+            // Unparent when we leave the platform
+            transform.SetParent(null);
+        }
+
     }
 
     public void AlignToLadder()
