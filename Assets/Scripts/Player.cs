@@ -399,6 +399,16 @@ public class Player : MonoBehaviour, IDamageable
         {
             climbing = false;
             wasClimbing = true;
+
+            // Apply a force to the player if they are holding a horizontal direction
+            if (directionalInput.x != 0)
+            {
+                velocity.x = directionalInput.x * 20f;
+            }
+            else
+            {
+                velocity.x = 0;
+            }
         }
 
         if (wallSliding)
