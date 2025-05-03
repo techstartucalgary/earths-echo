@@ -13,6 +13,7 @@ public class EE_Snake : EE_NPC
 
     [SerializeField] private Sensor actionSensor;
     float actionSensorRadius;
+    
 
 
     protected override void Start()
