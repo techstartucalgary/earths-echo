@@ -1,8 +1,3 @@
-// In order to change the music in certain areas, use an empty gameobjet with a collider2d and musictrigger script attached
-// Else, make an appropriate call to AudioManager.instance.SetGameplayMusic(stateForMusic); wherever necessary
-
-
-
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,220 +5,155 @@ using UnityEngine.Audio;
 
 public enum GameplayContext
 {
-    Tutorial,
-    TaintedGrove,
-    VerdantHollow,
-    CorruptedThicket1,
-    CorruptedThicket2,
-    CelestialGardens,
-    Timberlands,
-    Factory,
-    EcoStation,
-    HunterBossFight,
-    TigerBossFight,
-    RobotBossFight
+    Tutorial, TaintedGrove, VerdantHollow,
+    CorruptedThicket1, CorruptedThicket2, CelestialGardens,
+    Timberlands, Factory, EcoStation,
+    HunterBossFight, TigerBossFight, RobotBossFight
 }
 
-public class AudioManager : MonoBehaviour
+public sealed class AudioManager : MonoBehaviour
 {
-    public static AudioManager instance;
+    /* ─────────────────────────  SINGLETON  ───────────────────────── */
+    public static AudioManager instance { get; private set; }
 
-    // Audio Source for background music
-    private AudioSource musicSource;
-
-    // Core Audio Clips
+    /* ────────────────────────  INSPECTOR DATA  ───────────────────── */
+    [Header("Core clips")]
     public AudioClip mainMenuMusic;
     public AudioClip pauseMusic;
     public AudioClip gameOverMusic;
-    
-    // Default fallback clip for non-boss gameplay contexts.
-    public AudioClip gameplayMusic;
-    // Fallback for boss fights if a specific boss clip isn't assigned.
-    public AudioClip fightMusic;
-    
-    // Dedicated Audio Clips for each gameplay context.
-    public AudioClip TutorialMusic;
-    public AudioClip TaintedGroveMusic;
-    public AudioClip VerdantHollowMusic;
-    public AudioClip CorruptedThicket1Music;
-    public AudioClip CorruptedThicket2Music;
-    public AudioClip CelestialGardensMusic;
-    public AudioClip TimberlandsMusic;
-    public AudioClip FactoryMusic;
-    public AudioClip EcoStationMusic;
-    public AudioClip HunterBossFightMusic;
-    public AudioClip TigerBossFightMusic;
-    public AudioClip RobotBossFightMusic;
 
-    // Audio Mixer Group for music
+    [Header("Fallbacks")]
+    public AudioClip gameplayMusic;        // used if a level‑specific clip is missing
+    public AudioClip fightMusic;           // used if a boss‑specific clip is missing
+
+    [Header("Per‑level / per‑boss clips")]
+    public AudioClip TutorialMusic, TaintedGroveMusic, VerdantHollowMusic,
+                     CorruptedThicket1Music, CorruptedThicket2Music,
+                     CelestialGardensMusic, TimberlandsMusic, FactoryMusic,
+                     EcoStationMusic, HunterBossFightMusic, TigerBossFightMusic,
+                     RobotBossFightMusic;
+
+    [Header("Audio mixer")]
     public AudioMixerGroup musicMixerGroup;
 
-    // Dictionary to store playback positions for each clip
-    private Dictionary<AudioClip, float> clipPlaybackPositions = new Dictionary<AudioClip, float>();
+    /* ───────────────────────────  RUNTIME  ────────────────────────── */
+    readonly Dictionary<AudioClip,float> _clipPositions = new();
+    AudioSource _music;
+    const float _defaultVolume = 1f;       // change if you have a different master vol
 
-    private void Awake()
+    /* ───────────────────────────  UNITY LIFE  ────────────────────── */
+
+    void Awake()
     {
-        // Ensure there's only one instance of the AudioManager
-        if (instance == null)
-        {
-            instance = this;
-            DontDestroyOnLoad(gameObject);  // Keep AudioManager persistent across scenes
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (instance == null)    { instance = this;  DontDestroyOnLoad(gameObject); }
+        else                     { Destroy(gameObject); return; }
 
-        // Initialize the music source
-        musicSource = gameObject.AddComponent<AudioSource>();
-        if (musicMixerGroup != null)
-        {
-            musicSource.outputAudioMixerGroup = musicMixerGroup;
-        }
-        musicSource.loop = true;
+        _music = gameObject.AddComponent<AudioSource>();
+        if (musicMixerGroup) _music.outputAudioMixerGroup = musicMixerGroup;
+        _music.loop = true;
     }
 
-    private void Update()
+    void Update()
     {
-        // If dialogue is playing, stop the music.
-        if (DialogueManager.GetInstance().dialogueIsPlaying)
-        {
-            StopMusic();
-        }
-        // Resume playback if there is a clip assigned but not playing.
-        else if (!musicSource.isPlaying && musicSource.clip != null)
-        {
-            musicSource.Play();
-        }
+        /* 1️⃣  SAFETY‑NET – clamp AudioListener position so WebAudio never
+               receives NaN / ±Infinity (this is what was killing WebGL).   */
+        SanitizeListenerTransform();
+
+        /* 2️⃣  Dialogue pause behaviour (unchanged)                         */
+        if (DialogueManager.GetInstance().dialogueIsPlaying) StopMusic();
+        else if (!_music.isPlaying && _music.clip) _music.Play();
     }
 
-    // Plays background music while preserving its relative playback position.
+    /* ─────────────────────────  PUBLIC API  ───────────────────────── */
+
     public void PlayMusic(AudioClip clip)
     {
-        // If the requested clip is already playing, do nothing.
-        if (musicSource.clip == clip)
-            return;
+        if (clip == null) return;           // silent fail (no crash)
 
-        // Save playback position of the current clip.
-        if (musicSource.clip != null)
-        {
-            clipPlaybackPositions[musicSource.clip] = musicSource.time;
-        }
+        if (_music.clip == clip) return;    // already playing
 
-        // Switch to the new clip.
-        musicSource.clip = clip;
+        // remember position of the outgoing clip
+        if (_music.clip) _clipPositions[_music.clip] = _music.time;
 
-        // Resume from the saved playback position if it exists.
-        if (clipPlaybackPositions.TryGetValue(clip, out float savedTime))
-        {
-            musicSource.time = savedTime;
-        }
-        else
-        {
-            musicSource.time = 0f;
-        }
-
-        musicSource.Play();
+        // switch
+        _music.clip = clip;
+        _music.time = _clipPositions.TryGetValue(clip, out var t) ? t : 0f;
+        _music.Play();
     }
 
-    // Stops music while saving its playback position.
     public void StopMusic()
     {
-        if (musicSource.clip != null)
-        {
-            clipPlaybackPositions[musicSource.clip] = musicSource.time;
-        }
-        musicSource.Stop();
+        if (_music.clip) _clipPositions[_music.clip] = _music.time;
+        _music.Stop();
     }
 
-    // Adjusts volume for music.
-    public void SetMusicVolume(float volume)
+    public void SetMusicVolume(float vol)  // guarantees finite 0‑1 range
     {
-        musicSource.volume = volume;
+        _music.volume = Mathf.Clamp01(float.IsFinite(vol) ? vol : _defaultVolume);
     }
 
-    // Switches gameplay music based on context (e.g., level, boss fight) with an optional fade.
-    public void SetGameplayMusic(GameplayContext context, float fadeDuration = 1f)
+    public void SetGameplayMusic(GameplayContext ctx, float fade = 1f)
     {
-        AudioClip newClip = null;
-        switch (context)
-        {
-            case GameplayContext.Tutorial:
-                newClip = TutorialMusic != null ? TutorialMusic : gameplayMusic;
-                break;
-            case GameplayContext.TaintedGrove:
-                newClip = TaintedGroveMusic != null ? TaintedGroveMusic : gameplayMusic;
-                break;
-            case GameplayContext.VerdantHollow:
-                newClip = VerdantHollowMusic != null ? VerdantHollowMusic : gameplayMusic;
-                break;
-            case GameplayContext.CorruptedThicket1:
-                newClip = CorruptedThicket1Music != null ? CorruptedThicket1Music : gameplayMusic;
-                break;
-            case GameplayContext.CorruptedThicket2:
-                newClip = CorruptedThicket2Music != null ? CorruptedThicket2Music : gameplayMusic;
-                break;
-            case GameplayContext.CelestialGardens:
-                newClip = CelestialGardensMusic != null ? CelestialGardensMusic : gameplayMusic;
-                break;
-            case GameplayContext.Timberlands:
-                newClip = TimberlandsMusic != null ? TimberlandsMusic : gameplayMusic;
-                break;
-            case GameplayContext.Factory:
-                newClip = FactoryMusic != null ? FactoryMusic : gameplayMusic;
-                break;
-            case GameplayContext.EcoStation:
-                newClip = EcoStationMusic != null ? EcoStationMusic : gameplayMusic;
-                break;
-            case GameplayContext.HunterBossFight:
-                newClip = HunterBossFightMusic != null ? HunterBossFightMusic : fightMusic;
-                break;
-            case GameplayContext.TigerBossFight:
-                newClip = TigerBossFightMusic != null ? TigerBossFightMusic : fightMusic;
-                break;
-            case GameplayContext.RobotBossFight:
-                newClip = RobotBossFightMusic != null ? RobotBossFightMusic : fightMusic;
-                break;
-            default:
-                newClip = gameplayMusic;
-                break;
-        }
-
-        // Update the global gameplayMusic to the new clip so that future calls (like resume) use this clip.
-        gameplayMusic = newClip;
-
-        // Transition to the selected music with a fade.
-        StartCoroutine(TransitionToMusic(newClip, fadeDuration));
+        PlayWithFade(ChooseClip(ctx), fade);
     }
 
+    /* ─────────────────────────  INTERNALS  ───────────────────────── */
 
-    // Coroutine to smoothly fade out the current music and fade in the new music.
-    private IEnumerator TransitionToMusic(AudioClip newClip, float fadeDuration)
+    AudioClip ChooseClip(GameplayContext ctx) => ctx switch
     {
-        // Fade out current music if playing.
-        if (musicSource.isPlaying)
-        {
-            float startVolume = musicSource.volume;
-            for (float t = 0; t < fadeDuration; t += Time.deltaTime)
-            {
-                musicSource.volume = Mathf.Lerp(startVolume, 0f, t / fadeDuration);
-                yield return null;
-            }
-            musicSource.volume = 0f;
-            musicSource.Stop();
-        }
+        GameplayContext.Tutorial           => TutorialMusic        ?? gameplayMusic,
+        GameplayContext.TaintedGrove       => TaintedGroveMusic    ?? gameplayMusic,
+        GameplayContext.VerdantHollow      => VerdantHollowMusic   ?? gameplayMusic,
+        GameplayContext.CorruptedThicket1  => CorruptedThicket1Music?? gameplayMusic,
+        GameplayContext.CorruptedThicket2  => CorruptedThicket2Music?? gameplayMusic,
+        GameplayContext.CelestialGardens   => CelestialGardensMusic?? gameplayMusic,
+        GameplayContext.Timberlands        => TimberlandsMusic     ?? gameplayMusic,
+        GameplayContext.Factory            => FactoryMusic         ?? gameplayMusic,
+        GameplayContext.EcoStation         => EcoStationMusic      ?? gameplayMusic,
+        GameplayContext.HunterBossFight    => HunterBossFightMusic ?? fightMusic,
+        GameplayContext.TigerBossFight     => TigerBossFightMusic  ?? fightMusic,
+        GameplayContext.RobotBossFight     => RobotBossFightMusic  ?? fightMusic,
+        _                                   => gameplayMusic
+    };
 
-        // Play the new clip.
-        PlayMusic(newClip);
-
-        // Fade in the new music.
-        float targetVolume = 1f; // Use your desired default music volume.
-        for (float t = 0; t < fadeDuration; t += Time.deltaTime)
-        {
-            musicSource.volume = Mathf.Lerp(0f, targetVolume, t / fadeDuration);
-            yield return null;
-        }
-        musicSource.volume = targetVolume;
+    void PlayWithFade(AudioClip clip, float seconds)
+    {
+        if (clip == null) return;
+        StopAllCoroutines();
+        StartCoroutine(FadeRoutine(clip, seconds));
     }
 
+    IEnumerator FadeRoutine(AudioClip next, float tDur)
+    {
+        /* fade‑out */
+        for (float t = 0, s = _music.volume; t < tDur; t += Time.unscaledDeltaTime)
+        {
+            _music.volume = Mathf.Lerp(s, 0f, t / tDur); yield return null;
+        }
+        _music.volume = 0f; _music.Stop();
+
+        /* swap & play */
+        PlayMusic(next);
+
+        /* fade‑in */
+        for (float t = 0; t < tDur; t += Time.unscaledDeltaTime)
+        {
+            _music.volume = Mathf.Lerp(0f, _defaultVolume, t / tDur); yield return null;
+        }
+        _music.volume = _defaultVolume;
+    }
+
+    /* ─────────────────────  LISTENER SANITISER  ───────────────────── */
+
+    static void SanitizeListenerTransform()
+    {
+        var lis = AudioListener.pause ? null : FindObjectOfType<AudioListener>();
+        if (lis == null) return;
+
+        Vector3 p = lis.transform.position;
+        if (float.IsFinite(p.x) && float.IsFinite(p.y) && float.IsFinite(p.z)) return;
+
+        Debug.LogWarning($"[AudioManager] Non‑finite listener position detected ({p}) – reset to (0,0,0)");
+        lis.transform.position = Vector3.zero;
+    }
 }

@@ -1,6 +1,7 @@
 using System;
 using Pathfinding;
 using UnityEngine;
+using System.Collections;
 
 public class EE_NPC : MonoBehaviour
 {
@@ -60,21 +61,49 @@ public class EE_NPC : MonoBehaviour
         UpdatePath();
     }
 
-    void UpdatePath()
+        private IEnumerator LookForTargetRoutine()
     {
-        if (seeker.IsDone())
+        while (target == null)
         {
-            seeker.StartPath(rb.position, target.transform.position, OnPathComplete);
+            GameObject p = GameObject.FindWithTag("Player");
+            if (p != null)
+            {
+                target = p.transform;
+                InitialiseForTarget(target);
+                yield break;
+            }
+            yield return new WaitForSeconds(1f);
         }
     }
 
-    void OnPathComplete(Path p)
+    private void InitialiseForTarget(Transform newTarget)
     {
-        if (!p.error)
+        if (newTarget == null) return;
+
+        if (targetSensor != null)
         {
-            path = p;
-            currentWaypoint = 0;
+            targetSensor.setTargetTag(newTarget.tag);
+            if (useSensorForPath) targetSensor.OnTargetChanged += UpdatePath;
         }
+
+        InvokeRepeating(nameof(UpdatePath), 0f, .5f);
+    }
+
+    protected void UpdatePath()
+    {
+        if (target == null) return;          // still no player – do nothing
+        if (!seeker.IsDone()) return;        // path request already pending
+
+        seeker.StartPath(rb.position, target.position, OnPathComplete);
+    }
+
+    private void OnPathComplete(Path p)
+    {
+        if (p.error) return;
+
+        path            = p;
+        currentWaypoint = 0;
+        reachedEndOfPath = false;
     }
 
     protected virtual void Update()

@@ -8,7 +8,7 @@ public class EE_Snake : EE_NPC
     [SerializeField] private float attackInterval = 1.5f; // Time between attack attempts
 
     private EnemyAttack enemyAttack;
-    private Coroutine attackCoroutine;
+    private Coroutine   attackRoutine;
     private bool isAttacking = false;
 
     [SerializeField] private Sensor actionSensor;
@@ -18,60 +18,59 @@ public class EE_Snake : EE_NPC
 
     protected override void Start()
     {
-        base.Start();
+        base.Start();                                              // sets up movement
+
         enemyAttack = GetComponent<EnemyAttack>();
-        actionSensor.setTargetTag(base.target.tag);
-		actionSensorRadius = actionSensor.detectionRadius;
+        if (enemyAttack == null)
+        {
+            Debug.LogError("[EE_Snake] Missing <EnemyAttack> component – disabled.");
+            enabled = false;
+            return;
+        }
+
+        if (actionSensor == null) actionSensor = GetComponent<Sensor>();
+        if (actionSensor == null)
+        {
+            Debug.LogError("[EE_Snake] Missing action Sensor – disabled.");
+            enabled = false;
+        }
     }
+
 
     protected override void Update()
     {
+        base.Update();                                             // handles locomotion
 
-        base.Update();
+        if (target == null || actionSensor == null) return;
 
-        if (enemyAttack == null)
+        bool targetInRange = actionSensor.IsTargetInRange;
+
+        if (targetInRange && !isAttacking)
         {
-            Debug.LogError("EE_Snake requires an EnemyAttack component.");
+            attackRoutine = StartCoroutine(AttackLoop());
+            isAttacking   = true;
+        }
+        else if (!targetInRange && isAttacking)
+        {
+            StopCoroutine(attackRoutine);
+            isAttacking = false;
         }
 
-        if (target == null) return;
-
-
-        if (actionSensor.IsTargetInRange)
+        // Face the target when attacking
+        if (isAttacking)
         {
-            // Start attack coroutine if not already started
-            if (!isAttacking)
-            {
-                Debug.Log("Attack coroutine started");
-                attackCoroutine = StartCoroutine(AttackRoutine());
-                isAttacking = true;
-            }
-
-            // Face the target
             if (target.position.x < transform.position.x)
-                npcGFX.localScale = new Vector3(-animatorXScale, npcGFX.localScale.y, npcGFX.localScale.z);
-            else
-                npcGFX.localScale = new Vector3(animatorXScale, npcGFX.localScale.y, npcGFX.localScale.z);
-        }
-        else
-        {
-            // Stop attack coroutine when out of range
-            if (isAttacking)
-            {
-                StopCoroutine(attackCoroutine);
-                isAttacking = false;
-            }
+                 npcGFX.localScale = new Vector3(-animatorXScale, npcGFX.localScale.y, npcGFX.localScale.z);
+            else npcGFX.localScale = new Vector3( animatorXScale, npcGFX.localScale.y, npcGFX.localScale.z);
         }
     }
 
-    private IEnumerator AttackRoutine()
+    private IEnumerator AttackLoop()
     {
         while (true)
         {
-            if (enemyAttack != null && enemyAttack.Attack(enemyAttack.SideHitPoint))
-            {
-                animator.Play("snake_attack"); // if you have a specific animation
-            }
+            if (enemyAttack.Attack(enemyAttack.SideHitPoint))
+                animator?.Play("snake_attack");
 
             yield return new WaitForSeconds(attackInterval);
         }

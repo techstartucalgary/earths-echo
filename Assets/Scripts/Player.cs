@@ -366,26 +366,38 @@ public class Player : MonoBehaviour, IDamageable
         }
     }
 
-    public void ClimbLadder()
+// Player.cs  ― replace the whole method
+public void ClimbLadder()
+{
+    /* ─────────────────────  SAFETY CHECKS  ───────────────────── */
+    if (touchingLadder == null)                // not touching anything
+        return;
+
+    // Try‑pattern avoids allocations and the IL2CPP null‑“this” crash
+    if (!touchingLadder.TryGetComponent<BoxCollider2D>(out var ladderCollider))
+        return;
+
+    if (!TryGetComponent<BoxCollider2D>(out var playerCollider))
+        return;                                // should never happen, but be safe
+
+    /* ─────────────────────  ORIGINAL LOGIC  ──────────────────── */
+    float ladderTop    = ladderCollider.bounds.max.y;
+    float ladderBottom = ladderCollider.bounds.min.y;
+
+    float playerTop    = playerCollider.bounds.max.y;
+    float playerBottom = playerCollider.bounds.min.y;
+
+    velocity.x = 0f;
+    velocity.y = directionalInput.y * climbSpeed;
+
+    if (Mathf.Approximately(directionalInput.y, 0f) ||
+        (playerBottom >= ladderTop   && directionalInput.y > 0f) ||
+        (playerTop    <= ladderBottom && directionalInput.y < 0f))
     {
-        BoxCollider2D ladderCollider = touchingLadder.GetComponent<BoxCollider2D>();
-        float ladderTop = ladderCollider.bounds.max.y;
-        float ladderBottom = ladderCollider.bounds.min.y;
-
-        BoxCollider2D playerCollider = GetComponent<BoxCollider2D>();
-        float playerTop = playerCollider.bounds.max.y;
-        float playerBottom = playerCollider.bounds.min.y;
-
-        velocity.x = 0;
-        velocity.y = directionalInput.y * climbSpeed;
-
-        if (directionalInput.y == 0 ||
-           (playerBottom >= ladderTop && directionalInput.y > 0) ||
-           (playerTop <= ladderBottom && directionalInput.y < 0))
-        {
-            velocity.y = 0;
-        }
+        velocity.y = 0f;
     }
+}
+
 
     public void SetDirectionalInput(Vector2 input)
     {

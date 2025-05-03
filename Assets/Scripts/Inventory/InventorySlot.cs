@@ -45,17 +45,40 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler
     public Image ammo2Image;
     public TMP_Text ammo2NameText;
 
-    void Start()
-    {
-        inventoryMenu = FindObjectOfType<InventoryMenu>();
-        itemIcon = transform.Find("ItemImage").GetComponent<Image>();
+private void Start()
+{
+    // Cache the InventoryMenu reference (unchanged)
+    inventoryMenu = FindObjectOfType<InventoryMenu>();
 
-        // Initially hide the icon.
-        if (itemIcon != null)
+    /* ── Find the child called "ItemImage" safely ───────────────────────── */
+    Transform imgT = transform.Find("ItemImage");
+
+    if (imgT != null)
+    {
+        itemIcon = imgT.GetComponent<Image>();
+        if (itemIcon == null)   // child exists but has no Image component
         {
+            Debug.LogError($"[InventorySlot] \"ItemImage\" on {name} has no <Image> component.");
+            itemIcon = imgT.gameObject.AddComponent<Image>();
             itemIcon.enabled = false;
         }
     }
+    else
+    {
+        Debug.LogError($"[InventorySlot] Child \"ItemImage\" not found on {name}. " +
+                       "Creating a placeholder so the slot can still run.");
+
+        // Create an invisible placeholder so later code won’t NRE
+        GameObject placeholder = new GameObject("ItemImage");
+        placeholder.transform.SetParent(transform, false);
+        itemIcon = placeholder.AddComponent<Image>();
+        itemIcon.enabled = false;
+    }
+
+    /* ── Hide icon initially (same as before) ───────────────────────────── */
+    itemIcon.enabled = false;
+}
+
 
     /// <summary>
     /// Sets the slot with the given item and count.
