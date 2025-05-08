@@ -69,18 +69,25 @@ public class CameraCutsceneTriggerWithSize : MonoBehaviour
             if (playerInputScript == null)
             {
                 playerInputScript = playerInput;
+                Debug.Log($"Assigned playerInputScript: {playerInputScript}");
             }
 
             // Disable camera follow behavior if assigned.
             if (followScript != null)
             {
                 followScript.enabled = false;
+                Debug.Log("Disabled followScript.");
             }
 
             // Disable player input.
             if (playerInputScript != null)
             {
                 playerInputScript.enabled = false;
+                Debug.Log("Disabled playerInputScript.");
+            }
+            else
+            {
+                Debug.LogWarning("playerInputScript is null. Cannot disable player input.");
             }
 
             StartCoroutine(CutsceneRoutine());
@@ -103,9 +110,11 @@ public class CameraCutsceneTriggerWithSize : MonoBehaviour
 
     private IEnumerator CutsceneRoutine()
     {
-        // Save the starting camera position (presumably following the player).
+        // Save the starting camera position and size (presumably following the player).
         Vector3 originalPosition = targetCamera.transform.position;
-        originalPosition.z = targetCamera.transform.position.z; // Ensure Z remains unchanged
+        float originalSize = targetCamera.orthographicSize;
+
+        Debug.Log($"Starting Cutscene. Original Position: {originalPosition}, Original Size: {originalSize}");
 
         // Determine the outgoing path based on the chosen mode.
         Vector3 finalOutgoingTarget = cutsceneTargetPosition;
@@ -118,11 +127,13 @@ public class CameraCutsceneTriggerWithSize : MonoBehaviour
         {
             // Custom path mode: First pan from original to cutsceneTargetPosition.
             yield return StartCoroutine(TransitionCamera(originalPosition, cutsceneTargetPosition, originalSize, targetSize, panOutDuration));
+
             // Then traverse each waypoint sequentially.
             foreach (Transform waypoint in pathPoints)
             {
                 Vector3 waypointPos = waypoint.position;
-                waypointPos.z = targetCamera.transform.position.z;
+                waypointPos.z = targetCamera.transform.position.z; // Preserve Z-position
+                Debug.Log($"Moving to waypoint: {waypointPos}");
                 yield return StartCoroutine(TransitionCamera(targetCamera.transform.position, waypointPos, targetCamera.orthographicSize, targetSize, segmentDuration));
                 // Set final target to the last waypoint.
                 finalOutgoingTarget = waypointPos;
@@ -143,9 +154,11 @@ public class CameraCutsceneTriggerWithSize : MonoBehaviour
             yield return null;
         }
 
-        // Ensure camera is exactly at player's position and size.
+        // Ensure camera is exactly at the player's position and size.
         targetCamera.transform.position = PlayerCameraPos();
         targetCamera.orthographicSize = originalSize;
+
+        Debug.Log($"Cutscene finished. Restored Position: {targetCamera.transform.position}, Restored Size: {targetCamera.orthographicSize}");
 
         // Mark the cutscene as finished.
         cutsceneFinished = true;
@@ -206,7 +219,11 @@ public class CameraCutsceneTriggerWithSize : MonoBehaviour
     /// </summary>
     private IEnumerator TransitionCamera(Vector3 fromPos, Vector3 toPos, float fromSize, float toSize, float duration)
     {
+        Debug.Log($"Transitioning camera from {fromPos} to {toPos} over {duration} seconds.");
         float elapsedTime = 0f;
+        fromPos.z = targetCamera.transform.position.z; // Preserve Z-position
+        toPos.z = targetCamera.transform.position.z;   // Preserve Z-position
+
         while (elapsedTime < duration)
         {
             elapsedTime += Time.deltaTime;

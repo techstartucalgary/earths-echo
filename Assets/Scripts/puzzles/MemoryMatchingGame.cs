@@ -325,26 +325,26 @@ public class MemoryMatchingGame : MonoBehaviour
                 shadow.effectDistance = new Vector2(2, -2);
 
 
-                RectTransform faceRect = cardFace.GetComponent<RectTransform>();
-                faceRect.anchorMin = Vector2.zero;
-                faceRect.anchorMax = Vector2.one;
-                faceRect.offsetMin = Vector2.zero;
-                faceRect.offsetMax = Vector2.zero;
+                // RectTransform faceRect = cardFace.GetComponent<RectTransform>();
+                // faceRect.anchorMin = Vector2.zero;
+                // faceRect.anchorMax = Vector2.one;
+                // faceRect.offsetMin = Vector2.zero;
+                // faceRect.offsetMax = Vector2.zero;
 
-                GameObject labelObj = new GameObject("Card ID");
-                labelObj.transform.SetParent(cardFace.transform, false);
+                // GameObject labelObj = new GameObject("Card ID");
+                // labelObj.transform.SetParent(cardFace.transform, false);
 
-                TextMeshProUGUI label = labelObj.AddComponent<TextMeshProUGUI>();
-                label.text = i.ToString();
-                label.fontSize = 30;
-                label.color = Color.white;
-                label.alignment = TextAlignmentOptions.Center;
+                // TextMeshProUGUI label = labelObj.AddComponent<TextMeshProUGUI>();
+                // label.text = i.ToString();
+                // label.fontSize = 30;
+                // label.color = Color.white;
+                // label.alignment = TextAlignmentOptions.Center;
 
-                RectTransform labelRect = labelObj.GetComponent<RectTransform>();
-                labelRect.anchorMin = Vector2.zero;
-                labelRect.anchorMax = Vector2.one;
-                labelRect.offsetMin = Vector2.zero;
-                labelRect.offsetMax = Vector2.zero;
+                // RectTransform labelRect = labelObj.GetComponent<RectTransform>();
+                // labelRect.anchorMin = Vector2.zero;
+                // labelRect.anchorMax = Vector2.one;
+                // labelRect.offsetMin = Vector2.zero;
+                // labelRect.offsetMax = Vector2.zero;
 
                 GameObject cardBack = new GameObject("Card Back");
                 cardBack.transform.SetParent(cardObj.transform, false);

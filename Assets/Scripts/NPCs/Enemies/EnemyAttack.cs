@@ -7,6 +7,11 @@ public class EnemyAttack : MonoBehaviour
     [SerializeField] protected Transform sideHitPoint;
     [SerializeField] protected Transform upwardHitPoint;
     [SerializeField] protected Transform downwardHitPoint;
+    public Transform SideHitPoint => sideHitPoint;
+    public Transform UpwardHitPoint => upwardHitPoint;
+    public Transform DownwardHitPoint => downwardHitPoint;
+
+
 
     [Header("Attack Triggers")]
     // These booleans trigger an attack from the corresponding attack point.
@@ -108,4 +113,32 @@ public class EnemyAttack : MonoBehaviour
             Gizmos.DrawWireSphere(downwardHitPoint.position, attackRange);
         }
     }
+
+    public bool Attack(Transform point)
+    {
+        if (Time.time < nextAttackTime || point == null) return false;
+
+        Collider2D[] hitTargets = Physics2D.OverlapCircleAll(point.position, attackRange, targetLayer);
+        if (hitTargets.Length > 0)
+        {
+            foreach (var target in hitTargets)
+            {
+                IDamageable damageable = target.GetComponent<IDamageable>();
+                if (damageable != null)
+                {
+                    Vector2 direction = (target.transform.position - point.position).normalized;
+                    damageable.Damage(attackDamage, direction * knockbackForce);
+                }
+            }
+
+            if (attackSound != null)
+                AudioSource.PlayClipAtPoint(attackSound, transform.position);
+
+            nextAttackTime = Time.time + attackCooldown;
+            return true;
+        }
+
+        return false;
+    }
+
 }

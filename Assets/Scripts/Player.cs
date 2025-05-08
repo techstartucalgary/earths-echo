@@ -112,9 +112,10 @@ public class Player : MonoBehaviour, IDamageable
 
     [Header("Impact Effects")]
     [SerializeField] private GameObject[] impactParticlePrefabs;   // One‑shot VFX to spawn on hit
+    [SerializeField] private GameObject healingParticlePrefab;
 
-
-
+    // Garbage collection
+    [SerializeField] public int collectedGarbage = 0; // Number of collected garbage objects
     FindGrandchildren finder;
 
     void Start()
@@ -258,8 +259,24 @@ public class Player : MonoBehaviour, IDamageable
         if (impactParticlePrefabs == null || impactParticlePrefabs.Length == 0) return;
 
         GameObject prefab = impactParticlePrefabs[UnityEngine.Random.Range(0, impactParticlePrefabs.Length)];
-        Instantiate(prefab, position, Quaternion.identity);
+
+        // Instantiate at the hit position
+        GameObject instance = Instantiate(prefab, position, Quaternion.identity);
+
+        // Optionally parent to the player if you want it to follow
+        instance.transform.SetParent(transform);
+
+        // Auto-destroy after particle lifetime (fallback = 2 seconds if unknown)
+        float lifetime = 2f;
+        var ps = instance.GetComponent<ParticleSystem>();
+        if (ps != null)
+        {
+            lifetime = ps.main.duration + ps.main.startLifetime.constantMax;
+        }
+
+        Destroy(instance, lifetime);
     }
+
 
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -304,6 +321,11 @@ public class Player : MonoBehaviour, IDamageable
                 velocity.y = 40f;
             }
         }
+        if (collision.CompareTag("MovingPlatform"))
+        {
+            // Parent to platform so we move with it
+            transform.SetParent(collision.transform);
+        }
     }
 
     private void OnTriggerStay2D(Collider2D collision)
@@ -325,6 +347,12 @@ public class Player : MonoBehaviour, IDamageable
             touchingLadder = null;
             canClimb = false;
         }
+        if (collision.CompareTag("MovingPlatform"))
+        {
+            // Unparent when we leave the platform
+            transform.SetParent(null);
+        }
+
     }
 
     public void AlignToLadder()
@@ -371,6 +399,16 @@ public class Player : MonoBehaviour, IDamageable
         {
             climbing = false;
             wasClimbing = true;
+
+            // Apply a force to the player if they are holding a horizontal direction
+            if (directionalInput.x != 0)
+            {
+                velocity.x = directionalInput.x * 20f;
+            }
+            else
+            {
+                velocity.x = 0;
+            }
         }
 
         if (wallSliding)
@@ -693,6 +731,7 @@ public class Player : MonoBehaviour, IDamageable
     {
         float range = attackRange;
 
+        // Draw and check the Side attack hitbox
         if (SideHitpoint != null)
         {
             Gizmos.color = Color.green;
@@ -747,7 +786,7 @@ public class Player : MonoBehaviour, IDamageable
             healthBar.Damage(damageAmount);
             SoundFXManager.Instance.PlayRandomSoundFXClip(damageSoundClips, transform, 0.6f);
             ApplyKnockback(impactPos, damageAmount * 0.5f);
-            screenShake.Shake(0.2f, 0.5f);
+            screenShake.Shake(damageAmount / 20, 0.5f);
         }
 
         // Record the time of damage so healing will wait.
@@ -808,17 +847,31 @@ public class Player : MonoBehaviour, IDamageable
 
     private IEnumerator HealToFull()
     {
-        // While the player's health is not full, apply incremental healing.
+        GameObject healingEffectInstance = null;
+
+        if (healingParticlePrefab != null)
+        {
+            // Instantiate and parent to the player
+            healingEffectInstance = Instantiate(healingParticlePrefab, DownwardHitpoint.position, Quaternion.identity);
+            healingEffectInstance.transform.SetParent(transform); // Now it follows the player
+        }
+
         while (currentHealth < maxHealth)
         {
-            // The healing rate per second (so full recovery happens over healingDuration)
             float healAmount = (maxHealth / healingDuration) * Time.deltaTime;
-            Heal(healAmount);  // Call your existing Heal method
+            Heal(healAmount);
             yield return null;
         }
-        // Once healing is complete, clear the coroutine reference.
+
+        // Cleanup after healing is done
         healingCoroutine = null;
+
+        if (healingEffectInstance != null)
+        {
+            Destroy(healingEffectInstance);
+        }
     }
+
 
 
 }

@@ -38,10 +38,10 @@ public class PlayerInput : MonoBehaviour {
         player.SetSprinting(Input.GetKey(KeyCode.LeftShift));
 
         // Sliding
-        if (Input.GetKeyDown(KeyCode.C) && player.isSprinting)
-            player.StartSlide();
-        if (Input.GetKeyUp(KeyCode.C))
-            player.StopSlide();
+        // if (Input.GetKeyDown(KeyCode.C) && player.isSprinting)
+        //     player.StartSlide();
+        // if (Input.GetKeyUp(KeyCode.C))
+        //     player.StopSlide();
 
         // Item pickup
         if (currentItemInRange != null && Input.GetKeyDown(KeyCode.E))
@@ -171,14 +171,14 @@ public class PlayerInput : MonoBehaviour {
                 trajectoryLine.HideTrajectory();
         }
         
-        if (Input.GetKeyDown(KeyCode.T))
-        {
-            if (inventoryHandler != null && inventoryHandler.IsItemEquipped)
-            {
-                Debug.Log("T key pressed.");
-                inventoryHandler.UseItem(inventoryHandler.currentItemSO);
-            }
-        }
+        // if (Input.GetKeyDown(KeyCode.T))
+        // {
+        //     if (inventoryHandler != null && inventoryHandler.IsItemEquipped)
+        //     {
+        //         Debug.Log("T key pressed.");
+        //         inventoryHandler.UseItem(inventoryHandler.currentItemSO);
+        //     }
+        // }
         
         // For debugging: display player's current speed.
         player.playerSpeed = player.velocity.x;

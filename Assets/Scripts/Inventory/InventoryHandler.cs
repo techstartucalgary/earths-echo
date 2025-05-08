@@ -5,471 +5,321 @@ using UnityEngine;
 public class InventoryHandler : MonoBehaviour
 {
     public int inventoryLimit = 20;
-    // Dictionary to track each ItemSO and its count.
-    private Dictionary<ItemSO, int> inventory = new Dictionary<ItemSO, int>();
 
+    // Item‑count map
+    private readonly Dictionary<ItemSO, int> inventory = new();
+
+    
     [SerializeField] private InventoryMenu inventoryMenu;
-	private Player player;
-    // Holder transforms for each equipped type.
+    [SerializeField] private Player player;   // drag the real player here
+
+    [Header("Item Holders")]
     [SerializeField] private Transform meleeHolder;
     [SerializeField] private Transform projectileHolder;
-    [SerializeField] private Transform handHolder;  // For general holdable items
+    [SerializeField] private Transform handHolder;
 
-    // Currently instantiated GameObject for the equipped item.
     private GameObject currentEquippedInstance;
 
-    // Equipped state enum.
     private enum EquippedState { None, Melee, Projectile, Item, ThrowableItem }
-
-	public bool IsItemEquipped {
-    get { return activeState == EquippedState.Item; }
-	}
-
-	public bool IsProjectileWeaponEquipped {
-		get { return activeState == EquippedState.Projectile; }
-	}
-
-    public bool isThrowableObjectEquipped {
-        get {return activeState == EquippedState.ThrowableItem;}
-    }
-	public GameObject EquippedInstance 
-	{ 
-		get { return currentEquippedInstance; } 
-	}
-
-	public WeaponSO CurrentProjectileWeaponSO 
-	{ 
-		get { return currentProjectileWeaponSO; } 
-	}
-
-    public WeaponSO CurrentMeleeWeaponSO 
-	{ 
-		get { return currentMeleeWeaponSO; } 
-	}
-
-
-	private float defaultAttackDamage;
-	private float defaultAttackCooldown;
-	private float defaultAttackRange;
-	private string defaultAnimPrefix;
-	private AudioClip[] defaultAttackSounds;
-
     private EquippedState activeState = EquippedState.None;
+    private EquippedState lastSyncedState = EquippedState.None;
 
-    // Dynamic references set when items are equipped from the inventory.
-    private WeaponSO currentMeleeWeaponSO;
-    private WeaponSO currentProjectileWeaponSO;
-    public ItemInstSO currentItemSO;  // General holdable item (non-weapon)
+
+    // Public getters
+    public bool  IsItemEquipped             => activeState == EquippedState.Item;
+    public bool  IsProjectileWeaponEquipped => activeState == EquippedState.Projectile;
+    public bool  isThrowableObjectEquipped  => activeState == EquippedState.ThrowableItem;
+    public GameObject EquippedInstance      => currentEquippedInstance;
+    public WeaponSO CurrentProjectileWeaponSO => currentProjectileWeaponSO;
+    public WeaponSO CurrentMeleeWeaponSO     => currentMeleeWeaponSO;
+
+    // Current equipped data
+    private WeaponSO   currentMeleeWeaponSO;
+    private WeaponSO   currentProjectileWeaponSO;
+    public  ItemInstSO currentItemSO;
+
+    // Cached defaults (so we can restore when nothing equipped)
+    private float       defaultAttackDamage;
+    private float       defaultAttackCooldown;
+    private float       defaultAttackRange;
+    private string      defaultAnimPrefix;
+    private AudioClip[] defaultAttackSounds;
 
     private Camera mainCamera;
 
-    [SerializeField] Animator playerAnim;
+    /* ─────────────────────────────────────────────  INITIALISATION ───────────────────────────────────────────── */
+
     private void Awake()
     {
-        // Optionally assign inventoryMenu if not set in the Inspector.
-        // inventoryMenu = FindObjectOfType<InventoryMenu>();
-        
-        player = FindObjectOfType<Player>();
-        defaultAttackDamage = player.attackDamage;
-		defaultAttackCooldown = player.attackCooldown;
-		defaultAttackRange = player.attackRange;
-		defaultAnimPrefix = player.attackAnimPrefix;
-		defaultAttackSounds = player.attackSounds;
-        
+        if (player == null)
+            player = GetComponent<Player>();  // if handler lives on Player
+        if (player == null)
+            player = GameObject.FindWithTag("Player")?.GetComponent<Player>();
+
+        if (player == null)
+        {
+            Debug.LogError("[InventoryHandler] No Player reference!");
+            enabled = false;
+            return;
+        }
+
+        defaultAttackDamage   = player.attackDamage;
+        defaultAttackCooldown = player.attackCooldown;
+        defaultAttackRange    = player.attackRange;
+        defaultAnimPrefix     = player.attackAnimPrefix;
+        defaultAttackSounds   = player.attackSounds;
     }
 
     private void Start()
     {
         mainCamera = Camera.main;
-        if(mainCamera == null){
-            Debug.LogError("Main camera not found");
-            return;
-        }
-
+        if (mainCamera == null) Debug.LogError("Main camera not found");
     }
 
     private void Update()
     {
-
-        HandleEquippedSwitching();
-        HandlePlayerAttackStats();
-        
+        HandleEquippedSwitching();   // only key‑press handling now
+        if (activeState != lastSyncedState)
+        {
+            ApplyStatsToPlayer();
+            lastSyncedState = activeState;
+        }
     }
 
-    #region Inventory Management
+    /* ─────────────────────────────────────────────  PUBLIC INVENTORY API ─────────────────────────────────────── */
 
-    /// <summary>
-    /// Adds an item (as an ItemSO) to the inventory.
-    /// If the item is stackable and already exists, increases its count.
-    /// </summary>
     public void AddItem(ItemSO newItem)
     {
-        if (newItem == null)
-        {
-            Debug.LogError("Attempted to add a null item to the inventory.");
-            return;
-        }
-        if (inventoryMenu == null)
-        {
-            Debug.LogError("InventoryMenu is not assigned in InventoryHandler.");
-            return;
-        }
-        // If already in the inventory:
-        if (inventory.ContainsKey(newItem))
-        {
-            if (newItem.stackable)
-            {
-                inventory[newItem]++;
-                Debug.Log($"Increased stack of {newItem.itemName} to {inventory[newItem]}");
-            }
-            else
-            {
-                Debug.LogWarning("Item is already in inventory and is not stackable.");
-                return;
-            }
-        }
-        else
-        {
-            if (inventory.Count >= inventoryLimit)
-            {
-                Debug.LogWarning("Inventory is full. Cannot add more items.");
-                return;
-            }
-            inventory[newItem] = 1;
-            Debug.Log($"Added item: {newItem.itemName}");
-        }
-        inventoryMenu.UpdateEquippedHUD();
-        UpdateUI();
-    }
+        if (newItem == null) return;
+        if (inventory.Count >= inventoryLimit && !inventory.ContainsKey(newItem)) return;
 
-    /// <summary>
-    /// Uses one instance of the specified item.
-    /// When count reaches zero, the item is removed from the inventory,
-    /// any equipped instance is unequipped, and the UI slot is cleared.
-    /// </summary>
-    public void UseItem(ItemSO item)
-    {
-        // Early exit if item is invalid.
-        if (item == null || !inventory.ContainsKey(item) || !item.usable)
-            return;
+        inventory.TryAdd(newItem, 0);
+        if (newItem.stackable) inventory[newItem]++;   // stackable counts
+        else                   inventory[newItem] = 1; // non‑stackable
 
-        // If it's a throwable item, call ShootProjectile.
-        if (item is ThrowableItemSO)
-        {
-            Debug.Log($"Using throwable item: {item.itemName}");
-            // Use a full pullback percentage (1f). Adjust if needed.
-            ShootProjectile(1f);
-        }
-
-        // Common decrement logic for both basic and throwable items.
-        if (item.stackable)
-        {
-            inventory[item]--;
-            Debug.Log($"Used one {item.itemName}. New count: {inventory[item]}");
-
-            if (inventory[item] <= 0)
-            {
-                inventory.Remove(item);
-                Debug.Log($"{item.itemName} removed from inventory.");
-
-                // Clear any UI selection and unequip if this item was currently equipped.
-                foreach (var slot in inventoryMenu.itemSlots)
-                {
-                    if (slot.itemSO == currentItemSO)
-                    {
-                        slot.ClearSelectedIcon();
-                    }
-                }
-                if (currentMeleeWeaponSO == item)
-                {
-                    UnequipCurrentItem();
-                    currentMeleeWeaponSO = null;
-                }
-                if (currentProjectileWeaponSO == item)
-                {
-                    UnequipCurrentItem();
-                    currentProjectileWeaponSO = null;
-                }
-                if (currentItemSO == item)
-                {
-                    UnequipCurrentItem();
-                    currentItemSO = null;
-                }
-            }
-        }
-        else
-        {
-            Debug.Log($"Used {item.itemName} (non-stackable)");
-            // Add any additional behavior for non-stackable non-throwable items here if needed.
-        }
         UpdateUI();
         inventoryMenu.UpdateEquippedHUD();
-
     }
 
+/* ─────────────────────────────────  USE / CONSUME ITEM  ───────────────────────────── */
 
+public void UseItem(ItemSO item)
+{
+    if (item == null || !inventory.ContainsKey(item) || !item.usable) return;
 
+    /* ❶ run the item’s behaviour (e.g. throw) */
+    if (item is ThrowableItemSO) ShootProjectile(1f);
 
+    /* ❷ consume one and decide if it’s gone */
+    bool itemDepleted = false;
 
-    /// <summary>
-    /// Updates the inventory UI by passing a list of key–value pairs (ItemSO, count) to the InventoryMenu.
-    /// </summary>
-    private void UpdateUI()
+    if (item.stackable)
     {
-        List<KeyValuePair<ItemSO, int>> itemList = new List<KeyValuePair<ItemSO, int>>(inventory);
-        inventoryMenu.UpdateInventoryUI(itemList);
+        inventory[item]--;
+        if (inventory[item] <= 0)
+        {
+            inventory.Remove(item);
+            itemDepleted = true;
+        }
     }
-
-    /// <summary>
-    /// Iterates through all inventory slots and clears any slot displaying the given item.
-    /// </summary>
-
-    public List<ItemSO> GetItems()
+    else
     {
-        return new List<ItemSO>(inventory.Keys);
+        // non‑stackable → remove immediately
+        inventory.Remove(item);
+        itemDepleted = true;
     }
 
-    #endregion
+    /* ❸ if we just consumed the last one, unequip & clear HUD selection */
+    if (itemDepleted)
+    {
+        // clear any UI highlights in the slots
+        foreach (var slot in inventoryMenu.itemSlots)
+            if (slot.itemSO == item) slot.ClearSelectedIcon();
 
-    #region External Equip Methods
+        if (currentItemSO == item)
+        {
+            UnequipCurrentItem();
+            currentItemSO = null;
+        }
+        if (currentMeleeWeaponSO == item)
+        {
+            UnequipCurrentItem();
+            currentMeleeWeaponSO = null;
+        }
+        if (currentProjectileWeaponSO == item)
+        {
+            UnequipCurrentItem();
+            currentProjectileWeaponSO = null;
+        }
+    }
 
-    /// <summary>
-    /// Called externally (from InventoryMenu) to equip a melee weapon.
-    /// </summary>
+    /* ❹ refresh UI */
+    UpdateUI();
+    inventoryMenu.UpdateEquippedHUD();
+}
+
+
+    /* ─────────────────────────────────────────────  EQUIP / UNEQUIP ─────────────────────────────────────────── */
+
     public void EquipMeleeWeapon(WeaponSO weaponData)
     {
-        if (weaponData == null)
-        {
-            Debug.LogError("EquipMeleeWeapon called with null weaponData.");
-            return;
-        }
-        currentMeleeWeaponSO = weaponData;
-        ActivateEquippedItem(EquippedState.Melee);
-        inventoryMenu.UpdateEquippedHUD();
+        if (weaponData == null) return;
 
+        currentMeleeWeaponSO    = weaponData;
+        currentItemSO           = null;
+
+        ActivateEquippedItem(EquippedState.Melee);
     }
 
-    /// <summary>
-    /// Called externally (from InventoryMenu) to equip a projectile weapon.
-    /// </summary>
     public void EquipProjectileWeapon(WeaponSO weaponData)
     {
-        if (weaponData == null)
-        {
-            Debug.LogError("EquipProjectileWeapon called with null weaponData.");
-            return;
-        }
-        currentProjectileWeaponSO = weaponData;
-        ActivateEquippedItem(EquippedState.Projectile);
-        inventoryMenu.UpdateEquippedHUD();
+        if (weaponData == null) return;
 
+        currentProjectileWeaponSO = weaponData;
+        currentItemSO             = null;
+
+        ActivateEquippedItem(EquippedState.Projectile);
     }
 
-    /// <summary>
-    /// Called externally (from InventoryMenu) to equip a general holdable item.
-    /// </summary>
     public void EquipItem(ItemInstSO itemData)
     {
-        if (itemData == null)
-        {
-            Debug.LogError("EquipItem called with null itemData.");
-            return;
-        }
-        // Check if the item is a throwable item.
-        if (itemData is ThrowableItemSO)
-        {
-            currentItemSO = itemData;
-            ActivateEquippedItem(EquippedState.ThrowableItem);
-        }
-        else
-        {
-            currentItemSO = itemData;
-            ActivateEquippedItem(EquippedState.Item);
-        }
-        inventoryMenu.UpdateEquippedHUD();
+        if (itemData == null) return;
+
+        currentItemSO            = itemData;
+
+        var state = itemData is ThrowableItemSO ? EquippedState.ThrowableItem
+                                                : EquippedState.Item;
+
+        ActivateEquippedItem(state);
     }
 
-    #endregion
+    /* ─────────────────────────────────────────────  SWITCHING HELPER  ────────────────────────────────────────── */
 
-    #region Activation / Switching
-
-    /// <summary>
-    /// Handles switching between equipped states via key input.
-    /// Alpha1: Melee, Alpha2: Projectile, Alpha3: General Item (toggle).
-    /// </summary>
     private void HandleEquippedSwitching()
     {
-        if (Input.GetKeyDown(KeyCode.Alpha1))
+        if (Input.GetKeyDown(KeyCode.Alpha1)) ActivateEquippedItem(EquippedState.Melee);
+        if (Input.GetKeyDown(KeyCode.Alpha2)) ActivateEquippedItem(EquippedState.Projectile);
+        if (Input.GetKeyDown(KeyCode.Alpha3))
         {
-            if (activeState != EquippedState.Melee)
-                ActivateEquippedItem(EquippedState.Melee);
+            if (currentItemSO is ThrowableItemSO)
+                ActivateEquippedItem(EquippedState.ThrowableItem);
             else
-                Debug.Log("Melee weapon is already active.");
-        }
-        else if (Input.GetKeyDown(KeyCode.Alpha2))
-        {
-            if (activeState != EquippedState.Projectile)
-                ActivateEquippedItem(EquippedState.Projectile);
-            else
-                Debug.Log("Projectile weapon is already active.");
-        }
-        else if (Input.GetKeyDown(KeyCode.Alpha3))
-        {
-            // If there's an equipped item, check if it's throwable.
-            if (currentItemSO != null && currentItemSO is ThrowableItemSO)
-            {
-                // Toggle throwable state.
-                if (activeState != EquippedState.ThrowableItem)
-                    ActivateEquippedItem(EquippedState.ThrowableItem);
-                else
-                    UnequipCurrentItem();
-            }
-            else
-            {
-                // Otherwise, treat it as a regular item.
-                if (activeState == EquippedState.Item)
-                    UnequipCurrentItem();
-                else
-                    ActivateEquippedItem(EquippedState.Item);
-            }
+                ActivateEquippedItem(EquippedState.Item);
         }
     }
 
-    /// <summary>
-    /// Activates an equipped item based on the desired state.
-    /// Activating one type automatically unequips any previously active item.
-    /// </summary>
     private void ActivateEquippedItem(EquippedState state)
     {
-        if (activeState != EquippedState.None)
-            UnequipCurrentItem();
-
-        WeaponSO weaponData = null;
-        Transform targetHolder = null;
+        if (state == activeState) return;          // already active
+        UnequipCurrentItem();
 
         switch (state)
         {
             case EquippedState.Melee:
-                weaponData = currentMeleeWeaponSO;
-                targetHolder = meleeHolder;
+                if (currentMeleeWeaponSO) InstantiateWeapon(currentMeleeWeaponSO, meleeHolder);
                 break;
+
             case EquippedState.Projectile:
-                weaponData = currentProjectileWeaponSO;
-                targetHolder = projectileHolder;
+                if (currentProjectileWeaponSO) InstantiateWeapon(currentProjectileWeaponSO, projectileHolder);
                 break;
+
             case EquippedState.Item:
-                if (currentItemSO == null)
-                {
-                    Debug.LogWarning("No general item equipped.");
-                    return;
-                }
-                targetHolder = handHolder;
-                break;
             case EquippedState.ThrowableItem:
-                if (currentItemSO == null)
-                {
-                    Debug.LogWarning("No throwable item equipped.");
-                    return;
-                }
-                targetHolder = handHolder;
-                break;
-            default:
+                if (currentItemSO) InstantiateHoldable(currentItemSO, handHolder);
                 break;
         }
 
-        // Instantiate holdable item for both Item and ThrowableItem states.
-        if (state == EquippedState.Item || state == EquippedState.ThrowableItem)
-        {
-            InstantiateHoldable(currentItemSO, targetHolder);
-            activeState = state;
-            Debug.Log($"Activated {(state == EquippedState.ThrowableItem ? "Throwable Item" : "Item")}: {currentItemSO.itemName}");
-        }
-        else if (weaponData != null)
-        {
-            InstantiateWeapon(weaponData, targetHolder);
-            activeState = state;
-            Debug.Log($"Activated {state}: {weaponData.itemName}");
-        }
-        else
-        {
-            Debug.LogWarning($"No data set for state {state}.");
-            activeState = EquippedState.None;
-        }
+        activeState = state;
+        ApplyStatsToPlayer();          // ← only happens once per equip
+        inventoryMenu.UpdateEquippedHUD();
     }
 
-    /// <summary>
-    /// Unequips the currently active item.
-    /// Dynamic references remain intact for seamless reactivation.
-    /// </summary>
     private void UnequipCurrentItem()
     {
-        if (currentEquippedInstance != null)
-        {
-            Debug.Log($"Unequipping: {currentEquippedInstance.name}");
-            Destroy(currentEquippedInstance);
-            currentEquippedInstance = null;
-        }
-        activeState = EquippedState.None;
+        if (currentEquippedInstance) Destroy(currentEquippedInstance);
+        currentEquippedInstance = null;
+        activeState             = EquippedState.None;
+
+        ApplyStatsToPlayer();          // revert to defaults
     }
 
-    #endregion
+    /* ─────────────────────────────────────────────  PLAYER STAT SYNC  ───────────────────────────────────────── */
 
-    #region Instantiation Methods
-
-    /// <summary>
-    /// Instantiates a weapon (melee or projectile) using the provided WeaponSO data.
-    /// </summary>
-    private void InstantiateWeapon(WeaponSO weaponData, Transform parentHolder)
+    private void ApplyStatsToPlayer()
     {
-        if (weaponData == null)
+        switch (activeState)
         {
-            Debug.LogError("InstantiateWeapon called with null weaponData.");
-            return;
+            case EquippedState.Melee when currentMeleeWeaponSO:
+                player.attackDamage     = currentMeleeWeaponSO.damage;
+                player.attackCooldown   = currentMeleeWeaponSO.cooldownTime;
+                player.attackRange      = currentMeleeWeaponSO.range;
+                player.attackAnimPrefix = currentMeleeWeaponSO.animPrefix;
+                player.attackSounds     = currentMeleeWeaponSO.audioClips;
+                break;
+
+            case EquippedState.Projectile when currentProjectileWeaponSO:
+                player.attackAnimPrefix = currentProjectileWeaponSO.animPrefix;
+                player.attackSounds     = currentProjectileWeaponSO.audioClips;
+                break;
+
+            case EquippedState.Item when currentItemSO:
+                player.attackSounds     = currentItemSO.audioClips;
+                break;
+
+            case EquippedState.ThrowableItem when currentItemSO:
+                player.attackSounds     = currentItemSO.audioClips;
+                break;
+
+            default: // none equipped – restore defaults
+                player.attackDamage     = defaultAttackDamage;
+                player.attackCooldown   = defaultAttackCooldown;
+                player.attackRange      = defaultAttackRange;
+                player.attackAnimPrefix = defaultAnimPrefix;
+                player.attackSounds     = defaultAttackSounds;
+                break;
         }
-        if (currentEquippedInstance != null)
-            Destroy(currentEquippedInstance);
+        Debug.Log($"[InventoryHandler] Now using prefix {player.attackAnimPrefix}  dmg {player.attackDamage}");
 
-        currentEquippedInstance = new GameObject(weaponData.itemName);
-        currentEquippedInstance.transform.SetParent(parentHolder, false);
-        currentEquippedInstance.transform.localScale = new Vector3(weaponData.itemScale, weaponData.itemScale, 0);
-        currentEquippedInstance.transform.localPosition = Vector3.zero;
-        currentEquippedInstance.transform.localRotation = Quaternion.identity;
-
-        SpriteRenderer sr = currentEquippedInstance.AddComponent<SpriteRenderer>();
-        ItemGameObject itemGO = currentEquippedInstance.AddComponent<ItemGameObject>();
-        itemGO.item = weaponData;
     }
 
-    /// <summary>
+    /* ─────────────────────────────────────────────  INSTANTIATION ──────────────────────────────────────────── */
+
+    private void InstantiateWeapon(WeaponSO weaponData, Transform holder)
+    {
+        currentEquippedInstance = new GameObject(weaponData.itemName);
+        currentEquippedInstance.transform.SetParent(holder, false);
+        currentEquippedInstance.transform.localScale    = Vector3.one * weaponData.itemScale;
+
+        currentEquippedInstance.AddComponent<SpriteRenderer>();
+        currentEquippedInstance.AddComponent<ItemGameObject>().item = weaponData;
+    }
+
+    private void InstantiateHoldable(ItemSO itemData, Transform holder)
+    {
+        currentEquippedInstance = new GameObject(itemData.itemName);
+        currentEquippedInstance.transform.SetParent(holder, false);
+        currentEquippedInstance.transform.localScale    = Vector3.one * itemData.itemScale;
+
+        currentEquippedInstance.AddComponent<SpriteRenderer>();
+        currentEquippedInstance.AddComponent<ItemGameObject>().item = itemData;
+    }
+
+    /* ─────────────────────────────────────────────  UI HELPERS ─────────────────────────────────────────────── */
+
+    private void UpdateUI()
+    {
+        var list = new List<KeyValuePair<ItemSO,int>>(inventory);
+        inventoryMenu.UpdateInventoryUI(list);
+    }
+
+    public int GetItemCount(ItemSO item) => inventory.TryGetValue(item, out var c) ? c : 0;
+
+    /* ─────────────────────────────────────────────  PROJECTILES (unchanged) ────────────────────────────────── */
+    // ── keep your ShootProjectile(...) method here ──
+        /// <summary>
     /// Instantiates a holdable item (general item or projectile held as item) using the provided ItemSO data.
     /// Expects itemData to be of type ItemInstSO.
     /// </summary>
-    private void InstantiateHoldable(ItemSO itemData, Transform parentHolder)
-    {
-        if (itemData == null)
-        {
-            Debug.LogError("InstantiateHoldable called with null itemData.");
-            return;
-        }
-        ItemInstSO holdableItem = itemData as ItemInstSO;
-        if (holdableItem == null)
-        {
-            Debug.LogWarning("Item is not holdable: " + itemData.itemName);
-            return;
-        }
-        if (currentEquippedInstance != null)
-            Destroy(currentEquippedInstance);
-
-        currentEquippedInstance = new GameObject(holdableItem.itemName);
-        currentEquippedInstance.transform.SetParent(parentHolder, false);
-        currentEquippedInstance.transform.localScale = new Vector3(holdableItem.itemScale, holdableItem.itemScale, 0);
-        currentEquippedInstance.transform.localPosition = Vector3.zero;
-        currentEquippedInstance.transform.localRotation = Quaternion.identity;
-
-        SpriteRenderer sr = currentEquippedInstance.AddComponent<SpriteRenderer>();
-        ItemGameObject itemGO = currentEquippedInstance.AddComponent<ItemGameObject>();
-        itemGO.item = holdableItem;
-    }
     private Quaternion MouseToDegrees(){
         Vector3 mouseWorldPosition = mainCamera.ScreenToWorldPoint(Input.mousePosition);
         mouseWorldPosition.z= 0f;
@@ -587,49 +437,4 @@ public class InventoryHandler : MonoBehaviour
 			}
 		}
 	}
-
-
-
-
-    
-	private void HandlePlayerAttackStats()
-	{
-		// Only update player's melee attack stats if a melee weapon is currently active.
-		if (activeState == EquippedState.Melee && currentMeleeWeaponSO != null)
-		{
-			// Assuming the WeaponSO has these properties.
-			player.attackDamage = currentMeleeWeaponSO.damage;
-			player.attackCooldown = currentMeleeWeaponSO.cooldownTime;
-			player.attackRange = currentMeleeWeaponSO.range;
-			player.attackAnimPrefix = currentMeleeWeaponSO.animPrefix;
-			player.attackSounds = currentMeleeWeaponSO.audioClips;
- 		}
- 		else if (activeState == EquippedState.Item && currentItemSO != null)
- 		{
-
-			player.attackSounds = currentItemSO.audioClips;
-		}
-		else if (activeState == EquippedState.Projectile && currentProjectileWeaponSO !=null)
-		{
-			player.attackSounds = currentProjectileWeaponSO.audioClips;
-		}
-		else
-		{
-			// Revert to the player's default stats when no melee weapon is equipped.
-			player.attackDamage = defaultAttackDamage;
-			player.attackCooldown = defaultAttackCooldown;
-			player.attackRange = defaultAttackRange;
-			player.attackAnimPrefix = defaultAnimPrefix;
-			player.attackSounds = defaultAttackSounds;
-		}
-	}
-
-
-    #endregion
-    public int GetItemCount(ItemSO item)
-    {
-        if (item != null && inventory.ContainsKey(item))
-            return inventory[item];
-        return 0;
-    }
 }
