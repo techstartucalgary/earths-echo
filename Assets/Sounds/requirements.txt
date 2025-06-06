@@ -41,7 +41,7 @@ dirtyjson==1.0.8
 discord.py==2.4.0
 distlib==0.3.9
 distro==1.9.0
-Django==1.8.3
+Django==4.2.22
 django-appconf==1.1.0
 django-axes==1.4.0
 django-compressor==1.5
