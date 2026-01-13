@@ -54,7 +54,7 @@ exa_py==1.7.1
 executing==2.1.0
 fastjsonschema==2.20.0
 ffs==0.0.8.2
-filelock==3.16.1
+filelock==3.20.3
 filetype==1.2.0
 fqdn==1.5.1
 frozendict==2.4.6
